@@ -1,0 +1,4 @@
+name = "ZigguratTools"
+uuid = "974aae91-9ec7-499e-b331-29e7a3e13038"
+authors = ["Nathan Barnes <npbarnes@alaska.edu>"]
+version = "0.1.0"
