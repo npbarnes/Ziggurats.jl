@@ -9,6 +9,7 @@ export sampleziggurat
 export plotziggurat
 export Ziggurat, xvalues, yvalues, xyvalues, layerarea
 
+# TODO: Ziggurat should be a sampler similar to samplers from Random.jl and Distributions.jl
 struct Ziggurat{X,Y,XY}
     x::Vector{X}
     y::Vector{Y}
@@ -20,6 +21,7 @@ yvalues(z::Ziggurat) = z.y
 xyvalues(z::Ziggurat) = (z.x, z.y)
 layerarea(z::Ziggurat) = z.A
 
+# TODO: Implement plotting as a Plots.jl recipe
 function plotziggurat(zig::Ziggurat)
     x,y = xyvalues(zig)
 
@@ -82,11 +84,14 @@ function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
     zig
 end
 
+# TODO: add fallback for F(x) = quadgk(f, -Inf, x)
+# TODO: add interface for supplying F or 1-F
+# TODO: add fallback for 1-F(x) = quadgk(f, x, Inf)
 function _buildziggurat!(x, y, f, finv, F, x1; f0)
     N = length(x) # length(x) == length(y)
     x[1] = x1
     y[1] = f(x1)
-    A = x[1] * y[1] + (1 - F(x[1]))
+    A = x[1] * y[1] + (1 - F(x[1])) # TODO: support unnormalized functions
 
     y[2] = y[1] + A/x[1]
     for i in 2:N-1
