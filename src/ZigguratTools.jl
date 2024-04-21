@@ -66,7 +66,7 @@ Build a table of ziggurat x and y values. Raise and error if the ziggurat is inv
 """
 function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
     # Check arguments
-    if !isreal(x1) || x1 <= 0
+    if x1 <= zero(x1)
         throw(ArgumentError("x1 must be a real positive number."))
     end
     if length(x) != length(y)
