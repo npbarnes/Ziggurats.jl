@@ -4,10 +4,10 @@ include("Normal.jl")
 using .Normal
 
 N = 10
-zig = searchziggurat(f, finv, F, N)
+zs = ZigguratSampler(f, finv, F, N, tailsample)
 
-x,y = xyvalues(zig)
-A = layerarea(zig)
+x,y = xyvalues(zs)
+A = layerarea(zs)
 f0 = f(0)
 
 # Number of layers

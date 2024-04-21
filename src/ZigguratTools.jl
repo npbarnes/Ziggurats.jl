@@ -7,23 +7,34 @@ export buildziggurat, buildziggurat!
 export searchziggurat
 export sampleziggurat
 export plotziggurat
-export Ziggurat, xvalues, yvalues, xyvalues, layerarea
+export ZigguratSampler, xvalues, yvalues, xyvalues, layerarea
 
 # TODO: Ziggurat should be a sampler similar to samplers from Random.jl and Distributions.jl
-struct Ziggurat{X,Y,XY}
+struct ZigguratSampler{X,Y,XY,T,F}
     x::Vector{X}
     y::Vector{Y}
     A::XY
+    tailsample::T
+    pdf::F
 end
 
-xvalues(z::Ziggurat) = z.x
-yvalues(z::Ziggurat) = z.y
-xyvalues(z::Ziggurat) = (z.x, z.y)
-layerarea(z::Ziggurat) = z.A
+function ZigguratSampler(f, finv, F, N, tailsample, method=Bisection(); xtype=Float64)
+    x,y = searchziggurat(f, finv, F, N, method; xtype)
+    A = x[1] * (y[2] - y[1])
+    ZigguratSampler(x, y, A, tailsample, f)
+end
+
+xvalues(zs::ZigguratSampler) = zs.x
+yvalues(zs::ZigguratSampler) = zs.y
+xyvalues(zs::ZigguratSampler) = (zs.x, zs.y)
+layerarea(zs::ZigguratSampler) = zs.A
+pdf(zs::ZigguratSampler, x) = zs.f(x)
+tailsample(zs::ZigguratSampler) = zs.tailsample(xvalues(zs)[1])
 
 # TODO: Implement plotting as a Plots.jl recipe
-function plotziggurat(zig::Ziggurat)
-    x,y = xyvalues(zig)
+# TODO: Put the plotting stuff in an extension
+function plotziggurat(zs::ZigguratSampler)
+    x,y = xyvalues(zs)
 
     p = plot([0, x[1]], [y[1], y[1]], color=:black, legend=false)
     scatter!(p, [x[1]], [y[1]], color=:black)
@@ -36,13 +47,10 @@ function plotziggurat(zig::Ziggurat)
     yl = ylims(p)
     xlims!(0,1.5xl[2])
     ylims!(0,yl[2])
+
+    plot!(p, zs.f, color=:blue, lw=2)
+
     p
-end
-function plotziggurat(zig::Ziggurat, f)
-    p = plotziggurat(zig)
-    xl = xlims(p)
-    x = range(xl[1],xl[2],length=1000)
-    plot!(p, x, f.(x), color=:blue, lw=2)
 end
 
 function buildziggurat(f, finv, F, N, x1; f0=f(zero(x1)))
@@ -73,7 +81,7 @@ function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
         error("failed to build a covering ziggurat. The starting value, x1=$x1, is too small for N=$N.")
     end
 
-    x,y = xyvalues(zig)
+    x,y = zig
     if y[end] < f0
         error("failed to buld a covering ziggurat. The starting value, x1=$x1, is too large for N=$N.")
     elseif y[end] ≉ f0 # i.e y[end] >> f0
@@ -106,7 +114,7 @@ function _buildziggurat!(x, y, f, finv, F, x1; f0)
     # The sampling algorithm requires x[N] = 0.
     x[N] = zero(eltype(x))
     
-    Ziggurat(x,y,A)
+    x,y
 end
 
 
@@ -126,7 +134,8 @@ function searchziggurat(f, finv, F, N, method=Bisection(); xtype=Float64)
             return Inf
         end
 
-        yvalues(zig)[N] - f0
+        x,y = zig
+        y[N] - f0
     end
 
     tracker = Roots.Tracks()
@@ -141,36 +150,37 @@ function searchziggurat(f, finv, F, N, method=Bisection(); xtype=Float64)
     buildziggurat!(x, y, f, finv, F, xstar; f0)
 end
 
-function sampleziggurat!(out, zig)
+function sampleziggurat!(out, zs::ZigguratSampler)
     for i in eachindex(out)
-        out[i] = sampleziggurat(zig)
+        out[i] = sampleziggurat(zs)
     end
     out
 end
 
-function sampleziggurat(zig, N)
+function sampleziggurat(zs::ZigguratSampler, N)
     out = Vector{Float64}(undef, N)
-    sampleziggurat!(out, zig)
+    sampleziggurat!(out, zs)
 end
 
-function sampleziggurat(zig)
-    N = length(zig.x)
+# TODO: tailsample and f need to be part of the Sampler struct.
+function sampleziggurat(zs::ZigguratSampler)
+    N = length(zs.x)
 
     while true
         l = rand(1:N)
         if l == 1 # Baselayer
-            x0 = zig.A/zig.y[1]
-            if x0 < zig.x[1]
+            x0 = zs.A/zs.y[1]
+            if x0 < zs.x[1]
                 return x0
             else
-                return tailsample(zig.x[1])
+                return tailsample(zs)
             end
         else # all other layers
-            x = zig.x[l-1]*rand()
-            if x < zig.x[l]
+            x = zs.x[l-1]*rand()
+            if x < zs.x[l]
                 return x
             else
-                y = (zig.y[l] - zig.y[l-1])*rand() + zig.y[l-1]
+                y = (zs.y[l] - zs.y[l-1])*rand() + zs.y[l-1]
                 if y < f(x)
                     return x
                 end
