@@ -84,7 +84,7 @@ function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
     x,y = zig
     if y[end] < f0
         error("failed to buld a covering ziggurat. The starting value, x1=$x1, is too large for N=$N.")
-    elseif y[end] ≉ f0 # i.e y[end] >> f0
+    elseif y[end] ≉ f0
         error("failed to build an accurate ziggurat. y[N] = $(y[N]) is not close to f(0) = $f0.\
         The starting value, x1=$x1, is too small for N=$N.")
     end
