@@ -181,7 +181,7 @@ function sampleziggurat(zs::ZigguratSampler)
                 return x
             else
                 y = (zs.y[l] - zs.y[l-1])*rand() + zs.y[l-1]
-                if y < f(x)
+                if y < zs.pdf(x)
                     return x
                 end
             end
