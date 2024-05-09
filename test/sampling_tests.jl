@@ -1,6 +1,6 @@
 using ZigguratTools, Test
 
-include("Normal.jl")
+include("../utils/Normal.jl")
 using .Normal
 
 N = 10
