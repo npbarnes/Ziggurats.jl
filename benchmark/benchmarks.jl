@@ -1,6 +1,6 @@
 using ZigguratTools, BenchmarkTools
 
-include("Normal.jl")
+include("../utils/Normal.jl")
 using .Normal
 
 const SUITE = BenchmarkGroup()
