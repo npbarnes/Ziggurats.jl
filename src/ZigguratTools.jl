@@ -194,4 +194,16 @@ function symmetricsampleziggurat(zs::ZigguratSampler)
     ifelse(rand(Bool), x, -x)
 end
 
+function symmetricsampleziggurat(zs::ZigguratSampler, N)
+    out = Vector{Float64}(undef, N)
+    symmetricsampleziggurat!(out, zs)
+end
+
+function symmetricsampleziggurat!(out, zs::ZigguratSampler)
+    for i in eachindex(out)
+        out[i] = symmetricsampleziggurat(zs)
+    end
+    out
+end
+
 end # module ZigguratTools
