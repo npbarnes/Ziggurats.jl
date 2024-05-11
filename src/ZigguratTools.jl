@@ -5,7 +5,7 @@ using Plots
 
 export buildziggurat, buildziggurat!
 export searchziggurat
-export sampleziggurat, symmetricsampleziggurat
+export sampleziggurat, sampleziggurat!, symmetricsampleziggurat, symmetricsampleziggurat!
 export plotziggurat
 export ZigguratSampler, xvalues, yvalues, xyvalues, layerarea
 
