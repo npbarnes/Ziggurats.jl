@@ -5,7 +5,7 @@ using Plots
 
 export buildziggurat, buildziggurat!
 export searchziggurat
-export sampleziggurat, symmetricsampleziggurat
+export sampleziggurat, sampleziggurat!, symmetricsampleziggurat, symmetricsampleziggurat!
 export plotziggurat
 export ZigguratSampler, xvalues, yvalues, xyvalues, layerarea
 
@@ -192,6 +192,18 @@ end
 function symmetricsampleziggurat(zs::ZigguratSampler)
     x = sampleziggurat(zs)
     ifelse(rand(Bool), x, -x)
+end
+
+function symmetricsampleziggurat(zs::ZigguratSampler, N)
+    out = Vector{Float64}(undef, N)
+    symmetricsampleziggurat!(out, zs)
+end
+
+function symmetricsampleziggurat!(out, zs::ZigguratSampler)
+    for i in eachindex(out)
+        out[i] = symmetricsampleziggurat(zs)
+    end
+    out
 end
 
 end # module ZigguratTools
