@@ -15,13 +15,6 @@ SUITE["sampling"]["symmetric"] = BenchmarkGroup()
 SUITE["sampling"]["oneside"]["single"] = BenchmarkGroup()
 SUITE["sampling"]["symmetric"]["single"] = BenchmarkGroup()
 
-#=
-SUITE["sampling"]["oneside"]["single"] = 
-    @benchmarkable sampleziggurat(zs) setup=(zs=ZigguratSampler(f, finv, F, Nzig, tailsample))
-SUITE["sampling"]["symmetric"]["single"] = 
-    @benchmarkable sampleziggurat(zs) setup=(zs=ZigguratSampler(f, finv, F, Nzig, tailsample))
-=#
-
 for Nzig in zigsizes
     zs = ZigguratSampler(f, finv, F, Nzig, tailsample)
 
