@@ -26,3 +26,4 @@ Manifest.toml
 # VSCode local project settings
 .vscode/
 benchmark/tune.json
+benchmark/result.json
