@@ -1,7 +1,6 @@
 using ZigguratTools, Test
 
-include("../utils/Normal.jl")
-using .Normal
+using Normal
 
 Nzig = 10
 Nsamp = 5
