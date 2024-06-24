@@ -53,6 +53,14 @@ function plotziggurat(zs::ZigguratSampler)
     p
 end
 
+"""
+    buildziggurat(f, finv, F, N, x1; f0=f(zero(x1)))
+
+Build a ziggurat for f with N levels given a known x1. Returns a tuple of vectors for
+the x values and the y values respectively. An error is thrown if the ziggurat is
+invalid. For example, when the N'th level fails to cover f, or if the N'th level is not
+close to f(0).
+"""
 function buildziggurat(f, finv, F, N, x1; f0=f(zero(x1)))
     x = Vector{typeof(x1)}(undef, N)
     y = Vector{typeof(f0)}(undef, N)
@@ -60,9 +68,12 @@ function buildziggurat(f, finv, F, N, x1; f0=f(zero(x1)))
 end
 
 """
-    buildziggurat!(x, y, f, finv, F, N::Integer, x1; f0=f(zero(eltype(x))))
+    buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(eltype(x))))
 
-Build a table of ziggurat x and y values. Raise and error if the ziggurat is invalid.
+Build a ziggurat for f and put the x and y values into the arguments x and y. The arguments
+x and y should be Vectors with the same length. An error is thrown if the ziggurat is
+invalid. For example, when the N'th level fails to cover f, or if the N'th level is not 
+close to f(0).
 """
 function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
     # Check arguments
@@ -119,8 +130,12 @@ end
 
 
 """
+    searchziggurat(f, finv, F, N, method=Bisection(); xytpe=Float64)
+
 Build a ziggurat for f when x1 is unknown by searching for the correct value.
-Returns the completed ziggurat table of x's and y's.
+Returns a tuple of Vectors for the x and y values of the ziggurat respectively.
+The method argument may be any of the derivative free methods provided by
+Roots.jl; Bisection() is the default because it is guarenteed to converge.
 """
 function searchziggurat(f, finv, F, N, method=Bisection(); xtype=Float64)
     f0 = f(zero(xtype))
@@ -162,7 +177,11 @@ function sampleziggurat(zs::ZigguratSampler, N)
     sampleziggurat!(out, zs)
 end
 
-# TODO: tailsample and f need to be part of the Sampler struct.
+"""
+    sampleziggurat(zs::ZigguratSampler)
+
+Sample a point from the distribution using the ziggurat method.
+"""
 function sampleziggurat(zs::ZigguratSampler)
     N = length(zs.x)
 
