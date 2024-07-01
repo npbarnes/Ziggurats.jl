@@ -107,6 +107,7 @@ function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
 end
 
 # TODO: add fallback for F(x) = quadgk(f, -Inf, x)
+# TODO: add fallback for f(x) = ForwardDiff.derivative(F, x)
 # TODO: add interface for supplying F or 1-F
 # TODO: add fallback for 1-F(x) = quadgk(f, x, Inf)
 function _buildziggurat!(x, y, f, finv, F, x1; f0)
@@ -141,6 +142,8 @@ The method argument may be any of the derivative free methods provided by
 Roots.jl; Bisection() is the default because it is guarenteed to converge.
 """
 function searchziggurat(f, finv, F, N, method=Bisection(); xtype=Float64)
+    # TODO: The defualt method can be made faster since we know x1 is probably closer to 
+    # zero than to Inf, and we may be able to use some derivative information.
     f0 = f(zero(xtype))
     x = Vector{xtype}(undef, N)
     y = Vector{typeof(f0)}(undef, N)
@@ -163,7 +166,8 @@ function searchziggurat(f, finv, F, N, method=Bisection(); xtype=Float64)
     if tracker.convergence_flag !== :exact_zero
         xstar = tracker.abₛ[end][1]
     end
-    #TODO handle non-convergence.
+    #TODO handle non-convergence. Bisection is guarenteed to converge, but not all
+    #algorithms are.
 
     buildziggurat!(x, y, f, finv, F, xstar; f0)
 end
