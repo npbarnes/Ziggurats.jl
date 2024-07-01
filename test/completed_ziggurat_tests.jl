@@ -1,6 +1,6 @@
 using ZigguratTools, Test
 
-using Normal
+include("./Normal.jl")
 
 N = 10
 zs = ZigguratSampler(f, finv, F, N, tailsample)
