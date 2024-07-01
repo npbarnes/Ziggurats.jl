@@ -21,7 +21,8 @@ end
 function ZigguratSampler(f, finv, F, N, tailsample, method=Bisection(); xtype=Float64)
     x,y = searchziggurat(f, finv, F, N, method; xtype)
     A = x[1] * (y[2] - y[1])
-    ZigguratSampler(x, y, A, tailsample, f)
+    ts = () -> tailsample(x[1])
+    ZigguratSampler(x, y, A, ts, f)
 end
 
 xvalues(zs::ZigguratSampler) = zs.x
@@ -194,7 +195,7 @@ function sampleziggurat(zs::ZigguratSampler)
             if x0 < zs.x[1]
                 return x0
             else
-                return tailsample(zs)
+                return zs.tailsample()
             end
         else # all other layers
             x = zs.x[l-1]*rand()
