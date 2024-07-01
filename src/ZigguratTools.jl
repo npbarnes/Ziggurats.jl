@@ -48,7 +48,7 @@ function plotziggurat(zs::ZigguratSampler)
     xlims!(0,1.5xl[2])
     ylims!(0,yl[2])
 
-    plot!(p, zs.f, color=:blue, lw=2)
+    plot!(p, zs.pdf, color=:blue, lw=2)
 
     p
 end
