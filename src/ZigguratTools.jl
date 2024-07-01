@@ -6,7 +6,7 @@ using Plots
 export buildziggurat, buildziggurat!
 export searchziggurat
 export sampleziggurat, sampleziggurat!, symmetricsampleziggurat, symmetricsampleziggurat!
-export plotziggurat
+export plotziggurat, plotziggurat!
 export ZigguratSampler, xvalues, yvalues, xyvalues, layerarea
 
 # TODO: Ziggurat should be a sampler similar to samplers from Random.jl and Distributions.jl
@@ -33,10 +33,12 @@ tailsample(zs::ZigguratSampler) = zs.tailsample(xvalues(zs)[1])
 
 # TODO: Implement plotting as a Plots.jl recipe
 # TODO: Put the plotting stuff in an extension
-function plotziggurat(zs::ZigguratSampler)
+plotziggurat(zs::ZigguratSampler) = plotziggurat!(plot(), zs)
+plotziggurat!(zs::ZigguratSampler) = plotziggurat!(current(), zs)
+function plotziggurat!(p::Plots.Plot, zs::ZigguratSampler)
     x,y = xyvalues(zs)
 
-    p = plot([0, x[1]], [y[1], y[1]], color=:black, legend=false)
+    p = plot!(p, [0, x[1]], [y[1], y[1]], color=:black, legend=false)
     scatter!(p, [x[1]], [y[1]], color=:black)
     for i in eachindex(x)[2:end]
         plot!(p, [0, x[i-1], x[i-1]], [y[i], y[i], y[i-1]], color=:black)
