@@ -92,15 +92,15 @@ function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
     
     # Sanity checks
     if zig === nothing
-        error("failed to build a covering ziggurat. The starting value, x1=$x1, is too small for N=$N.")
+        error("failed to build a covering ziggurat. The starting value, x1=$x1, is too small for N=$(length(x)).")
     end
 
     x,y = zig
     if y[end] < f0
-        error("failed to buld a covering ziggurat. The starting value, x1=$x1, is too large for N=$N.")
+        error("failed to buld a covering ziggurat. The starting value, x1=$x1, is too large for N=$(length(x)).")
     elseif y[end] ≉ f0
         error("failed to build an accurate ziggurat. y[N] = $(y[N]) is not close to f(0) = $f0.\
-        The starting value, x1=$x1, is too small for N=$N.")
+        The starting value, x1=$x1, is too small for N=$(length(x)).")
     end
 
     zig
