@@ -89,7 +89,7 @@ function buildziggurat!(x, y, pdf, ipdf, tailarea, mode, x1, mode_pd=pdf(mode))
     y[1] = pdf(x1)
     A = abs(x[1] - mode) * y[1] + tailarea(x[1])
     y[2] = y[1] + A/abs(x[1] - mode)
-    for i in eachindex(x)[2:end-1]
+    for i in eachindex(x)[begin+1:end-1]
         if y[i] >= mode_pd
             # Building the ziggurat failed
             return nothing 
