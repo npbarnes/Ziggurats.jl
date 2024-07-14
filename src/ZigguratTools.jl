@@ -1,43 +1,56 @@
 module ZigguratTools
 
 using Roots
+using Random
+using Distributions
 using Plots
 
-export buildziggurat, buildziggurat!
-export searchziggurat
-export sampleziggurat, sampleziggurat!, symmetricsampleziggurat, symmetricsampleziggurat!
-export plotziggurat, plotziggurat!
-export ZigguratSampler, xvalues, yvalues, xyvalues, layerarea
+export UnboundedIncreasingZiggurat, UnboundedDecreasingZiggurat, plotziggurat, plotziggurat!
 
-# TODO: Ziggurat should be a sampler similar to samplers from Random.jl and Distributions.jl
-struct ZigguratSampler{X,Y,XY,T,F}
+abstract type AbstractZiggurat{X} <: Sampleable{Univariate, Continuous} end
+abstract type AbstractMonotonicZiggurat{X} <: AbstractZiggurat{X} end
+Base.eltype(::AbstractZiggurat{X}) where X = X
+
+struct UnboundedDecreasingZiggurat{X, Y, F, XY, T} <: AbstractMonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
-    A::XY
-    tailsample::T
     pdf::F
+    layerarea::XY
+    tailmap::T
+
+    # TODO: add a fallback for tailsample that uses inverse transform sampling
+    # or ApproxFun.jl (Olver & Townsend 2013 algorithm)
+    # or one or more of the algorithms in Jalalvand & Charsooghi
+    function UnboundedDecreasingZiggurat(pdf, ipdf, ccdf, mode, N, tailmap)
+        x,y = searchrightziggurat(pdf, ipdf, ccdf, mode, N)
+        A = abs(x[1] - mode) * (y[2] - y[1])
+        tm = u -> tailmap(x[1], u)
+        new{eltype(x), eltype(y), typeof(pdf), typeof(A), typeof(tm)}(x, y, pdf, A, tm)
+    end
 end
 
-function ZigguratSampler(f, finv, F, N, tailsample, method=Bisection(); xtype=Float64)
-    x,y = searchziggurat(f, finv, F, N, method; xtype)
-    A = x[1] * (y[2] - y[1])
-    ts = () -> tailsample(x[1])
-    ZigguratSampler(x, y, A, ts, f)
+struct UnboundedIncreasingZiggurat{X, Y, F, XY, T} <: AbstractMonotonicZiggurat{X}
+    x::Vector{X}
+    y::Vector{Y}
+    pdf::F
+    layerarea::XY
+    tailmap::T
+
+    # TODO: add a fallback for tailsample that uses inverse transform sampling
+    # or ApproxFun.jl (Olver & Townsend 2013 algorithm)
+    # or one or more of the algorithms in Jalalvand & Charsooghi
+    function UnboundedIncreasingZiggurat(pdf, ipdf, cdf, mode, N, tailmap)
+        x,y = searchleftziggurat(pdf, ipdf, cdf, mode, N)
+        A = abs(x[1] - mode) * (y[2] - y[1])
+        tm = u -> tailmap(x[1], u)
+        new{eltype(x), eltype(y), typeof(pdf), typeof(A), typeof(tm)}(x, y, pdf, A, tm)
+    end
 end
 
-xvalues(zs::ZigguratSampler) = zs.x
-yvalues(zs::ZigguratSampler) = zs.y
-xyvalues(zs::ZigguratSampler) = (zs.x, zs.y)
-layerarea(zs::ZigguratSampler) = zs.A
-pdf(zs::ZigguratSampler, x) = zs.f(x)
-tailsample(zs::ZigguratSampler) = zs.tailsample(xvalues(zs)[1])
-
-# TODO: Implement plotting as a Plots.jl recipe
-# TODO: Put the plotting stuff in an extension
-plotziggurat(zs::ZigguratSampler) = plotziggurat!(plot(), zs)
-plotziggurat!(zs::ZigguratSampler) = plotziggurat!(current(), zs)
-function plotziggurat!(p::Plots.Plot, zs::ZigguratSampler)
-    x,y = xyvalues(zs)
+plotziggurat(zs) = plotziggurat!(plot(), zs)
+plotziggurat!(zs) = plotziggurat!(current(), zs)
+function plotziggurat!(p::Plots.Plot, zs)
+    x, y = zs.x, zs.y
 
     p = plot!(p, [0, x[1]], [y[1], y[1]], color=:black, legend=false)
     scatter!(p, [x[1]], [y[1]], color=:black)
@@ -56,158 +69,93 @@ function plotziggurat!(p::Plots.Plot, zs::ZigguratSampler)
     p
 end
 
-"""
-    buildziggurat(f, finv, F, N, x1; f0=f(zero(x1)))
-
-Build a ziggurat for f with N levels given a known x1. Returns a tuple of vectors for
-the x values and the y values respectively. An error is thrown if the ziggurat is
-invalid. For example, when the N'th level fails to cover f, or if the N'th level is not
-close to f(0).
-"""
-function buildziggurat(f, finv, F, N, x1; f0=f(zero(x1)))
-    x = Vector{typeof(x1)}(undef, N)
-    y = Vector{typeof(f0)}(undef, N)
-    buildziggurat!(x, y, f, finv, F, x1; f0)
-end
-
-"""
-    buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(eltype(x))))
-
-Build a ziggurat for f and put the x and y values into the arguments x and y. The arguments
-x and y should be Vectors with the same length. An error is thrown if the ziggurat is
-invalid. For example, when the N'th level fails to cover f, or if the N'th level is not 
-close to f(0).
-"""
-function buildziggurat!(x, y, f, finv, F, x1; f0=f(zero(x1)))
-    # Check arguments
-    if x1 <= zero(x1)
-        throw(ArgumentError("x1 must be a real positive number."))
-    end
-    if length(x) != length(y)
-        throw(ArgumentError("the lengths of x and y must be the same"))
-    end
-
-    # Do the actual work
-    zig = _buildziggurat!(x, y, f, finv, F, x1; f0)
-    
-    # Sanity checks
-    if zig === nothing
-        error("failed to build a covering ziggurat. The starting value, x1=$x1, is too small for N=$(length(x)).")
-    end
-
-    x,y = zig
-    if y[end] < f0
-        error("failed to buld a covering ziggurat. The starting value, x1=$x1, is too large for N=$(length(x)).")
-    elseif y[end] ≉ f0
-        error("failed to build an accurate ziggurat. y[N] = $(y[N]) is not close to f(0) = $f0.\
-        The starting value, x1=$x1, is too small for N=$(length(x)).")
-    end
-
-    zig
-end
+Distributions.mode(z::AbstractMonotonicZiggurat) = z.x[end]
+Random.rand(rng::AbstractRNG, z::AbstractMonotonicZiggurat) = sampleziggurat(rng, z)
 
 # TODO: add fallback for F(x) = quadgk(f, -Inf, x)
 # TODO: add fallback for f(x) = ForwardDiff.derivative(F, x)
 # TODO: add interface for supplying F or 1-F
 # TODO: add fallback for 1-F(x) = quadgk(f, x, Inf)
-function _buildziggurat!(x, y, f, finv, F, x1; f0)
+# TODO: add fallback for finv using root finding
+# TODO: support ziggurats with < 3 layers
+function buildziggurat!(x, y, pdf, ipdf, tailarea, mode, x1, mode_pd=pdf(mode))
     N = length(x) # length(x) == length(y)
     x[1] = x1
-    y[1] = f(x1)
-    A = x[1] * y[1] + (1 - F(x[1])) # TODO: support unnormalized functions
+    y[1] = pdf(x1)
+    A = abs(x[1] - mode) * y[1] + tailarea(x[1])
+    y[2] = y[1] + A/abs(x[1] - mode)
+    _finishziggurat!(x, y, ipdf, mode, A, mode_pd)
+end
 
-    y[2] = y[1] + A/x[1]
-    for i in 2:N-1
-        if y[i] >= f0
+function _finishziggurat!(x, y, ipdf, mode, A, mode_pd)
+    for i in eachindex(x)[2:end-1]
+        if y[i] >= mode_pd
             # Building the ziggurat failed
             return nothing 
         end
-        x[i] = finv(y[i])
-        y[i+1] = y[i] + A/x[i]
+        x[i] = ipdf(y[i])
+        y[i+1] = y[i] + A/abs(x[i] - mode)
     end
 
-    # The sampling algorithm requires x[N] = 0.
-    x[N] = zero(eltype(x))
+    x[end] = mode
     
     x,y
 end
 
+searchleftziggurat(pdf, ipdf_left, cdf, mode, N) = searchziggurat((-Inf, mode), pdf, ipdf_left, cdf, mode, N)
+searchrightziggurat(pdf, ipdf_right, ccdf, mode, N) = searchziggurat((mode, Inf), pdf, ipdf_right, ccdf, mode, N)
 
-"""
-    searchziggurat(f, finv, F, N, method=Bisection(); xytpe=Float64)
-
-Build a ziggurat for f when x1 is unknown by searching for the correct value.
-Returns a tuple of Vectors for the x and y values of the ziggurat respectively.
-The method argument may be any of the derivative free methods provided by
-Roots.jl; Bisection() is the default because it is guarenteed to converge.
-"""
-function searchziggurat(f, finv, F, N, method=Bisection(); xtype=Float64)
-    # TODO: The defualt method can be made faster since we know x1 is probably closer to 
-    # zero than to Inf, and we may be able to use some derivative information.
-    f0 = f(zero(xtype))
-    x = Vector{xtype}(undef, N)
-    y = Vector{typeof(f0)}(undef, N)
+function searchziggurat(domain, pdf, ipdf, tailarea, mode, N)
+    # TODO: The search method can be made faster since we know x1 is probably closer to 
+    # mode than to Inf or -Inf, and we may be able to use some derivative information.
+    max_pd = pdf(mode)
+    x = Vector{typeof(mode)}(undef, N)
+    y = Vector{typeof(max_pd)}(undef, N)
 
     "Try to build a ziggurat and return a value that represents error"
     function attemptziggurat!(x1)
-        zig = _buildziggurat!(x, y, f, finv, F, x1; f0)
+        zig = buildziggurat!(x, y, pdf, ipdf, tailarea, mode, x1, max_pd)
         if zig === nothing
             return Inf
         end
 
         x,y = zig
-        y[N] - f0
+        y[N] - max_pd
     end
 
     tracker = Roots.Tracks()
-    xstar = find_zero(attemptziggurat!, (0, Inf), method; tracks=tracker)
+    xstar = find_zero(attemptziggurat!, domain, Bisection(); tracks=tracker)
 
-    # y[N] needs to be either exact or a slight over estimate
+    # y[N] needs to be either exact or a slightly over
     if tracker.convergence_flag !== :exact_zero
         xstar = tracker.abₛ[end][1]
     end
     #TODO handle non-convergence. Bisection is guarenteed to converge, but not all
     #algorithms are.
 
-    buildziggurat!(x, y, f, finv, F, xstar; f0)
+    buildziggurat!(x, y, pdf, ipdf, tailarea, mode, xstar, max_pd)
 end
 
-function sampleziggurat!(out, zs::ZigguratSampler)
-    for i in eachindex(out)
-        out[i] = sampleziggurat(zs)
-    end
-    out
-end
-
-function sampleziggurat(zs::ZigguratSampler, N)
-    out = Vector{Float64}(undef, N)
-    sampleziggurat!(out, zs)
-end
-
-"""
-    sampleziggurat(zs::ZigguratSampler)
-
-Sample a point from the distribution using the ziggurat method.
-"""
-function sampleziggurat(zs::ZigguratSampler)
+function sampleziggurat(rng::AbstractRNG, zs::UnboundedDecreasingZiggurat)
     N = length(zs.x)
 
     while true
-        l = rand(1:N)
+        l = rand(rng, 1:N)
         if l == 1 # Baselayer
-            x0 = zs.A/zs.y[1]
-            x = x0*rand()
+            δ = zs.layerarea/zs.y[1]
+            x = mode(zs) + δ*rand(rng)
             if x < zs.x[1]
                 return x
             else
-                return zs.tailsample()
+                return zs.tailmap(rand(rng)) # Can I replace rand() with (x-x1)/(m+δ-x1)?
             end
         else # all other layers
-            x = zs.x[l-1]*rand()
+            u = rand(rng)
+            x = mode(zs)*u + zs.x[l-1]*(1-u)
             if x < zs.x[l]
                 return x
             else
-                y = (zs.y[l] - zs.y[l-1])*rand() + zs.y[l-1]
+                y = (zs.y[l] - zs.y[l-1])*rand(rng) + zs.y[l-1]
                 if y < zs.pdf(x)
                     return x
                 end
@@ -216,21 +164,32 @@ function sampleziggurat(zs::ZigguratSampler)
     end
 end
 
-function symmetricsampleziggurat(zs::ZigguratSampler)
-    x = sampleziggurat(zs)
-    ifelse(rand(Bool), x, -x)
-end
+function sampleziggurat(rng::AbstractRNG, zs::UnboundedIncreasingZiggurat)
+    N = length(zs.x)
 
-function symmetricsampleziggurat(zs::ZigguratSampler, N)
-    out = Vector{Float64}(undef, N)
-    symmetricsampleziggurat!(out, zs)
-end
-
-function symmetricsampleziggurat!(out, zs::ZigguratSampler)
-    for i in eachindex(out)
-        out[i] = symmetricsampleziggurat(zs)
+    while true
+        l = rand(rng, 1:N)
+        if l == 1 # Baselayer
+            δ = zs.layerarea/zs.y[1]
+            x = mode(zs) - δ*rand(rng)
+            if zs.x[1] < x
+                return x
+            else
+                return zs.tailmap(rand(rng)) # Can I replace rand() with (x1-x)/(x1-(m-δ))?
+            end
+        else # all other layers
+            u = rand(rng)
+            x = mode(zs)*u + zs.x[l-1]*(1-u)
+            if zs.x[l] < x
+                return x
+            else
+                y = (zs.y[l] - zs.y[l-1])*rand(rng) + zs.y[l-1]
+                if y < zs.pdf(x)
+                    return x
+                end
+            end
+        end
     end
-    out
 end
 
-end # module ZigguratTools
+end # module
