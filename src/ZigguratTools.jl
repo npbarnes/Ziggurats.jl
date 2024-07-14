@@ -47,11 +47,19 @@ struct UnboundedIncreasingZiggurat{X, Y, F, XY, T} <: AbstractMonotonicZiggurat{
     end
 end
 
-plotziggurat(zs) = plotziggurat!(plot(), zs)
-plotziggurat!(zs) = plotziggurat!(current(), zs)
-function plotziggurat!(p::Plots.Plot, zs)
-    x, y = zs.x, zs.y
+plotziggurat(args...) = plotziggurat!(plot(), args...)
+plotziggurat!(args...) = plotziggurat!(current(), args...)
 
+plotziggurat!(p::Plots.Plot, x::AbstractVector, y::AbstractVector) = plotziggurat_steps!(p, x, y)
+function plotziggurat!(p::Plots.Plot, zs::AbstractZiggurat)
+    plotziggurat_steps!(p, zs)
+    plotziggurat_pdf!(p, zs)
+end
+
+plotziggurat_pdf!(p::Plots.Plot, zs::AbstractZiggurat) = plot!(p, zs.pdf, color=:blue, lw=2)
+
+plotziggurat_steps!(p::Plots.Plot, zs::AbstractZiggurat) = plotziggurat_steps!(p, zs.x, zs.y)
+function plotziggurat_steps!(p::Plots.Plot, x::AbstractVector, y::AbstractVector)
     p = plot!(p, [0, x[1]], [y[1], y[1]], color=:black, legend=false)
     scatter!(p, [x[1]], [y[1]], color=:black)
     for i in eachindex(x)[2:end]
@@ -63,8 +71,6 @@ function plotziggurat!(p::Plots.Plot, zs)
     yl = ylims(p)
     xlims!(0,1.5xl[2])
     ylims!(0,yl[2])
-
-    plot!(p, zs.pdf, color=:blue, lw=2)
 
     p
 end
