@@ -79,7 +79,6 @@ Random.rand(rng::AbstractRNG, z::AbstractMonotonicZiggurat) = sampleziggurat(rng
 # TODO: add fallback for finv using root finding
 # TODO: support ziggurats with < 3 layers
 function buildziggurat!(x, y, pdf, ipdf, tailarea, mode, x1, mode_pd=pdf(mode))
-    N = length(x) # length(x) == length(y)
     x[1] = x1
     y[1] = pdf(x1)
     A = abs(x[1] - mode) * y[1] + tailarea(x[1])
