@@ -83,7 +83,7 @@ Random.rand(rng::AbstractRNG, z::AbstractMonotonicZiggurat) = sampleziggurat(rng
 # TODO: add fallback for 1-F(x) = quadgk(f, x, Inf)
 # TODO: add fallback for finv using root finding
 # TODO: support ziggurats with < 3 layers
-function buildziggurat!(x, y, pdf, ipdf, tailarea, mode, x1, mode_pd=pdf(mode))
+function buildziggurat_unbounded!(x, y, pdf, ipdf, tailarea, mode, x1, mode_pd=pdf(mode))
     x[1] = x1
     y[1] = pdf(x1)
     A = abs(x[1] - mode) * y[1] + tailarea(x[1])
@@ -114,7 +114,7 @@ function searchziggurat(domain, pdf, ipdf, tailarea, mode, N)
 
     "Try to build a ziggurat and return a value that represents error"
     function attemptziggurat!(x1)
-        zig = buildziggurat!(x, y, pdf, ipdf, tailarea, mode, x1, max_pd)
+        zig = buildziggurat_unbounded!(x, y, pdf, ipdf, tailarea, mode, x1, max_pd)
         if zig === nothing
             return Inf
         end
@@ -133,7 +133,7 @@ function searchziggurat(domain, pdf, ipdf, tailarea, mode, N)
     #TODO handle non-convergence. Bisection is guarenteed to converge, but not all
     #algorithms are.
 
-    buildziggurat!(x, y, pdf, ipdf, tailarea, mode, xstar, max_pd)
+    buildziggurat_unbounded!(x, y, pdf, ipdf, tailarea, mode, xstar, max_pd)
 end
 
 fastpath(z::UnboundedDecreasingZiggurat, x, l) = x < z.x[l]
