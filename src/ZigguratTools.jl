@@ -50,17 +50,16 @@ end
 plotziggurat(args...) = plotziggurat!(plot(), args...)
 plotziggurat!(args...) = plotziggurat!(current(), args...)
 
-plotziggurat!(p::Plots.Plot, x::AbstractVector, y::AbstractVector) = plotziggurat_steps!(p, x, y)
 function plotziggurat!(p::Plots.Plot, zs::AbstractZiggurat)
-    plotziggurat_steps!(p, zs)
+    plotziggurat_unboundedsteps!(p, zs)
     plotziggurat_pdf!(p, zs)
 end
 
 plotziggurat_pdf!(p::Plots.Plot, zs::AbstractZiggurat) = plot!(p, zs.pdf, color=:blue, lw=2)
 
-plotziggurat_steps!(p::Plots.Plot, zs::AbstractZiggurat) = plotziggurat_steps!(p, zs.x, zs.y)
-function plotziggurat_steps!(p::Plots.Plot, x::AbstractVector, y::AbstractVector)
-    p = plot!(p, [0, x[1]], [y[1], y[1]], color=:black, legend=false)
+plotziggurat_unboundedsteps!(p::Plots.Plot, zs::AbstractZiggurat) = plotziggurat_unboundedsteps!(p, zs.x, zs.y)
+function plotziggurat_unboundedsteps!(p::Plots.Plot, x::AbstractVector, y::AbstractVector)
+    plot!(p, [0, x[1]], [y[1], y[1]], color=:black, legend=false)
     scatter!(p, [x[1]], [y[1]], color=:black)
     for i in eachindex(x)[2:end]
         plot!(p, [0, x[i-1], x[i-1]], [y[i], y[i], y[i-1]], color=:black)
