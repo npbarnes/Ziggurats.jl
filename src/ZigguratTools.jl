@@ -74,6 +74,25 @@ function plotziggurat_unboundedsteps!(p::Plots.Plot, x::AbstractVector, y::Abstr
     p
 end
 
+plotziggurat_boundedsteps(x,y) = plotziggurat_boundedsteps!(plot(), x, y)
+plotziggurat_boundedsteps!(x,y) = plotziggurat_boundedsteps!(current(), x, y)
+function plotziggurat_boundedsteps!(p::Plots.Plot, x, y)
+    plot!(p, [0,x[1]], [y[1],y[1]], color=:black, legend=false)
+    plot!(p, [x[1],x[1]], [0, y[1]], color=:black)
+    for i in eachindex(x)[2:end]
+        plot!(p, [0,x[i]], [y[i],y[i]], color=:black)
+        plot!(p, [x[i],x[i]], [y[i-1], y[i]], color=:black)
+        plot!(p, [x[i],x[i]], [0, y[i-1]], color=:black, ls=:dash)
+    end
+
+    xl = xlims(p)
+    yl = ylims(p)
+    xlims!(0,1.5xl[2])
+    ylims!(0,yl[2])
+
+    p
+end
+
 Distributions.mode(z::AbstractMonotonicZiggurat) = z.x[end]
 Random.rand(rng::AbstractRNG, z::AbstractMonotonicZiggurat) = sampleziggurat(rng, z)
 
@@ -100,6 +119,28 @@ function buildziggurat_unbounded!(x, y, pdf, ipdf, tailarea, mode, x1, mode_pd=p
     x[end] = mode
     
     x,y
+end
+
+function buildziggurat_bounded!(x, y, L, R, pdf, ipdf, A)
+    Lpd = pdf(L)
+    Rpd = pdf(R)
+    isincreasing = Lpd < Rpd
+
+    mode = isincreasing ? R : L
+    mode_pd = isincreasing ? Rpd : Lpd
+
+    x[1] = isincreasing ? L : R
+    y[1] = A/abs(x[1] - mode)
+    
+    for i in eachindex(x)[begin:end-1]
+        if y[i] >= mode_pd
+            return nothing
+        end
+        x[i+1] = ipdf(y[i])
+        y[i+1] = y[i] + A/abs(x[i] - mode)
+    end
+
+    x, y
 end
 
 searchleftziggurat(pdf, ipdf_left, cdf, mode, N) = searchziggurat((-Inf, mode), pdf, ipdf_left, cdf, mode, N)
