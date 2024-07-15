@@ -136,55 +136,30 @@ function searchziggurat(domain, pdf, ipdf, tailarea, mode, N)
     buildziggurat!(x, y, pdf, ipdf, tailarea, mode, xstar, max_pd)
 end
 
-function sampleziggurat(rng::AbstractRNG, zs::UnboundedDecreasingZiggurat)
-    N = length(zs.x)
+fastpath(z::UnboundedDecreasingZiggurat, x, l) = x < z.x[l]
+fastpath(z::UnboundedIncreasingZiggurat, x, l) = x > z.x[l]
+
+function sampleziggurat(rng::AbstractRNG, z::AbstractZiggurat)
+    N = length(z.x)
 
     while true
         l = rand(rng, 1:N)
         if l == 1 # Baselayer
-            δ = zs.layerarea/zs.y[1]
-            x = mode(zs) + δ*rand(rng)
-            if x < zs.x[1]
+            Δ = z.layerarea/z.y[1]
+            x = mode(z) + sign(z.x[begin] - z.x[end])*Δ*rand(rng)
+            if fastpath(z, x, l)
                 return x
             else
-                return zs.tailmap(rand(rng)) # Can I replace rand() with (x-x1)/(m+δ-x1)?
+                return z.tailmap(rand(rng)) # Can I replace rand() with (x-x1)/(m+δ-x1)?
             end
         else # all other layers
             u = rand(rng)
-            x = mode(zs)*u + zs.x[l-1]*(1-u)
-            if x < zs.x[l]
+            x = mode(z)*u + z.x[l-1]*(1-u)
+            if fastpath(z, x, l)
                 return x
             else
-                y = (zs.y[l] - zs.y[l-1])*rand(rng) + zs.y[l-1]
-                if y < zs.pdf(x)
-                    return x
-                end
-            end
-        end
-    end
-end
-
-function sampleziggurat(rng::AbstractRNG, zs::UnboundedIncreasingZiggurat)
-    N = length(zs.x)
-
-    while true
-        l = rand(rng, 1:N)
-        if l == 1 # Baselayer
-            δ = zs.layerarea/zs.y[1]
-            x = mode(zs) - δ*rand(rng)
-            if zs.x[1] < x
-                return x
-            else
-                return zs.tailmap(rand(rng)) # Can I replace rand() with (x1-x)/(x1-(m-δ))?
-            end
-        else # all other layers
-            u = rand(rng)
-            x = mode(zs)*u + zs.x[l-1]*(1-u)
-            if zs.x[l] < x
-                return x
-            else
-                y = (zs.y[l] - zs.y[l-1])*rand(rng) + zs.y[l-1]
-                if y < zs.pdf(x)
+                y = (z.y[l] - z.y[l-1])*rand(rng) + z.y[l-1]
+                if y < z.pdf(x)
                     return x
                 end
             end
