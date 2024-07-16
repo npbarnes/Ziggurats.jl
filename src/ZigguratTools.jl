@@ -10,6 +10,9 @@ export
     UnboundedIncreasingZiggurat,
     UnboundedDecreasingZiggurat,
 
+    # Inverse pdfs
+    ipdf_left,
+    ipdf_right,
 
     # Plot ziggurats
     plotziggurat, plotziggurat!
@@ -17,6 +20,7 @@ export
 abstract type AbstractZiggurat{X} <: Sampleable{Univariate, Continuous} end
 Base.eltype(::AbstractZiggurat{X}) where X = X
 
+include("inverse_pdf.jl")
 include("unboundedmonotonic.jl")
 include("boundedmonotonic.jl")
 include("plotting.jl")
