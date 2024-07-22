@@ -6,6 +6,10 @@ using Distributions
 using Plots
 
 export
+    # Abstract types
+    AbstractZiggurat,
+    AbstractUnboundedMonotonicZiggurat,
+
     # Sampler types
     UnboundedIncreasingZiggurat,
     UnboundedDecreasingZiggurat,
