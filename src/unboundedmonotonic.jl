@@ -97,8 +97,22 @@ function searchziggurat(domain, pdf, ipdf, tailarea, mode, N)
     buildziggurat_unbounded!(x, y, pdf, ipdf, tailarea, mode, xstar, max_pd)
 end
 
-fastpath(z::UnboundedDecreasingZiggurat, x, l) = x < z.x[l]
-fastpath(z::UnboundedIncreasingZiggurat, x, l) = x > z.x[l]
+"""
+    slopesign(z::AbstractUnboundedMonotonicZiggurat)
+
+An internal method to determine whether the ziggurat is sloped to the left or 
+the right. I.e., is the mode <= x or is mode >= x for each x in the ziggurat.
+For a differentiable strictly monotonic pdf, `slopesign(z)` would be the 
+sign of the deriviative of the pdf, but keep in mind that we support any
+monotonic pdf. 
+"""
+slopesign(z::AbstractUnboundedMonotonicZiggurat) = sign(z.x[end] - z.x[begin])
+slopesign(z::UnboundedDecreasingZiggurat) = -1
+slopesign(z::UnboundedIncreasingZiggurat) = 1
+
+fastpath(z::AbstractUnboundedMonotonicZiggurat, x, l) = slopesign(z)*x > slopesign(z)*z.x[l]
+# fastpath(z::UnboundedDecreasingZiggurat, x, l) = x < z.x[l]
+# fastpath(z::UnboundedIncreasingZiggurat, x, l) = x > z.x[l]
 
 function Random.rand(rng::AbstractRNG, z::AbstractUnboundedMonotonicZiggurat)
     N = length(z.x)
@@ -107,7 +121,7 @@ function Random.rand(rng::AbstractRNG, z::AbstractUnboundedMonotonicZiggurat)
         l = rand(rng, 1:N)
         if l == 1 # Baselayer
             Δ = z.layerarea/z.y[1]
-            x = mode(z) + sign(z.x[begin] - z.x[end])*Δ*rand(rng)
+            x = mode(z) - slopesign(z)*Δ*rand(rng)
             if fastpath(z, x, l)
                 return x
             else
