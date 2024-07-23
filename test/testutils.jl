@@ -12,10 +12,6 @@ SteppedExponential() = SteppedExponential(1.0)
 Distributions.scale(d::SteppedExponential) = d.θ
 Distributions.rate(d::SteppedExponential) = 1/d.θ
 
-function Random.rand(rng::AbstractRNG, d::SteppedExponential)
-
-end
-
 function Distributions.pdf(d::SteppedExponential, x::Real)
     if x < zero(x)
         return 0.0
