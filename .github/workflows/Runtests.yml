@@ -1,17 +1,15 @@
 name: Runtests
 on: [push, pull_request]
+# needed to allow julia-actions/cache to delete old caches that it has created
+permissions:
+    actions: write
+    contents: read
 jobs:
     test:
-        runs-on: ${{ matrix.os }}
-        strategy:
-            matrix:
-                julia-version: ['1.10']
-                julia-arch: ['x64']
-                os: [ubuntu-latest]
+        runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
-            - uses: julia-actions/setup-julia@latest
-              with: 
-                versions: ${{ matrix.julia-version }}
-            - uses: julia-actions/julia-buildpkg@latest
-            - uses: julia-actions/julia-runtest@latest
+            - uses: actions/checkout@v4
+            - uses: julia-actions/setup-julia@v2
+            - uses: julia-action/cache@v2
+            - uses: julia-actions/julia-buildpkg@v1
+            - uses: julia-actions/julia-runtest@v1
