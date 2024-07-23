@@ -1,7 +1,6 @@
 using ZigguratTools, Test
 using Distributions
 using Random
-using Printf
 using StatsBase
 
 function test_samples(s::AbstractZiggurat,    # the sampleable instance
@@ -95,7 +94,7 @@ function test_samples(s::AbstractZiggurat,    # the sampleable instance
     # check the counts
     for i = 1:nbins
         if verbose
-            @printf("[%.4f, %.4f) ==> (%d, %d): %d\n", edges[i], edges[i+1], clb[i], cub[i], cnts[i])
+            println("[$(edges[i]), $(edges[i+1])) ==> ($(clb[i]), $(cub[i])): $(cnts[i])")
         end
         clb[i] <= cnts[i] <= cub[i] ||
             error("The counts are out of the confidence interval.")

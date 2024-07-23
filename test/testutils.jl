@@ -1,3 +1,4 @@
+using ZigguratTools
 using Distributions
 using Random
 using StatsBase
