@@ -11,7 +11,11 @@ struct UnboundedDecreasingZiggurat{X, Y, F, XY, T} <: AbstractUnboundedMonotonic
     # or ApproxFun.jl (Olver & Townsend 2013 algorithm)
     # or one or more of the algorithms in Jalalvand & Charsooghi
     function UnboundedDecreasingZiggurat(pdf, ipdf, ccdf, mode, N, fallback)
-        x,y = searchrightziggurat(pdf, ipdf, ccdf, mode, N)
+        zig = searchrightziggurat(pdf, ipdf, ccdf, mode, N)
+        if zig === nothing
+            error("Failed to build a ziggurat.")
+        end
+        x, y = zig
         A = abs(x[1] - mode) * (y[2] - y[1])
         tailsampler = fallback(x[1])
         new{eltype(x), eltype(y), typeof(pdf), typeof(A), typeof(tailsampler)}(x, y, pdf, A, tailsampler)
@@ -29,7 +33,11 @@ struct UnboundedIncreasingZiggurat{X, Y, F, XY, T} <: AbstractUnboundedMonotonic
     # or ApproxFun.jl (Olver & Townsend 2013 algorithm)
     # or one or more of the algorithms in Jalalvand & Charsooghi
     function UnboundedIncreasingZiggurat(pdf, ipdf, cdf, mode, N, fallback)
-        x,y = searchleftziggurat(pdf, ipdf, cdf, mode, N)
+        zig = searchleftziggurat(pdf, ipdf, cdf, mode, N)
+        if zig === nothing
+            error("Failed to build a ziggurat.")
+        end
+        x, y = zig
         A = abs(x[1] - mode) * (y[2] - y[1])
         tailsampler = fallback(x[1])
         new{eltype(x), eltype(y), typeof(pdf), typeof(A), typeof(tailsampler)}(x, y, pdf, A, tailsampler)
