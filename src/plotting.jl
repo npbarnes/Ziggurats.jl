@@ -1,14 +1,14 @@
 plotziggurat(args...) = plotziggurat!(plot(), args...)
 plotziggurat!(args...) = plotziggurat!(current(), args...)
 
-function plotziggurat!(p::Plots.Plot, zs::AbstractZiggurat)
+function plotziggurat!(p::Plots.Plot, zs::Ziggurat)
     plotziggurat_unboundedsteps!(p, zs)
     plotziggurat_pdf!(p, zs)
 end
 
-plotziggurat_pdf!(p::Plots.Plot, zs::AbstractZiggurat) = plot!(p, zs.pdf, color=:blue, lw=2)
+plotziggurat_pdf!(p::Plots.Plot, zs::Ziggurat) = plot!(p, zs.pdf, color=:blue, lw=2)
 
-plotziggurat_unboundedsteps!(p::Plots.Plot, zs::AbstractZiggurat) = plotziggurat_unboundedsteps!(p, zs.x, zs.y)
+plotziggurat_unboundedsteps!(p::Plots.Plot, zs::Ziggurat) = plotziggurat_unboundedsteps!(p, zs.x, zs.y)
 function plotziggurat_unboundedsteps!(p::Plots.Plot, x::AbstractVector, y::AbstractVector)
     plot!(p, [0, x[1]], [y[1], y[1]], color=:black, legend=false)
     scatter!(p, [x[1]], [y[1]], color=:black)

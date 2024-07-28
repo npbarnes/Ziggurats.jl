@@ -7,12 +7,15 @@ using Plots
 
 export
     # Abstract types
-    AbstractZiggurat,
-    AbstractUnboundedMonotonicZiggurat,
+    Ziggurat,
+    MonotonicZiggurat,
 
     # Sampler types
-    UnboundedIncreasingZiggurat,
-    UnboundedDecreasingZiggurat,
+    UnboundedMonotonicZiggurat,
+    BoundedMonotonicZiggurat,
+
+    # Helper
+    monotonic_ziggurat,
 
     # Inverse pdfs
     ipdf_left,
@@ -21,12 +24,11 @@ export
     # Plot ziggurats
     plotziggurat, plotziggurat!
 
-abstract type AbstractZiggurat{X} <: Sampleable{Univariate, Continuous} end
-Base.eltype(::AbstractZiggurat{X}) where X = X
+abstract type Ziggurat{X} <: Sampleable{Univariate, Continuous} end
+Base.eltype(::Ziggurat{X}) where X = X
 
 include("inverse_pdf.jl")
-include("unboundedmonotonic.jl")
-include("boundedmonotonic.jl")
+include("monotonic.jl")
 include("plotting.jl")
 
 end # module

@@ -3,7 +3,7 @@ using Distributions
 using Random
 using StatsBase
 
-function test_samples(s::AbstractZiggurat,    # the sampleable instance
+function test_samples(s::Sampleable{Univariate, Continuous},    # the sampleable instance
     distr::ContinuousUnivariateDistribution,  # corresponding distribution
     n::Int;                                   # number of samples to generate
     nbins::Int=50,                            # divide the main interval into nbins
@@ -111,71 +111,75 @@ function testsampling(dist, z)
 end
 
 @testset "Normal (x>=0)" begin
-    basedist = Normal()
+    dist = Normal()
 
     # Because of the choice of UnboundedDecreasingZiggurat, ipdf_right, and ccdf,
     # this ziggurat will actually be sampling from truncated(Normal(), lower=0.0).
     # A small number N is chosen so that the fallback branch gets chosen with high
     # probability and its confidence intervals can be tested.
-    z = UnboundedDecreasingZiggurat(
-        x->pdf(basedist,x),
-        y->ipdf_right(basedist,y),
-        x->ccdf(basedist,x),
-        mode(basedist),
-        2,
-        x->sampler(truncated(basedist, lower=x))
+    N = 3
+    z = monotonic_ziggurat(
+        N,
+        mode(dist),
+        x->ccdf(dist,x),
+        x->pdf(dist,x),
+        y->ipdf_right(dist,y),
+        x->sampler(truncated(dist, lower=x))
     )
 
-    testsampling(truncated(basedist, lower=mode(basedist)), z)
+    testsampling(truncated(dist, lower=mode(dist)), z)
 end
 
 @testset "Normal (x<=0)" begin
-    basedist = Normal()
+    dist = Normal()
 
     # Because of the choice of a AbstractUnboundedMonotonicZiggurat, ipdf_left, and cdf,
     # this ziggurat will actually be sampling from truncated(Normal(), lower=0.0).
     # A small number N is chosen so that the fallback branch gets chosen with high
     # probability and its confidence intervals can be tested.
-    z = UnboundedIncreasingZiggurat(
-        x->pdf(basedist,x),
-        y->ipdf_left(basedist,y),
-        x->cdf(basedist,x),
-        mode(basedist),
-        2,
-        x->sampler(truncated(basedist, upper=x))
+    N = 3
+    z = monotonic_ziggurat(
+        N,
+        mode(dist),
+        x->cdf(dist,x),
+        x->pdf(dist,x),
+        y->ipdf_left(dist,y),
+        x->sampler(truncated(dist, upper=x))
     )
 
-    testsampling(truncated(basedist, upper=mode(basedist)), z)
+    testsampling(truncated(dist, upper=mode(dist)), z)
 end
 
 @testset "Exponential" begin
-    basedist = Exponential()
+    dist = Exponential()
 
-    z = UnboundedDecreasingZiggurat(
-        x->pdf(basedist,x),
-        y->ipdf_right(basedist,y),
-        x->ccdf(basedist,x),
-        mode(basedist),
-        2,
-        x->sampler(truncated(basedist, lower=x))
+    N = 3
+    z = monotonic_ziggurat(
+        N,
+        mode(dist),
+        x->ccdf(dist,x),
+        x->pdf(dist,x),
+        y->ipdf_right(dist,y),
+        x->sampler(truncated(dist, lower=x))
     )
 
-    testsampling(basedist, z)
+    testsampling(dist, z)
 end
 
 @testset "SteppedExponential" begin
     include("./testutils.jl")
     
-    basedist = SteppedExponential()
+    dist = SteppedExponential()
 
-    z = UnboundedDecreasingZiggurat(
-        x->pdf(basedist,x),
-        y->ipdf_right(basedist,y),
-        x->ccdf(basedist,x),
-        mode(basedist),
-        2,
-        x->sampler(truncated(basedist, lower=x))
+    N = 3
+    z = monotonic_ziggurat(
+        N,
+        mode(dist),
+        x->ccdf(dist,x),
+        x->pdf(dist,x),
+        y->ipdf_right(dist,y),
+        x->sampler(truncated(dist, lower=x))
     )
 
-    testsampling(basedist, z)
+    testsampling(dist, z)
 end

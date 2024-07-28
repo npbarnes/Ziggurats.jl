@@ -11,11 +11,11 @@ dist = SteppedExponential()
 # discontinuity. The ziggurat search algorithm needs to be aware of this. With
 # SteppedExponential and 256 layers, the correct first layer needs to have
 # pdf(prevfloat(8.0)) < y < pdf(8.0)
-@test_nowarn UnboundedDecreasingZiggurat(
+@test_nowarn monotonic_ziggurat(
+    256,
+    mode(dist),
+    x->ccdf(dist,x),
     x->pdf(dist,x),
     y->ipdf_right(dist,y),
-    x->ccdf(dist,x),
-    mode(dist),
-    256,
     x->sampler(truncated(dist, lower=x))
 )
