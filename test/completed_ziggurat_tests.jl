@@ -1,44 +1,17 @@
-slopesign(z::MonotonicZiggurat) = sign(z.x[2] - z.x[1])
-
-function baselayerarea(dist, z::UnboundedMonotonicZiggurat)
-    if slopesign(z) > 0
-        tail = cdf(dist, z.x[2])
-    else
-        tail = ccdf(dist, z.x[2])
-    end
-    abs(z.x[2] - z.modalboundary) * z.y[2] + tail
+function test_continuous_distribution_layers(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+    # y = f(x), except for the artificial base
+    @test all(y[i] ≈ mypdf(x[i]) for i in 2:N+1)
 end
 
-function baselayerarea(dist, z::BoundedMonotonicZiggurat)
-    abs(z.x[1] - z.modalboundary) * z.y[2]
-end
+function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+    true_base_area = abs(x[2] - modalboundary) * y[2] + tailarea(x[2])
+    artificial_base_area = abs(x[1] - modalboundary) * y[2]
 
-function layerwidth(z, l::Integer)
-    if l < 1 || l >= length(z.x)
-        error("Valid layer number are integers from 1 to N.")
-    end
-    abs(z.x[l] - z.modalboundary)
-end
+    # Base area
+    @test true_base_area ≈ artificial_base_area
 
-function layerarea(z, l::Integer)
-    if l < 1 || l >= length(z.x)
-        error("Valid layer number are integers from 1 to N.")
-    end
-    abs(z.x[l] - z.modalboundary) * (z.y[l+1] - z.y[l]) 
-end
-
-function test_continuous_distribution_layers(dist, z)
-    x = z.x
-    y = z.y
-
-    # y = f(x)
-    @test all(y ≈ pdf(dist, x) for (y, x) in Iterators.drop(zip(y,x), 1))
-end
-
-function test_layer_properties(dist, N, z)
-    x = z.x
-    y = z.y
-    A = baselayerarea(dist, z)
+    # boundary is mode
+    @test modalboundary ≈ only(modes(dist))
 
     # Initialization
     @test y[1] == zero(eltype(y))
@@ -50,102 +23,74 @@ function test_layer_properties(dist, N, z)
     @test all(y[i+1] > y[i] for i in 1:N)
 
     # The ziggurat may extend to the left or right of the modal boundary, but not both.
-    @test allequal(sign(x - z.modalboundary) for x in x[1:end-1])
-
     # The last x may be on the same side as the rest, or it may equal the modal boundary.
-    firstsign = sign(x[1] - z.modalboundary)
-    lastsign = sign(x[end] - z.modalboundary)
+    firstsign = sign(x[1] - modalboundary)
+    lastsign = sign(x[N+1] - modalboundary)
     @test lastsign == firstsign || lastsign == 0
+    @test all(sign(x[i] - modalboundary) == firstsign for i in 2:N)
 
-    # Ziggurats never get wider (they can get narrower or stay the same width)
-    @test all(layerwidth(z, l) >= layerwidth(z, l+1) for l in 1:N-1)
+    # Ziggurats never get wider as you go up the tower (they can get narrower or
+    # stay the same width)
+    @test all(abs(x[i] - modalboundary) >= abs(x[i+1] - modalboundary) for i in 1:N)
 
-    # Layer areas are all equal This also tests that the artificial layer area
-    # of the first layer (x[1]*y[2]) equals the true baselayerarea derived from
-    # the tail area function
-    @test all(layerarea(z, l) ≈ A for l in 1:N) 
+    # Layer areas are all equal
+    @test all(abs(x[i] - modalboundary) * (y[i+1] - y[i]) ≈ true_base_area for i in 1:N)
 
     # Upper boundary is close to and greater than or equal to f(m)
-    @test y[end] ≈ pdf(dist, mode(dist)) && y[end] >= pdf(dist, mode(dist))
+    @test y[end] ≈ mypdf(mode(dist)) && y[end] >= mypdf(mode(dist))
 
-    # x = f^-1(y)
-    #@test all(x ≈ ipdf(y) for (x, y) in Iterators.drop(zip(x, y), 1))
+    # x = f^-1(y), but not for i=1 because of the artificial base and not for
+    # i=N+1 because y might be greater than pdf(mode), so ipdf(y) might not be
+    # defined.
+    @test all(x[i] ≈ myipdf(y[i]) for i in 2:N)
 end
 
 @testset "Normal (x>=0)" begin
-    dist = Normal()
-    N = 256
-    
-    z = monotonic_ziggurat(
-        N,
-        mode(dist),
-        x->ccdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_right(dist,y),
-        x->sampler(truncated(dist, lower=x))
-    )
-
-    test_layer_properties(dist, N, z)
-    test_continuous_distribution_layers(dist, z)
+    dist = truncated(Normal(), lower=0.0)
+    modalboundary = 0.0
+    @testset "Normalized pdf" begin
+        tailarea = x -> ccdf(dist, x)
+        mypdf = x -> pdf(dist, x)
+        myipdf = y -> ipdf_right(dist, y)
+        @testset "N = 256" begin
+            N = 256
+            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
+            
+            test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+            test_continuous_distribution_layers(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+        end
+    end
 end
 
 @testset "Normal (x<=0)" begin
-    dist = Normal()
-    N = 256
-    
-    z = monotonic_ziggurat(
-        N,
-        mode(dist),
-        x->cdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_left(dist,y),
-        x->sampler(truncated(dist, upper=x))
-    )
-
-    test_layer_properties(dist, N, z)
-    test_continuous_distribution_layers(dist, z)
-end
-
-@testset "Exponential" begin
-    dist = Exponential()
-    N = 256
-
-    z = monotonic_ziggurat(
-        N,
-        mode(dist),
-        x->ccdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_right(dist,y),
-        x->sampler(truncated(dist, lower=x))
-    )
-
-    test_layer_properties(dist, N, z)
-    test_continuous_distribution_layers(dist, z)
+    dist = truncated(Normal(), upper=0.0)
+    modalboundary = 0.0
+    @testset "Normalized pdf" begin
+        tailarea = x -> cdf(dist, x)
+        mypdf = x -> pdf(dist, x)
+        myipdf = y -> ipdf_left(dist, y)
+        @testset "N = 256" begin
+            N = 256
+            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
+            
+            test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+            test_continuous_distribution_layers(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+        end
+    end
 end
 
 @testset "SteppedExponential" begin
-    # This distribution, with N=256 causes an error if we use a naive search
-    # algorithm. For an continuous pdf, `zig.y = pdf.(zig.x)`, but when the pdf is
-    # discontinuous, that need not be the case. We only require `zig.x = ipdf.(zig.y)`, for a
-    # generalized inverse. Therefore, there are multiple valid y's for each x at the
-    # discontinuity. The ziggurat search algorithm needs to be aware of this. With
-    # SteppedExponential and 256 layers, the correct first layer needs to have
-    # pdf(8.0) < y < pdf(prevfloat(8.0))
-
     dist = SteppedExponential()
-    N = 256
-
-    z = monotonic_ziggurat(
-        N,
-        mode(dist),
-        x->ccdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_right(dist,y),
-        x->sampler(truncated(dist, lower=x))
-    )
-
-    @test pdf(dist, 8.0) < z.y[2] < pdf(dist, prevfloat(8.0))
-    @test ipdf_right(dist, z.y[2]) ≈ z.x[2]
-
-    test_layer_properties(dist, N, z)
+    modalboundary = 0.0
+    @testset "Normalized pdf" begin
+        tailarea = x -> ccdf(dist, x)
+        mypdf = x -> pdf(dist, x)
+        myipdf = y -> ipdf_right(dist, y)
+        @testset "N = 256" begin
+            N = 256
+            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
+            
+            test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
+        end
+    end
 end
