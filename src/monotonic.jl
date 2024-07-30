@@ -15,6 +15,7 @@ struct UnboundedMonotonicZiggurat{X, Y, F <: Function, TS} <: MonotonicZiggurat{
     tailsampler::TS
 end
 
+# Bounded Support
 function monotonic_ziggurat(N, L, R::Number, pdf, ipdf)
     if N < 1
         throw(DomainError(N, "N must be a positive integer."))
@@ -28,6 +29,7 @@ function monotonic_ziggurat(N, L, R::Number, pdf, ipdf)
     BoundedMonotonicZiggurat(x, y, pdf, modalboundary)
 end
 
+# Unbounded Support
 function monotonic_ziggurat(N, modalboundary, tailarea::Function, pdf, ipdf, tailsampler)
     if N < 1
         throw(DomainError(N, "N must be a positive integer."))
