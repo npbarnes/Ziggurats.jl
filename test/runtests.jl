@@ -1,12 +1,11 @@
 using Test, ZigguratTools
 
+# Setup
 using Distributions
 using Random
 using StatsBase
 
 include("./testutils.jl")
 
-@testset "Ziggurat Tests" begin
-    @testset "Completed Ziggurat" include("completed_ziggurat_tests.jl")
-    @testset "Sampling" include("sampling_tests.jl")
-end
+# Testing
+include("alltests.jl")

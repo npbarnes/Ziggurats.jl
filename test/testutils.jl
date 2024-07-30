@@ -1,8 +1,3 @@
-using ZigguratTools
-using Distributions
-using Random
-using StatsBase
-
 # An unusual distribution to test discontinuities, and non-strict monotonicity.
 struct SteppedExponential <: ContinuousUnivariateDistribution
     θ::Float64
