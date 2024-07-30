@@ -100,6 +100,11 @@ function build!(x, y, y2, modalboundary, tailarea::Function, ipdf, modalpdf)
     initialize!(y, y2)
 
     x2 = ipdf(y2)
+    if isinf(x2)
+        # y2 is too small
+        y[end] = zero(eltype(y))
+        return x, y
+    end
     A = layerarea(y[2], x2, modalboundary, tailarea)
     x[1] = modalboundary + sign(x2 - modalboundary) * A/y[2]
 
