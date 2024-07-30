@@ -49,6 +49,14 @@ function test_layer_properties(dist, N, z)
     # Each layer has positive thickness
     @test all(y[i+1] > y[i] for i in 1:N)
 
+    # The ziggurat may extend to the left or right of the modal boundary, but not both.
+    @test allequal(sign(x - z.modalboundary) for x in x[1:end-1])
+
+    # The last x may be on the same side as the rest, or it may equal the modal boundary.
+    firstsign = sign(x[1] - z.modalboundary)
+    lastsign = sign(x[end] - z.modalboundary)
+    @test lastsign == firstsign || lastsign == 0
+
     # Ziggurats never get wider (they can get narrower or stay the same width)
     @test all(layerwidth(z, l) >= layerwidth(z, l+1) for l in 1:N-1)
 
