@@ -120,6 +120,14 @@ end
 end
 
 @testset "SteppedExponential" begin
+    # This distribution, with N=256 causes an error if we use a naive search
+    # algorithm. For an continuous pdf, `zig.y = pdf.(zig.x)`, but when the pdf is
+    # discontinuous, that need not be the case. We only require `zig.x = ipdf.(zig.y)`, for a
+    # generalized inverse. Therefore, there are multiple valid y's for each x at the
+    # discontinuity. The ziggurat search algorithm needs to be aware of this. With
+    # SteppedExponential and 256 layers, the correct first layer needs to have
+    # pdf(8.0) < y < pdf(prevfloat(8.0))
+
     include("./testutils.jl")
 
     dist = SteppedExponential()
@@ -133,6 +141,9 @@ end
         y->ipdf_right(dist,y),
         x->sampler(truncated(dist, lower=x))
     )
+
+    @test pdf(dist, 8.0) < z.y[2] < pdf(dist, prevfloat(8.0))
+    @test ipdf_right(dist, z.y[2]) ≈ z.x[2]
 
     test_layer_properties(dist, N, z)
 end
