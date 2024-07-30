@@ -1,8 +1,3 @@
-using ZigguratTools, Test
-using Distributions
-using Random
-using StatsBase
-
 function test_samples(s::Sampleable{Univariate, Continuous},    # the sampleable instance
     distr::ContinuousUnivariateDistribution,  # corresponding distribution
     n::Int;                                   # number of samples to generate
@@ -167,7 +162,6 @@ end
 end
 
 @testset "SteppedExponential" begin
-    include("./testutils.jl")
     
     dist = SteppedExponential()
 

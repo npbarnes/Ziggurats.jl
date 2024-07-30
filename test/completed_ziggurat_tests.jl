@@ -1,7 +1,3 @@
-
-using ZigguratTools, Test
-using Distributions
-
 slopesign(z::MonotonicZiggurat) = sign(z.x[2] - z.x[1])
 
 function baselayerarea(dist, z::UnboundedMonotonicZiggurat)
@@ -127,8 +123,6 @@ end
     # discontinuity. The ziggurat search algorithm needs to be aware of this. With
     # SteppedExponential and 256 layers, the correct first layer needs to have
     # pdf(8.0) < y < pdf(prevfloat(8.0))
-
-    include("./testutils.jl")
 
     dist = SteppedExponential()
     N = 256
