@@ -108,7 +108,14 @@ function build!(x, y, y2, modalboundary, tailarea::Function, ipdf, modalpdf)
         return x, y
     end
     A = layerarea(y[2], x2, modalboundary, tailarea)
-    x[1] = modalboundary + sign(x2 - modalboundary) * A/y[2]
+
+    if x2 == modalboundary
+        s = sign(ipdf(y2/2) - modalboundary)
+    else
+        s = sign(x2 - modalboundary)
+    end
+
+    x[1] = modalboundary + s * A/y[2]
 
     finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
