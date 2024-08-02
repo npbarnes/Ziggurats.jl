@@ -103,6 +103,9 @@ function build!(x, y, y2, modalboundary, tailarea::Function, ipdf, modalpdf)
 
     x2 = ipdf(y2)
     if isinf(x2)
+        # TODO: find a more consistant way for build!() to indicate when y2 is
+        # too small or too large.
+        
         # y2 is too small
         y[end] = zero(eltype(y))
         return x, y
