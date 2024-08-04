@@ -1,5 +1,5 @@
 # ZigguratTools
-[![Runtests](https://github.com/npbarnes/ZigguratTools/actions/workflows/Runtests.yml/badge.svg)](https://github.com/npbarnes/ZigguratTools/actions/workflows/Runtests.yml)
+[![CI](https://github.com/npbarnes/ZigguratTools/actions/workflows/CI.yml/badge.svg)](https://github.com/npbarnes/ZigguratTools/actions/workflows/CI.yml)
 
 This package aims to be a collection of tools for generating fast ziggurat-type random samplers for arbitrary distributions. **Currently in development.**
 
