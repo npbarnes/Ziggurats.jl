@@ -7,7 +7,7 @@ struct BoundedMonotonicZiggurat{X,Y,F<:Function} <: MonotonicZiggurat{X}
     modalboundary::X
 end
 
-struct UnboundedMonotonicZiggurat{X, Y ,F <: Function ,TS} <: MonotonicZiggurat{X}
+struct UnboundedMonotonicZiggurat{X,Y,F<:Function,TS} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
