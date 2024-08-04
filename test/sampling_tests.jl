@@ -1,10 +1,12 @@
-function test_samples(s::Sampleable{Univariate, Continuous},    # the sampleable instance
+function test_samples(
+    s::Sampleable{Univariate,Continuous},     # the sampleable instance
     distr::ContinuousUnivariateDistribution,  # corresponding distribution
     n::Int;                                   # number of samples to generate
-    nbins::Int=50,                            # divide the main interval into nbins
-    q::Float64=1.0e-6,                        # confidence interval, 1 - q as confidence
-    verbose::Bool=false,                      # show intermediate info (for debugging)
-    rng::Union{AbstractRNG,Missing}=missing) # add an rng?
+    nbins::Int = 50,                          # divide the main interval into nbins
+    q::Float64 = 1.0e-6,                      # confidence interval, 1 - q as confidence
+    verbose::Bool = false,                    # show intermediate info (for debugging)
+    rng::Union{AbstractRNG,Missing} = missing # add an rng?
+)
 
     # The basic idea
     # ------------------
@@ -20,11 +22,19 @@ function test_samples(s::Sampleable{Univariate, Continuous},    # the sampleable
     #   happen in practice.
     #
 
-    verbose && println("test_samples on $(typeof(s))")
+    if verbose
+        println("test_samples on $(typeof(s))")
+    end
 
-    n > 1 || error("The number of samples must be greater than 1.")
-    nbins > 1 || error("The number of bins must be greater than 1.")
-    0.0 < q < 0.1 || error("The value of q must be within the open interval (0.0, 0.1).")
+    if !(n > 1)
+        error("The number of samples must be greater than 1.")
+    end
+    if !(nbins > 1)
+        error("The number of bins must be greater than 1.")
+    end
+    if !(0.0 < q < 0.1)
+        error("The value of q must be within the open interval (0.0, 0.1).")
+    end
 
     # determine the range of values to examine
     vmin = minimum(distr)
@@ -48,8 +58,8 @@ function test_samples(s::Sampleable{Univariate, Continuous},    # the sampleable
     cub = Vector{Int}(undef, nbins)
     cdfs = map(Base.Fix1(cdf, distr), edges)
 
-    for i = 1:nbins
-        pi = cdfs[i+1] - cdfs[i]
+    for i in 1:nbins
+        pi = cdfs[i + 1] - cdfs[i]
         bp = Binomial(n, pi)
         clb[i] = floor(Int, quantile(bp, q / 2))
         cub[i] = ceil(Int, cquantile(bp, q / 2))
@@ -76,23 +86,25 @@ function test_samples(s::Sampleable{Univariate, Continuous},    # the sampleable
     end
 
     # check whether all samples are in the valid range
-    for i = 1:n
+    for i in 1:n
         @inbounds si = samples[i]
-        vmin <= si <= vmax ||
+        if !(vmin <= si <= vmax)
             error("Sample value out of valid range.")
+        end
     end
 
     # get counts
-    cnts = fit(Histogram, samples, edges; closed=:right).weights
+    cnts = fit(Histogram, samples, edges; closed = :right).weights
     @assert length(cnts) == nbins
 
     # check the counts
-    for i = 1:nbins
+    for i in 1:nbins
         if verbose
             println("[$(edges[i]), $(edges[i+1])) ==> ($(clb[i]), $(cub[i])): $(cnts[i])")
         end
-        clb[i] <= cnts[i] <= cub[i] ||
+        if !(clb[i] <= cnts[i] <= cub[i])
             error("The counts are out of the confidence interval.")
+        end
     end
     return samples
 end
@@ -116,13 +128,13 @@ end
     z = monotonic_ziggurat(
         N,
         mode(dist),
-        x->ccdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_right(dist,y),
-        x->sampler(truncated(dist, lower=x))
+        x -> ccdf(dist, x),
+        x -> pdf(dist, x),
+        y -> ipdf_right(dist, y),
+        x -> sampler(truncated(dist; lower = x))
     )
 
-    testsampling(truncated(dist, lower=mode(dist)), z)
+    testsampling(truncated(dist; lower = mode(dist)), z)
 end
 
 @testset "Normal (x<=0)" begin
@@ -136,13 +148,13 @@ end
     z = monotonic_ziggurat(
         N,
         mode(dist),
-        x->cdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_left(dist,y),
-        x->sampler(truncated(dist, upper=x))
+        x -> cdf(dist, x),
+        x -> pdf(dist, x),
+        y -> ipdf_left(dist, y),
+        x -> sampler(truncated(dist; upper = x))
     )
 
-    testsampling(truncated(dist, upper=mode(dist)), z)
+    testsampling(truncated(dist; upper = mode(dist)), z)
 end
 
 @testset "Exponential" begin
@@ -152,27 +164,26 @@ end
     z = monotonic_ziggurat(
         N,
         mode(dist),
-        x->ccdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_right(dist,y),
-        x->sampler(truncated(dist, lower=x))
+        x -> ccdf(dist, x),
+        x -> pdf(dist, x),
+        y -> ipdf_right(dist, y),
+        x -> sampler(truncated(dist; lower = x))
     )
 
     testsampling(dist, z)
 end
 
 @testset "SteppedExponential" begin
-    
     dist = SteppedExponential()
 
     N = 3
     z = monotonic_ziggurat(
         N,
         mode(dist),
-        x->ccdf(dist,x),
-        x->pdf(dist,x),
-        y->ipdf_right(dist,y),
-        x->sampler(truncated(dist, lower=x))
+        x -> ccdf(dist, x),
+        x -> pdf(dist, x),
+        y -> ipdf_right(dist, y),
+        x -> sampler(truncated(dist; lower = x))
     )
 
     testsampling(dist, z)

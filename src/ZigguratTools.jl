@@ -22,10 +22,11 @@ export
     ipdf_right,
 
     # Plot ziggurats
-    plotziggurat, plotziggurat!
+    plotziggurat,
+    plotziggurat!
 
-abstract type Ziggurat{X} <: Sampleable{Univariate, Continuous} end
-Base.eltype(::Ziggurat{X}) where X = X
+abstract type Ziggurat{X} <: Sampleable{Univariate,Continuous} end
+Base.eltype(::Ziggurat{X}) where {X} = X
 
 include("inverse_pdf.jl")
 include("monotonic.jl")

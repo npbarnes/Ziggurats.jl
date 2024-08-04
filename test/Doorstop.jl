@@ -8,8 +8,8 @@ struct Doorstop <: ContinuousUnivariateDistribution
         if !(backside <= corner <= tip)
             throw(ArgumentError("backside, corner, and tip must be in increasing order."))
         end
-        a,b,c = backside, corner, tip
-        h = 1/((b - a) + 1/2 * (c - b))
+        a, b, c = backside, corner, tip
+        h = 1 / ((b - a) + 1 / 2 * (c - b))
         p = h * (b - a)
         new(a, b, c, h, p)
     end
@@ -20,7 +20,7 @@ function Distributions.pdf(d::Doorstop, x::Real)
     if a <= x <= b
         h
     elseif b <= x <= c
-        h * (1 - (x-b)/(c-b))
+        h * (1 - (x - b) / (c - b))
     else
         zero(h)
     end
@@ -34,7 +34,7 @@ function Distributions.cdf(d::Doorstop, x::Real)
     elseif a <= x <= b
         h * (x - a)
     elseif b <= x <= c
-        h * (x - a - (x - b)^2/(2*(c - b)))
+        h * (x - a - (x - b)^2 / (2 * (c - b)))
     else
         one(x)
     end
@@ -44,9 +44,9 @@ function Distributions.quantile(d::Doorstop, q::Real)
     a, b, c, h = d.a, d.b, d.c, d.h
 
     if q < h * (b - a)
-        q/h + a
+        q / h + a
     else
-        (c-b) + b - (c-b) * √(1 + 2*(b-a)/(c-b) - 2*q/(h*(c-b)))
+        (c - b) + b - (c - b) * √(1 + 2 * (b - a) / (c - b) - 2 * q / (h * (c - b)))
     end
 end
 

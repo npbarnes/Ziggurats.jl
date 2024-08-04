@@ -1,13 +1,13 @@
 abstract type MonotonicZiggurat{X} <: Ziggurat{X} end
 
-struct BoundedMonotonicZiggurat{X, Y, F <: Function} <: MonotonicZiggurat{X}
+struct BoundedMonotonicZiggurat{X,Y,F<:Function} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
     modalboundary::X
 end
 
-struct UnboundedMonotonicZiggurat{X, Y, F <: Function, TS} <: MonotonicZiggurat{X}
+struct UnboundedMonotonicZiggurat{X,Y,F<:Function,TS} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
@@ -20,7 +20,7 @@ function monotonic_ziggurat(N, L, R::Number, pdf, ipdf)
     if N < 1
         throw(DomainError(N, "N must be a positive integer."))
     end
-    boundaries = (L,R)
+    boundaries = (L, R)
     boundarypdf = pdf.(boundaries)
     argminboundary = boundaries[argmin(boundarypdf)]
     modalboundary = boundaries[argmax(boundarypdf)]
@@ -41,9 +41,7 @@ end
 ## Construction
 
 # Bounded support
-function layerarea(y2, modalboundary, argminboundary)
-    abs(argminboundary - modalboundary) * y2
-end
+layerarea(y2, modalboundary, argminboundary) = abs(argminboundary - modalboundary) * y2
 
 # Unbounded support
 function layerarea(y2, x2, modalboundary, tailarea::Function)
@@ -59,13 +57,13 @@ function initialize!(y, y2)
 end
 
 function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
-    for i in eachindex(x)[begin+1:end-1]
+    for i in eachindex(x)[(begin + 1):(end - 1)]
         if y[i] >= modalpdf
             # failed to build ziggurat, y2 is too large.
             return nothing
         end
         x[i] = ipdf(y[i])
-        y[i+1] = A/abs(x[i]-modalboundary) + y[i]
+        y[i + 1] = A / abs(x[i] - modalboundary) + y[i]
     end
 
     if y[end] <= modalpdf
@@ -86,7 +84,6 @@ end
 #       (i.e. ipdf(y) is the largest x such that pdf(x) >= y for decreasing pdfs,
 #        and ipdf(y) is the smallest x such that pdf(x) >= y for increasing pdfs)
 
-
 # Bounded support
 function build!(x, y, y2, modalboundary, argminboundary::Number, ipdf, modalpdf)
     initialize!(y, y2)
@@ -105,7 +102,7 @@ function build!(x, y, y2, modalboundary, tailarea::Function, ipdf, modalpdf)
     if isinf(x2)
         # TODO: find a more consistant way for build!() to indicate when y2 is
         # too small or too large.
-        
+
         # y2 is too small
         y[end] = zero(eltype(y))
         return x, y
@@ -113,12 +110,12 @@ function build!(x, y, y2, modalboundary, tailarea::Function, ipdf, modalpdf)
     A = layerarea(y[2], x2, modalboundary, tailarea)
 
     if x2 == modalboundary
-        s = sign(ipdf(y2/2) - modalboundary)
+        s = sign(ipdf(y2 / 2) - modalboundary)
     else
         s = sign(x2 - modalboundary)
     end
 
-    x[1] = modalboundary + s * A/y[2]
+    x[1] = modalboundary + s * A / y[2]
 
     finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
@@ -134,8 +131,8 @@ length(x) == length(y) == N+1.
 """
 function search(N, modalboundary, tail, pdf, ipdf)
     modalpdf = pdf(modalboundary)
-    x = Vector{typeof(float(modalboundary))}(undef, N+1)
-    y = Vector{typeof(modalpdf)}(undef, N+1)
+    x = Vector{typeof(float(modalboundary))}(undef, N + 1)
+    y = Vector{typeof(modalpdf)}(undef, N + 1)
 
     function attemptziggurat!(y2)
         zig = build!(x, y, y2, modalboundary, tail, ipdf, modalpdf)
@@ -149,7 +146,12 @@ function search(N, modalboundary, tail, pdf, ipdf)
 
     # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML?)
     tracker = Roots.Tracks()
-    ystar = find_zero(attemptziggurat!, (nextfloat(zero(modalpdf)), modalpdf), Bisection(); tracks=tracker)
+    ystar = find_zero(
+        attemptziggurat!,
+        (nextfloat(zero(modalpdf)), modalpdf),
+        Bisection();
+        tracks = tracker
+    )
 
     # y[N] needs to be either exact or a slightly over
     if tracker.convergence_flag !== :exact_zero
@@ -162,13 +164,13 @@ function search(N, modalboundary, tail, pdf, ipdf)
 end
 
 ## Sampling
-function between(a,b,x)
-    l,r = minmax(a,b)
+function between(a, b, x)
+    l, r = minmax(a, b)
     l <= x <= r
 end
 
 function simple_rejection(rng, z, l, x)
-    y = (z.y[l+1] - z.y[l]) * rand(rng) + z.y[l]
+    y = (z.y[l + 1] - z.y[l]) * rand(rng) + z.y[l]
     if y < z.pdf(x)
         return x
     end
@@ -193,13 +195,13 @@ function Base.rand(rng::AbstractRNG, z::MonotonicZiggurat)
         l = rand(rng, 1:N)
         x = (z.modalboundary - z.x[l]) * rand(rng) + z.x[l]
 
-        if between(z.x[l+1], z.modalboundary, x)
+        if between(z.x[l + 1], z.modalboundary, x)
             return x
         else
             sp = slowpath(rng, z, l, x)
             if sp !== nothing
                 return sp
             end
-        end 
+        end
     end
 end
