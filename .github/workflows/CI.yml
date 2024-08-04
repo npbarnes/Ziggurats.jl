@@ -14,7 +14,8 @@ jobs:
             - name: 'Check formatting'
               run: |
                 julia -e 'import Pkg; Pkg.add("JuliaFormatter")'
-                julia -e 'using JuliaFormatter; exit(!format(".", overwrite=false))'
+                julia -e 'using JuliaFormatter; format(".")'
+                git diff --exit-code
               shell: bash
     test:
         runs-on: ubuntu-latest
