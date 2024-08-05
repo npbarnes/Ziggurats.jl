@@ -116,6 +116,12 @@ end
     test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=true, initiallyflat=false)
 end
 
+@testset "Non-standard Normal" begin
+    dist = truncated(Normal(1.5, 3); upper = 1)
+    modalboundary = 1.0
+    test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=true, initiallyflat=false)
+end
+
 @testset "SteppedExponential" begin
     dist = SteppedExponential()
     modalboundary = 0.0
