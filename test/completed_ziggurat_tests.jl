@@ -1,17 +1,3 @@
-function test_continuous_distribution_layers(
-    dist,
-    x,
-    y,
-    N,
-    modalboundary,
-    tailarea,
-    mypdf,
-    myipdf
-)
-    # y = f(x), except for the artificial base
-    @test all(y[i] ≈ mypdf(x[i]) for i in 2:(N + 1))
-end
-
 function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
     true_base_area = abs(x[2] - modalboundary) * y[2] + tailarea(x[2])
     artificial_base_area = abs(x[1] - modalboundary) * y[2]
@@ -54,307 +40,87 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
     @test all(x[i] ≈ myipdf(y[i]) for i in 2:N)
 end
 
+function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf=true)
+    f = Base.Fix1(pdf, dist)
+
+    if f(mode(dist)) != f(modalboundary)
+        error("Incorrect modalboundary.")
+    end
+
+    L, R = minimum(dist), maximum(dist)
+
+    if L == modalboundary
+        # Right handed ziggurat
+        invf = Base.Fix1(ipdf_right, dist)
+        tailarea = Base.Fix1(ccdf, dist)
+    elseif R == modalboundary
+        # Left handed ziggurat
+        invf = Base.Fix1(ipdf_left, dist)
+        tailarea = Base.Fix1(cdf, dist)
+    else
+        error("modalboundary is not on the boundary of the support of dist.")
+    end
+
+    # Unnormalized
+    uf(x) = 3 * f(x)
+    uinvf(y) = invf(y/3)
+    utailarea(x) = 3 * tailarea(x)
+
+    @testset "Normalized pdf" begin
+        @testset "N = $N" for N in Ns
+            x, y = ZigguratTools.search(N, modalboundary, tailarea, f, invf)
+            test_common_layer_properties(
+                dist,
+                x,
+                y,
+                N,
+                modalboundary,
+                tailarea,
+                f,
+                invf
+            )
+
+            if continuouspdf
+                @test all(y[i] ≈ f(x[i]) for i in 2:(N + 1))
+            end
+        end
+    end
+
+    @testset "Unnormalized pdf" begin
+        @testset "N = $N" for N in Ns
+            x, y = ZigguratTools.search(N, modalboundary, utailarea, uf, uinvf)
+            test_common_layer_properties(
+                dist,
+                x,
+                y,
+                N,
+                modalboundary,
+                utailarea,
+                uf,
+                uinvf
+            )
+
+            if continuouspdf
+                @test all(y[i] ≈ uf(x[i]) for i in 2:(N + 1))
+            end
+        end
+    end
+end
+
 @testset "Normal (x>=0)" begin
     dist = truncated(Normal(); lower = 0.0)
     modalboundary = 0.0
-    @testset "Normalized pdf" begin
-        tailarea = x -> ccdf(dist, x)
-        mypdf = x -> pdf(dist, x)
-        myipdf = y -> ipdf_right(dist, y)
-        @testset "N = 256" begin
-            N = 256
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-        @testset "N = 1" begin
-            N = 1
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-    end
-    @testset "Unnormalized pdf" begin
-        tailarea = x -> ccdf(dist, x)
-        mypdf = x -> 3 * pdf(dist, x)
-        myipdf = y -> ipdf_right(dist, y / 3)
-        @testset "N = 256" begin
-            N = 256
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-        @testset "N = 1" begin
-            N = 1
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-    end
+    test_dist_ziggurats([1, 256], dist, modalboundary)
 end
 
 @testset "Normal (x<=0)" begin
     dist = truncated(Normal(); upper = 0.0)
     modalboundary = 0.0
-    @testset "Normalized pdf" begin
-        tailarea = x -> cdf(dist, x)
-        mypdf = x -> pdf(dist, x)
-        myipdf = y -> ipdf_left(dist, y)
-        @testset "N = 256" begin
-            N = 256
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-        @testset "N = 1" begin
-            N = 1
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-    end
-    @testset "Unnormalized pdf" begin
-        tailarea = x -> cdf(dist, x)
-        mypdf = x -> 3 * pdf(dist, x)
-        myipdf = y -> ipdf_left(dist, y / 3)
-        @testset "N = 256" begin
-            N = 256
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-        @testset "N = 1" begin
-            N = 1
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-            test_continuous_distribution_layers(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-    end
+    test_dist_ziggurats([1, 256], dist, modalboundary)
 end
 
 @testset "SteppedExponential" begin
     dist = SteppedExponential()
     modalboundary = 0.0
-    @testset "Normalized pdf" begin
-        tailarea = x -> ccdf(dist, x)
-        mypdf = x -> pdf(dist, x)
-        myipdf = y -> ipdf_right(dist, y)
-        @testset "N = 256" begin
-            N = 256
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-        @testset "N = 1" begin
-            N = 1
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-    end
-    @testset "Unnormalized pdf" begin
-        tailarea = x -> ccdf(dist, x)
-        mypdf = x -> 3 * pdf(dist, x)
-        myipdf = y -> ipdf_right(dist, y / 3)
-        @testset "N = 256" begin
-            N = 256
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-        @testset "N = 1" begin
-            N = 1
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, mypdf, myipdf)
-
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                mypdf,
-                myipdf
-            )
-        end
-    end
+    test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=false)
 end
