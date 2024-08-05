@@ -21,8 +21,10 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
     # The last x may be on the same side as the rest, or it may equal the modal boundary.
     firstsign = sign(x[1] - modalboundary)
     lastsign = sign(x[N + 1] - modalboundary)
-    @test lastsign == firstsign || lastsign == 0
-    @test all(sign(x[i] - modalboundary) == firstsign for i in 2:N)
+    @testset let firstsign=firstsign, lastsign=lastsign
+        @test lastsign == firstsign || lastsign == 0
+        @test all(sign(x[i] - modalboundary) == firstsign for i in 2:N)
+    end
 
     # Ziggurats never get wider as you go up the tower (they can get narrower or
     # stay the same width)
@@ -40,7 +42,30 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
     @test all(x[i] ≈ myipdf(y[i]) for i in 2:N)
 end
 
-function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf=true)
+function testset_body(N, dist, modalboundary, tailarea, f, invf; continuouspdf, initiallyflat)
+    x, y = ZigguratTools.search(N, modalboundary, tailarea, f, invf)
+    test_common_layer_properties(
+        dist,
+        x,
+        y,
+        N,
+        modalboundary,
+        tailarea,
+        f,
+        invf
+    )
+
+    if continuouspdf
+        @test all(y[i] ≈ f(x[i]) for i in 2:(N + 1))
+    end
+    if !initiallyflat
+        @test x[end] ≈ modalboundary
+    end
+
+    x, y
+end
+
+function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf, initiallyflat)
     f = Base.Fix1(pdf, dist)
 
     if f(mode(dist)) != f(modalboundary)
@@ -68,41 +93,13 @@ function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf=true)
 
     @testset "Normalized pdf" begin
         @testset "N = $N" for N in Ns
-            x, y = ZigguratTools.search(N, modalboundary, tailarea, f, invf)
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                tailarea,
-                f,
-                invf
-            )
-
-            if continuouspdf
-                @test all(y[i] ≈ f(x[i]) for i in 2:(N + 1))
-            end
+            testset_body(N, dist, modalboundary, tailarea, f, invf; continuouspdf, initiallyflat)
         end
     end
 
     @testset "Unnormalized pdf" begin
         @testset "N = $N" for N in Ns
-            x, y = ZigguratTools.search(N, modalboundary, utailarea, uf, uinvf)
-            test_common_layer_properties(
-                dist,
-                x,
-                y,
-                N,
-                modalboundary,
-                utailarea,
-                uf,
-                uinvf
-            )
-
-            if continuouspdf
-                @test all(y[i] ≈ uf(x[i]) for i in 2:(N + 1))
-            end
+            testset_body(N, dist, modalboundary, utailarea, uf, uinvf; continuouspdf, initiallyflat)
         end
     end
 end
@@ -110,17 +107,17 @@ end
 @testset "Normal (x>=0)" begin
     dist = truncated(Normal(); lower = 0.0)
     modalboundary = 0.0
-    test_dist_ziggurats([1, 256], dist, modalboundary)
+    test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=true, initiallyflat=false)
 end
 
 @testset "Normal (x<=0)" begin
     dist = truncated(Normal(); upper = 0.0)
     modalboundary = 0.0
-    test_dist_ziggurats([1, 256], dist, modalboundary)
+    test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=true, initiallyflat=false)
 end
 
 @testset "SteppedExponential" begin
     dist = SteppedExponential()
     modalboundary = 0.0
-    test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=false)
+    test_dist_ziggurats([1, 256], dist, modalboundary; continuouspdf=false, initiallyflat=true)
 end
