@@ -21,10 +21,16 @@ function Distributions.pdf(d::Doorstop, x::Real)
         h
     elseif b <= x <= c
         h * (1 - (x - b) / (c - b))
-    else
+    elseif x < a || x > c
         zero(h)
+    elseif isnan(x)
+        NaN
+    else
+        error("Unreachable.")
     end
 end
+
+Distributions.logpdf(d::Doorstop, x::Real) = log(pdf(d, x))
 
 function Distributions.cdf(d::Doorstop, x::Real)
     a, b, c, h = d.a, d.b, d.c, d.h
@@ -35,8 +41,12 @@ function Distributions.cdf(d::Doorstop, x::Real)
         h * (x - a)
     elseif b <= x <= c
         h * (x - a - (x - b)^2 / (2 * (c - b)))
-    else
+    elseif x >= c
         one(x)
+    elseif isnan(x)
+        NaN
+    else
+        error("Unreachable.")
     end
 end
 
@@ -53,3 +63,5 @@ end
 Base.minimum(d::Doorstop) = d.a
 Base.maximum(d::Doorstop) = d.c
 Distributions.insupport(d::Doorstop, x::Real) = d.a <= x <= d.c
+
+Distributions.params(d::Doorstop) = (d.a, d.b, d.c)
