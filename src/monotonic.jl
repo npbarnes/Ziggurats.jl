@@ -15,7 +15,22 @@ struct UnboundedMonotonicZiggurat{X,Y,F<:Function,TS} <: MonotonicZiggurat{X}
     tailsampler::TS
 end
 
-# Bounded Support
+"""
+    monotonic_ziggurat(N, L, R, pdf, ipdf)
+
+Returns a BoundedMonotonicZiggurat that implements the sampler interface to rand().
+
+# Example
+```julia-repl
+julia> z = monotonic_ziggurat(8, 0.0, 5.0, x -> exp(-x^2), y -> √(-log(y)))
+BoundedMonotonicZiggurat{...}(...)
+
+julia> import Random; Random.seed!(1234);
+
+julia> rand(z)
+0.6851716653106885
+```
+"""
 function monotonic_ziggurat(N, L, R::Number, pdf, ipdf)
     if N < 1
         throw(DomainError(N, "N must be a positive integer."))
@@ -29,7 +44,38 @@ function monotonic_ziggurat(N, L, R::Number, pdf, ipdf)
     BoundedMonotonicZiggurat(x, y, pdf, modalboundary)
 end
 
-# Unbounded Support
+"""
+    monotonic_ziggurat(N, modalboundary, tailarea, pdf, ipdf, tailsampler)
+
+Returns an UnboundedMonotonicZiggurat that implements the sampler interface to
+rand(). The arguments `tailarea` and `tailsampler` are functions. `tailarea(x)`
+should return the area of the tail starting at `x`, and `tailsampler(x)` should
+return a sampler that samples from the tail (to be used as the fallback
+algorithm).
+
+# Example
+```julia-repl
+julia> using ZigguratTools, Distributions
+
+julia> dist = truncated(Normal(), lower=0.0)
+Truncated...
+
+julia> z = monotonic_ziggurat(
+    8,
+    0.0,
+    x -> ccdf(dist, x),
+    x -> pdf(dist, x),
+    y -> ipdf_right(dist, y), # ipdf_right is provided by ZigguratTools.jl
+    x -> sampler(truncated(dist, lower=x))
+)
+UnboundedMonotonicZiggurat...
+
+julia> import Random; Random.seed!(1234);
+
+julia> rand(z)
+0.8937377790003791
+```
+"""
 function monotonic_ziggurat(N, modalboundary, tailarea::Function, pdf, ipdf, tailsampler)
     if N < 1
         throw(DomainError(N, "N must be a positive integer."))
