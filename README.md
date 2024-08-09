@@ -12,8 +12,21 @@ The table generation algorithm requires several inputs: pdf, inverse pdf, cdf, a
 At first, I am focusing on monotonic distributions with finite density. That includes functions that are not strictly monotonic. The ziggurat algorithm is usually applied to unimodal distributions by randomly selecting a sign, but I believe I can extend that to piecewise monotonic distributions using an alias table. In the future, I may also implement the Generalized Ziggurat Method from Jalavand and Charsooghi[^2] to support distributions with unbounded densities.
 
 ## Status
+I would currently describe the status of this package with three words:
+ * Incomplete
+ * Buggy
+ * Slow
 
-I'm currently working on monotonic distributions. They will be the foundation of more complicated distributions, so it is important to get them right. Right now I can often make simple ziggurats and sample from them correctly, but there remain a lot of dangerous corner cases. For example, I started with a few manually written inverse pdfs, but I've found that floating point rounding can cause problems in specific circumstances. Counterintuitively, I think it's better to compute the generalized inverse using a bisection method since it can make certain guarantees that I don't get from floating point algebra. I would have liked to use Roots.jl or NonlinearSolve.jl for this problem, but they're inappropriate for this job because they return if they find an exact zero. However, I'm not satisfied with any x that satisfies the equation. I need the largest x that satisfies the equation. That's a slightly different problem. Fortunately, a bisection search is not a complicated algorithm to implement.
+But I am making progress on all three of those fronts.
 
+I'm currently working on monotonic distributions. They will be the foundation of more complicated distributions, so it is important to get them right. Right now I can often make simple ziggurats and sample from them correctly, but there remain a lot of dangerous corner cases. For example, I started with a few manually written inverse pdfs, but I've found that floating point rounding can cause problems in specific circumstances. Counterintuitively, I think it's better to compute the generalized inverse using a bisection method since it can make certain guarantees that can't be made with floating point algebra. I would have liked to use Roots.jl or NonlinearSolve.jl for this problem, but they're inappropriate for this job because they return if they find an exact zero. In my case, having *an* x that satisfies the equation isn't enough. I need the *largest* x that satisfies the equation. That's a slightly different problem. Fortunately, a bisection search is not a complicated algorithm to implement.
+
+## Installation
+If it's not already obvious, this package isn't ready for widespread use, but you can play around with it if you'd like.
+
+I intend to register v0.1 once I have most of the basic features working. Until then you can install it by tracking the main branch of this repo. Open a Julia REPL and type `]` to enter package mode. Then run
+```julia
+pkg> add https://github.com/npbarnes/ZigguratTools#main
+```
 [^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables. Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
 [^2]: Jalalvand, M., & Charsooghi, M. A. (2018). Generalized ziggurat algorithm for unimodal and unbounded probability density functions with Zest. arXiv preprint arXiv:1810.04744.
