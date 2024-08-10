@@ -106,7 +106,7 @@ julia> z = monotonic_ziggurat(
     x -> sampler(truncated(dist, lower=x))
 )
 ```
-I also used `ipdf_right()` which is a function provided by ZigguratTools.jl. For now, it's only defined on a few distributions. In the future, ZigguratTools.jl will use root finding by default to invert the pdf.
+I also used `ipdf_right()` which is a function provided by ZigguratTools.jl. For now, it's only defined on a few distributions. In the future, ZigguratTools.jl will use root finding by default to invert the pdf. Also note that makeing closures over `dist` like this has performance implications. See the performance tips seciton of the Julia manual for details and workarounds.
 ```julia-repl
 julia> plotziggurat(z)
 julia> histogram(rand(z, 10^6), norm=:pdf)
