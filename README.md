@@ -90,5 +90,29 @@ julia> plot!(x -> f(x)/0.746824, color=:black, lw=3)
 ```
 <img src="/assets/BoundedMonotonicZiggurat_Histogram.svg" width=350/>
 
+#### Distributions with Unbounded Support
+Distributions with unbounded support need a different arguments than the bounded ziggurats. First, it needs a function to determine the area of the tail, and second it needs a function that can produce a fallback sampler for the infinite tail.
+
+This time, let's get our pdf from Distributions.jl
+```julia-repl
+julia> using Distributions
+julia> dist = truncated(Normal(), lower=0.0)
+julia> z = monotonic_ziggurat(
+    10,
+    0.0,
+    x -> ccdf(dist, x),
+    x -> pdf(dist, x),
+    y -> ipdf_right(dist, y),
+    x -> sampler(truncated(dist, lower=x))
+)
+```
+I also used `ipdf_right()` which is a function provided by ZigguratTools.jl. For now, it's only defined on a few distributions. In the future, ZigguratTools.jl will use root finding by default to invert the pdf.
+```julia-repl
+julia> plotziggurat(z)
+julia> histogram(rand(z, 10^6), norm=:pdf)
+julia> plot!(x -> pdf(dist, x), color=:black, lw=3)
+```
+<img src="/assets/UnboundedMonotonicZiggurat.svg" width=350/> <img src="/assets/UnboundedMonotonicZiggurat_Histogram.svg" width=350/>
+
 [^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables. Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
 [^2]: Jalalvand, M., & Charsooghi, M. A. (2018). Generalized ziggurat algorithm for unimodal and unbounded probability density functions with Zest. arXiv preprint arXiv:1810.04744.
