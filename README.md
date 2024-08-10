@@ -28,5 +28,67 @@ I intend to register v0.1 once I have most of the basic features working. Until 
 ```julia
 pkg> add https://github.com/npbarnes/ZigguratTools#main
 ```
+
+## Examples
+These examples appear to work right now. That doesn't mean that everything you try will work.
+
+#### Distributions with Bounded Support
+First define a pdf and its inverse. The pdf does not need to be normalized.
+```julia-repl
+julia> f(x) = 0 <= x <= 1 ? exp(-x^2) : zero(float(x))
+julia> inv_f(x) = min(1.0, sqrt(-log(y)))
+```
+Then build the ziggurat
+```julia-repl
+julia> using ZigguratTools
+julia> z = monotonic_ziggurat(10, 0.0, 1.0, f, inv_f)
+```
+`z` can now be used like any other sampler.
+```julia-repl
+julia> rand(z)
+0.2977446038532221
+
+julia> rand(z, 3)
+3-element Vector{Float64}:
+ 0.07855690949819316      
+ 0.6499899606875755       
+ 0.7515162419547353       
+
+julia> using Random
+
+julia> a = Vector{Float64}(undef, 3)
+...
+
+julia> rand!(z, a)
+3-element Vector{Float64}:
+ 0.18796323126287684
+ 0.21786647926588895
+ 0.0636838420645357
+
+julia> rng = MersenneTwister(1234)
+...
+
+julia> rand(rng, z, 3)
+3-element Vector{Float64}:
+ 0.6271541821806008
+ 0.6265042348161904
+ 0.005040015479099047
+```
+
+You can visualize the ziggurat layers
+```julia-repl
+julia> plotziggurat(z)
+```
+<img src="/assets/BoundedMonotonicZiggurat.svg" width=350/>
+(right now Plots.jl is a dependency of ZigguratTools.jl just to define this function. Whenever I get around to it, I will make a plotting recipe with RecipesBase.jl. That should help with loading time.) 
+
+You can also qualitatively validate the distribution with a histogram. Make sure everything is correctly normalized!
+```julia-repl
+julia> using Plots
+julia> histogram(rand(z, 10^6), norm=:pdf)
+julia> plot!(x -> f(x)/0.746824, color=:black, lw=3)
+```
+<img src="/assets/BoundedMonotonicZiggurat_Histogram.svg" width=350/>
+
 [^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables. Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
 [^2]: Jalalvand, M., & Charsooghi, M. A. (2018). Generalized ziggurat algorithm for unimodal and unbounded probability density functions with Zest. arXiv preprint arXiv:1810.04744.
