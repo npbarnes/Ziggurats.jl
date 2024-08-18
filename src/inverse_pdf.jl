@@ -75,32 +75,23 @@ function max_root(f, domain::Tuple{Float64,Float64})
     return a
 end
 
-# find middle of (a,b) with convention that
-# * if a, b finite, they are made non-finite
-# if a,b of different signs, middle is 0
-# middle falls back to a/2 + b/2, but
-# for Float64 values, middle is over the
-# reinterpreted unsigned integer.
+# Reinterpreting floats as unsigned ints avoids some issues with floating point.
+# Inspired by Roots.jl
 function _middle(x, y)
-    a = isinf(x) ? nextfloat(x) : x
-    b = isinf(y) ? prevfloat(y) : y
-    if sign(a) * sign(b) < 0
-        return zero(a)
+    if sign(x) * sign(y) < 0
+        zero(x)
     else
-        __middle(a, b)
+        __middle(x, y)
     end
 end
-## find middle assuming a,b same sign, finite
-## Alternative "mean" definition that operates on the binary representation
-## of a float. Using this definition, bisection will never take more than
-## 64 steps (over Float64)
+
 __middle(x::Float64, y::Float64) = __middle(Float64, UInt64, x, y)
 __middle(x::Float32, y::Float32) = __middle(Float32, UInt32, x, y)
 __middle(x::Float16, y::Float16) = __middle(Float16, UInt16, x, y)
+## fallback for non FloatNN number types
+__middle(x::Number, y::Number) = x / 2 + y / 2
 
 function __middle(T, S, x, y)
-    # Use the usual float rules for combining non-finite numbers
-    # do division over unsigned integers with bit shift
     xint = reinterpret(S, abs(x))
     yint = reinterpret(S, abs(y))
     mid = (xint + yint) >> 1
