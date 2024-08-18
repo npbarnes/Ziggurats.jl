@@ -31,17 +31,20 @@ end
 ipdf_right(dist::Exponential, y) = -scale(dist) * log(scale(dist) * y)
 
 """
-    max_root(f, domain)
+    inverse(f, domain, y)
 
-Returns largest x in the domain (inclusive) such that f(x) >= 0. The function f
-must be monotonic, and f(a) and f(b) can not both be negative.
+Find the generalized inverse of the non-constant monotonic function f at y in
+the domain. If f is decreasing, then the largest x such that f(x) >= y is
+returned. If f is increasing then the smallest x such that f(x) >= y is
+returned. If there is no solution (i.e. when y is not between f(a) and f(b))
+then an error is thrown. If f is constant, then an error is thrown. If
+non-monotonicity is detected in f then an error is thrown, but in general the
+result is undefined if f is not monotonic. Note that while f cannot be constant,
+it need not be strictly monotonic.
 """
-function max_root(f, domain::Tuple{Float64,Float64})
-    # This is basically a bisection search. The function f might not be
-    # continuous or strictly monotonic, but in floating point there will always
-    # be a unique largest x where f(x) >= 0. I copied the method of
-    # reinterpreting floats as unsigned ints from Roots.jl.
+inverse(f, (a,b), y) = inverse(f, promote(float(a), float(b)), y)
 
+function inverse(f, domain::NTuple{2, <:AbstractFloat}, y)
     a, b = domain
 
     if a > b
@@ -51,19 +54,40 @@ function max_root(f, domain::Tuple{Float64,Float64})
     fa = f(a)
     fb = f(b)
 
-    if fa < 0 && fb < 0
-        error("no solutions, f(a) and f(b) are both negative.")
+    if fa == fb
+        error("f must be non-constant.")
     end
 
-    if fb >= 0
-        return b
+    if !between(fa, fb, y)
+        error("no solutions.")
     end
 
+    if fa >= fb
+        if fb >= y
+            b
+        else
+            _decreasing_inverse(f, fa, fb, a, b, y)
+        end
+    else
+        if fa >= y
+            a
+        else
+            _increasing_inverse(f, fa, fb, a, b, y)
+        end
+    end
+end
+
+"Largest x such that f(x) >= y"
+function _decreasing_inverse(f, fa, fb, a, b, y)
     while nextfloat(a) != b
         c = _middle(a,b)
         fc = f(c)
 
-        if fc >= 0
+        if !(fb <= fc <= fa)
+            error("f must be monotonic.")
+        end
+
+        if fc >= y
             a = c
             fa = fc
         else
@@ -73,6 +97,28 @@ function max_root(f, domain::Tuple{Float64,Float64})
     end
 
     return a
+end
+
+"Smallest x such that f(x) >= y"
+function _increasing_inverse(f, fa, fb, a, b, y)
+    while nextfloat(a) != b
+        c = _middle(a,b)
+        fc = f(c)
+
+        if !(fa <= fc <= fb)
+            error("f must be monotonic.")
+        end
+
+        if fc >= y
+            b = c
+            fb = fc
+        else
+            a = c
+            fa = fc
+        end
+    end
+
+    return b
 end
 
 # Reinterpreting floats as unsigned ints avoids some issues with floating point.

@@ -25,4 +25,5 @@ end
 end
 
 # Test ZigguratTools
+include("test_inverses.jl")
 include("ziggurat_tests.jl")

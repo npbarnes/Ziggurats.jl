@@ -20,6 +20,7 @@ export
     # Inverse pdfs
     ipdf_left,
     ipdf_right,
+    inverse,
 
     # Plot ziggurats
     plotziggurat,
