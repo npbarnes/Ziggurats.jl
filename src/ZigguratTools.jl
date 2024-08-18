@@ -28,6 +28,11 @@ export
 abstract type Ziggurat{X} <: Sampleable{Univariate,Continuous} end
 Base.eltype(::Ziggurat{X}) where {X} = X
 
+function between(a, b, x)
+    l, r = minmax(a, b)
+    l <= x <= r
+end
+
 include("inverse_pdf.jl")
 include("monotonic.jl")
 include("plotting.jl")

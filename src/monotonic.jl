@@ -226,11 +226,6 @@ function Base.rand(rng::AbstractRNG, z::MonotonicZiggurat)
     end
 end
 
-function between(a, b, x)
-    l, r = minmax(a, b)
-    l <= x <= r
-end
-
 function simple_rejection(rng, z, l, x)
     y = (z.y[l + 1] - z.y[l]) * rand(rng) + z.y[l]
     if y < z.pdf(x)
