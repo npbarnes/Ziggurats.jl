@@ -131,6 +131,91 @@
     @test_throws "domain must be an ordered tuple." inverse(cos, (π, 0), 0)
     @test_throws "domain must be an ordered tuple." inverse(s_curve, (1, -1), 0)
     @test_throws "domain must be an ordered tuple." inverse(slowdecay, (Inf, 0), 0)
+
+    # Domains that include some positive numbers
+    @test_throws "no solutions" inverse(sign, (-Inf,Inf), 2.0)
+    @test_throws "no solutions" inverse(sign, (-Inf,1.0), 2.0)
+    @test_throws "no solutions" inverse(sign, (-1.0,Inf), 2.0)
+    @test_throws "no solutions" inverse(sign, (-1.0,1.0), 2.0)
+
+    @test inverse(sign, (-Inf,Inf), 1.0) == nextfloat(0.0)
+    @test inverse(sign, (-Inf,1.0), 1.0) == nextfloat(0.0)
+    @test inverse(sign, (-1.0,Inf), 1.0) == nextfloat(0.0)
+    @test inverse(sign, (-1.0,1.0), 1.0) == nextfloat(0.0)
+
+    @test inverse(sign, (-Inf,Inf), 0.0) == 0.0
+    @test inverse(sign, (-Inf,1.0), 0.0) == 0.0
+    @test inverse(sign, (-1.0,Inf), 0.0) == 0.0
+    @test inverse(sign, (-1.0,1.0), 0.0) == 0.0
+
+    @test inverse(sign, (-Inf,Inf), -1.0) == -Inf
+    @test inverse(sign, (-Inf,1.0), -1.0) == -Inf
+    @test inverse(sign, (-1.0,Inf), -1.0) == -1.0
+    @test inverse(sign, (-1.0,1.0), -1.0) == -1.0
+
+    @test_throws "no solutions." inverse(sign, (-Inf,Inf), -2.0)
+    @test_throws "no solutions." inverse(sign, (-Inf,1.0), -2.0)
+    @test_throws "no solutions." inverse(sign, (-1.0,Inf), -2.0)
+    @test_throws "no solutions." inverse(sign, (-1.0,1.0), -2.0)
+
+    @test_throws "no solutions." inverse(sign, (-10.0, 10.0), 2.0)
+    @test inverse(sign, (-10.0, 10.0), 1.0) == nextfloat(0.0)
+    @test inverse(sign, (-10.0, 10.0), 0.0) == 0.0
+    @test inverse(sign, (-10.0, 10.0), -1.0) == -10
+    @test_throws "no solutions." inverse(sign, (-10.0, 10.0), -2.0)
+
+    # domain ends at zero
+    @test_throws "no solutions." inverse(sign, (-Inf,0.0), 2.0)
+    @test_throws "no solutions." inverse(sign, (-1.0,0.0), 2.0)
+
+    @test_throws "no solutions." inverse(sign, (-Inf,0.0), 1.0)
+    @test_throws "no solutions." inverse(sign, (-1.0,0.0), 1.0)
+
+    @test inverse(sign, (-Inf,0.0), 0.0) == 0.0
+    @test inverse(sign, (-1.0,0.0), 0.0) == 0.0
+
+    @test inverse(sign, (-Inf,0.0), -1.0) == -Inf
+    @test inverse(sign, (-1.0,0.0), -1.0) == -1.0
+
+    @test_throws "no solutions." inverse(sign, (-Inf,0.0), -2.0)
+    @test_throws "no solutions." inverse(sign, (-1.0,0.0), -2.0)
+
+    @test_throws "no solutions." inverse(sign, (-10.0, 0.0), 2.0)
+    @test_throws "no solutions." inverse(sign, (-10.0, 0.0), 1.0)
+    @test inverse(sign, (-10.0, 0.0), 0.0) == 0.0
+    @test inverse(sign, (-10.0, 0.0), -1.0) == -10
+    @test_throws "no solutions." inverse(sign, (-10.0, 0.0), -2.0)
+
+    # Out of order domains
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-1.0), 2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-1.0), 2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-Inf), 2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-Inf), 2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-1.0), 1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-1.0), 1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-Inf), 1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-Inf), 1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-1.0), 0.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-1.0), 0.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-Inf), 0.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-Inf), 0.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-1.0), -1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-1.0), -1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-Inf), -1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-Inf), -1.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-1.0), -2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-1.0), -2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (1.0,-Inf), -2.0)
+    @test_throws "domain must be an ordered tuple." inverse(sign, (Inf,-Inf), -2.0)
+
+    msign = x -> -sign(x)
+    @test_throws "no solutions." inverse(msign, (-10.0, 10.0), 2.0)
+    @test inverse(msign, (-10.0, 10.0), 1.0) == prevfloat(0.0)
+    @test inverse(msign, (-10.0, 10.0), 0.5) == prevfloat(0.0)
+    @test inverse(msign, (-10.0, 10.0), 0.0) == 0.0
+    @test inverse(msign, (-10.0, 10.0), -0.5) == 0.0
+    @test inverse(msign, (-10.0, 10.0), -1.0) == 10.0
+    @test_throws "no solutions." inverse(msign, (-10.0, 10.0), -2.0)
 end
 
 nothing
