@@ -42,9 +42,9 @@ non-monotonicity is detected in f then an error is thrown, but in general the
 result is undefined if f is not monotonic. Note that while f cannot be constant,
 it need not be strictly monotonic.
 """
-inverse(f, (a,b), y) = inverse(f, promote(float(a), float(b)), y)
+inverse(f, (a, b), y) = inverse(f, promote(float(a), float(b)), y)
 
-function inverse(f, domain::NTuple{2, <:AbstractFloat}, y)
+function inverse(f, domain::NTuple{2,<:AbstractFloat}, y)
     a, b = domain
 
     if a > b
@@ -80,7 +80,7 @@ end
 "Largest x such that f(x) >= y"
 function _decreasing_inverse(f, fa, fb, a, b, y)
     while nextfloat(a) != b
-        c = _middle(a,b)
+        c = _middle(a, b)
         fc = f(c)
 
         if !(fb <= fc <= fa)
@@ -102,7 +102,7 @@ end
 "Smallest x such that f(x) >= y"
 function _increasing_inverse(f, fa, fb, a, b, y)
     while nextfloat(a) != b
-        c = _middle(a,b)
+        c = _middle(a, b)
         fc = f(c)
 
         if !(fa <= fc <= fb)
