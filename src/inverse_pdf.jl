@@ -31,6 +31,18 @@ end
 ipdf_right(dist::Exponential, y) = -scale(dist) * log(scale(dist) * y)
 
 """
+    inverse(f, domain)
+
+Returns a function that will compute the inverse of f on the domain. Similar to
+`y -> inverse(f, domain, y)`.
+"""
+function inverse(f, (a,b))
+    let f = f, domain = promote(float(a), float(b))
+        y -> inverse(f, domain, y)
+    end
+end
+
+"""
     inverse(f, domain, y)
 
 Find the generalized inverse of the non-constant monotonic function f at y in
