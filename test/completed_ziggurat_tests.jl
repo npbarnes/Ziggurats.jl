@@ -42,6 +42,10 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
     # x[1]==argminboundary. i=N+1 is excluded because y might be greater
     # than pdf(mode), so ipdf(y) might not be defined.
     @test all(x[i] ≈ myipdf(y[i]) for i in 2:N)
+
+    if y[end] == mypdf(modalboundary)
+        @test x[end] ≈ myipdf(y[end])
+    end
 end
 
 function testset_body(
