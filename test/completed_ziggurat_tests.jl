@@ -21,7 +21,7 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
     # The last x may be on the same side as the rest, or it may equal the modal boundary.
     firstsign = sign(x[1] - modalboundary)
     lastsign = sign(x[N + 1] - modalboundary)
-    @testset let firstsign = firstsign, lastsign = lastsign
+    @testset begin
         @test lastsign == firstsign || lastsign == 0
         @test all(sign(x[i] - modalboundary) == firstsign for i in 2:N)
     end
