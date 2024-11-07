@@ -9,18 +9,20 @@ end
 @testset "Normal (x>=0)" begin
     dist = Normal()
 
-    # Because of the choice of UnboundedDecreasingZiggurat, ipdf_right, and ccdf,
-    # this ziggurat will actually be sampling from truncated(Normal(), lower=0.0).
-    # A small number N is chosen so that the fallback branch gets chosen with high
-    # probability and its confidence intervals can be tested.
+    # Because of the choice of domain this ziggurat will actually be sampling
+    # from truncated(Normal(), lower=0.0). A small number N is chosen so that
+    # the fallback branch gets chosen with high probability and its confidence
+    # intervals can be tested.
     N = 3
-    z = monotonic_ziggurat(
+    f = let dist=dist; x -> pdf(dist, x) end
+    ta = let dist=dist; x -> ccdf(dist,x) end
+    domain = (0, Inf)
+    z = UnboundedZiggurat(
         N,
-        mode(dist),
-        x -> ccdf(dist, x),
-        x -> pdf(dist, x),
-        y -> ipdf_right(dist, y),
-        x -> sampler(truncated(dist; lower = x))
+        domain,
+        f,
+        inverse(f, domain),
+        ta
     )
 
     testsampling(truncated(dist; lower = mode(dist)), z)
@@ -29,18 +31,20 @@ end
 @testset "Normal (x<=0)" begin
     dist = Normal()
 
-    # Because of the choice of a AbstractUnboundedMonotonicZiggurat, ipdf_left, and cdf,
-    # this ziggurat will actually be sampling from truncated(Normal(), lower=0.0).
-    # A small number N is chosen so that the fallback branch gets chosen with high
-    # probability and its confidence intervals can be tested.
+    # Because of the choice of a domain, this ziggurat will actually be sampling
+    # from truncated(Normal(), upper=0.0). A small number N is chosen so that
+    # the fallback branch gets chosen with high probability and its confidence
+    # intervals can be tested.
     N = 3
-    z = monotonic_ziggurat(
+    f = let dist=dist; x -> pdf(dist, x) end
+    ta = let dist=dist; x -> cdf(dist,x) end
+    domain = (-Inf, 0)
+    z = UnboundedZiggurat(
         N,
-        mode(dist),
-        x -> cdf(dist, x),
-        x -> pdf(dist, x),
-        y -> ipdf_left(dist, y),
-        x -> sampler(truncated(dist; upper = x))
+        domain,
+        f,
+        inverse(f, domain),
+        ta
     )
 
     testsampling(truncated(dist; upper = mode(dist)), z)
@@ -50,13 +54,15 @@ end
     dist = Exponential()
 
     N = 3
-    z = monotonic_ziggurat(
+    f = let dist=dist; x -> pdf(dist, x) end
+    ta = let dist=dist; x -> ccdf(dist,x) end
+    domain = (0, Inf)
+    z = UnboundedZiggurat(
         N,
-        mode(dist),
-        x -> ccdf(dist, x),
-        x -> pdf(dist, x),
-        y -> ipdf_right(dist, y),
-        x -> sampler(truncated(dist; lower = x))
+        domain,
+        f,
+        inverse(f, domain),
+        ta
     )
 
     testsampling(dist, z)
@@ -66,13 +72,15 @@ end
     dist = SteppedExponential()
 
     N = 3
-    z = monotonic_ziggurat(
+    f = let dist=dist; x -> pdf(dist, x) end
+    ta = let dist=dist; x -> ccdf(dist,x) end
+    domain = (0, Inf)
+    z = UnboundedZiggurat(
         N,
-        mode(dist),
-        x -> ccdf(dist, x),
-        x -> pdf(dist, x),
-        y -> ipdf_right(dist, y),
-        x -> sampler(truncated(dist; lower = x))
+        domain,
+        f,
+        inverse(f, domain),
+        ta
     )
 
     testsampling(dist, z)

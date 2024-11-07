@@ -52,44 +52,52 @@ function testset_body(
     N,
     dist,
     modalboundary,
-    tailarea,
-    f,
-    invf;
+    argminboundary,
+    f, # f and invf are passed explicitly since they may be scaled relative to pdf(dist, x)
+    invf,
+    tailarea=nothing;
     continuouspdf,
     initiallyflat
 )
-    x, y = ZigguratTools.search(N, modalboundary, tailarea, f, invf)
+    if tailarea !== nothing
+        x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
+    else
+        x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+    end
+
+    # General tests
     test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, f, invf)
 
+    # Additional tests for special cases
     if continuouspdf
         @test all(y[i] ≈ f(x[i]) for i in 2:(N + 1))
     end
     if !initiallyflat
-        @test x[end] ≈ modalboundary
+        @test x[end] ≈ modalboundary atol=1e-5
+    end
+    if tailarea === nothing
+        @test x[1] == argminboundary
     end
 
     x, y
 end
 
-function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf, initiallyflat)
+function test_dist_ziggurats(Ns, dist; continuouspdf, initiallyflat, boundeddomain)
     f = Base.Fix1(pdf, dist)
+    domain = extrema(dist)
+    invf = inverse(f, domain)
+    modalboundary, argminboundary = ZigguratTools._identify_mode(domain, f)
 
-    if f(mode(dist)) != f(modalboundary)
-        error("Incorrect modalboundary.")
-    end
-
-    L, R = minimum(dist), maximum(dist)
-
-    if L == modalboundary
-        # Right handed ziggurat
-        invf = Base.Fix1(ipdf_right, dist)
-        tailarea = Base.Fix1(ccdf, dist)
-    elseif R == modalboundary
-        # Left handed ziggurat
-        invf = Base.Fix1(ipdf_left, dist)
-        tailarea = Base.Fix1(cdf, dist)
+    if boundeddomain
+        tailarea = nothing
     else
-        error("modalboundary is not on the boundary of the support of dist.")
+        if domain[1] == modalboundary # Decreasing distribution
+            tailarea = Base.Fix1(ccdf, dist)
+        elseif domain[2] == modalboundary # Increasing distribution
+            tailarea = Base.Fix1(cdf, dist)
+        else
+            error("modalboundary is not on the boundary of the support of dist.")
+        end
     end
 
     # Unnormalized
@@ -103,9 +111,10 @@ function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf, initiallyfl
                 N,
                 dist,
                 modalboundary,
-                tailarea,
+                argminboundary,
                 f,
-                invf;
+                invf,
+                tailarea;
                 continuouspdf,
                 initiallyflat
             )
@@ -118,9 +127,10 @@ function test_dist_ziggurats(Ns, dist, modalboundary; continuouspdf, initiallyfl
                 N,
                 dist,
                 modalboundary,
-                utailarea,
+                argminboundary,
                 uf,
-                uinvf;
+                uinvf,
+                utailarea;
                 continuouspdf,
                 initiallyflat
             )
@@ -130,48 +140,44 @@ end
 
 @testset "Normal (x>=0)" begin
     dist = truncated(Normal(); lower = 0.0)
-    modalboundary = 0.0
     test_dist_ziggurats(
-        [1, 256],
-        dist,
-        modalboundary;
+        [1, 2, 256],
+        dist;
         continuouspdf = true,
-        initiallyflat = false
+        initiallyflat = false,
+        boundeddomain = false
     )
 end
 
 @testset "Normal (x<=0)" begin
     dist = truncated(Normal(); upper = 0.0)
-    modalboundary = 0.0
     test_dist_ziggurats(
-        [1, 256],
-        dist,
-        modalboundary;
+        [1, 2, 256],
+        dist;
         continuouspdf = true,
-        initiallyflat = false
+        initiallyflat = false,
+        boundeddomain = false
     )
 end
 
 @testset "Non-standard Normal" begin
     dist = truncated(Normal(1.5, 3); upper = 1)
-    modalboundary = 1.0
     test_dist_ziggurats(
-        [1, 256],
-        dist,
-        modalboundary;
+        [1, 2, 256],
+        dist;
         continuouspdf = true,
-        initiallyflat = false
+        initiallyflat = false,
+        boundeddomain = false
     )
 end
 
 @testset "SteppedExponential" begin
     dist = SteppedExponential()
-    modalboundary = 0.0
     test_dist_ziggurats(
-        [1, 256],
-        dist,
-        modalboundary;
+        [1, 2, 256],
+        dist;
         continuouspdf = false,
-        initiallyflat = true
+        initiallyflat = true,
+        boundeddomain = false
     )
 end

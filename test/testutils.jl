@@ -62,7 +62,7 @@ end
 # for continuous samplers
 #
 function test_samples(
-    s::Sampleable{Univariate,Continuous},    # the sampleable instance
+    s,    # the sampleable instance
     distr::ContinuousUnivariateDistribution,  # corresponding distribution
     n::Int;                                   # number of samples to generate
     nbins::Int = 50,                            # divide the main interval into nbins

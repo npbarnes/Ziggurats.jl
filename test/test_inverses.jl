@@ -1,6 +1,6 @@
 @testset "Generalized Inverses" begin
     @testset "_middle()" begin
-        import ZigguratTools: _middle
+        import ZigguratTools: inverse, _middle
 
         # Opposite signs have zero in the middle
         @test _middle(0.0, -0.0) == 0.0

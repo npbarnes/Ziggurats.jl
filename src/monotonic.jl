@@ -1,118 +1,198 @@
-abstract type MonotonicZiggurat{X} <: Ziggurat{X} end
+abstract type MonotonicZiggurat{X} end
 
-struct BoundedMonotonicZiggurat{X,Y,F<:Function} <: MonotonicZiggurat{X}
+struct BoundedZiggurat{X, Y, F<:Function} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
     modalboundary::X
 end
 
-struct UnboundedMonotonicZiggurat{X,Y,F<:Function,TS} <: MonotonicZiggurat{X}
+struct UnboundedZiggurat{X, Y, F<:Function, FB<:Function} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
     modalboundary::X
-    tailsampler::TS
+    tailmapping::FB
 end
 
-"""
-    monotonic_ziggurat(N, L, R, pdf, ipdf)
+function BoundedZiggurat(N::Integer, domain, pdf::Function, ipdf::Function=inverse(pdf,domain))
+    domain = promote(float(domain[1]), float(domain[2]))
+    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
 
-Returns a BoundedMonotonicZiggurat that implements the sampler interface to rand().
-
-# Example
-```julia-repl
-julia> z = monotonic_ziggurat(8, 0.0, 5.0, x -> exp(-x^2), y -> √(-log(y)))
-BoundedMonotonicZiggurat{...}(...)
-
-julia> import Random; Random.seed!(1234);
-
-julia> rand(z)
-0.6851716653106885
-```
-"""
-function monotonic_ziggurat(N, L, R::Number, pdf, ipdf)
-    if N < 1
-        throw(DomainError(N, "N must be a positive integer."))
+    if isinf(domain[1]) || isinf(domain[2])
+        error("The domain must be bounded.")
     end
-    boundaries = (L, R)
-    boundarypdf = pdf.(boundaries)
-    argminboundary = boundaries[argmin(boundarypdf)]
-    modalboundary = boundaries[argmax(boundarypdf)]
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf)
-    BoundedMonotonicZiggurat(x, y, pdf, modalboundary)
+    
+    BoundedZiggurat(x, y, pdf, modalboundary)
 end
 
-"""
-    monotonic_ziggurat(N, modalboundary, tailarea, pdf, ipdf, tailsampler)
+function UnboundedZiggurat(pdf::Function, N, domain; ipdf=inverse(pdf, domain), tailarea=nothing, tailmapping=nothing)
+    UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, tailmapping)
+end
 
-Returns an UnboundedMonotonicZiggurat that implements the sampler interface to
-rand(). The arguments `tailarea` and `tailsampler` are functions. `tailarea(x)`
-should return the area of the tail starting at `x`, and `tailsampler(x)` should
-return a sampler that samples from the tail (to be used as the fallback
-algorithm).
+function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping)
+    domain = promote(float(domain[1]), float(domain[2]))
+    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
 
-# Example
-```julia-repl
-julia> using ZigguratTools, Distributions
+    if !isinf(domain[1]) && !isinf(domain[2])
+        error("The domain must be unbounded.")
+    end
 
-julia> dist = truncated(Normal(), lower=0.0)
-Truncated...
+    if tailarea === nothing
+        tailarea = let pdf=pdf, modalboundary=modalboundary, argminboundary=argminboundary, modepdf
+            modepdf = pdf(modalboundary)
+            domain_type = typeof(modalboundary)
+            range_type = typeof(modepdf)
+            error_type = typeof(norm(modepdf))
+            segbuf = alloc_segbuf(domain_type, range_type, error_type)
+            # TODO: Add error tolerance and check the returned error estimate.
+            x -> abs(quadgk(pdf, x, argminboundary; segbuf)[1])
+        end
+    end
 
-julia> z = monotonic_ziggurat(
-    8,
-    0.0,
-    x -> ccdf(dist, x),
-    x -> pdf(dist, x),
-    y -> ipdf_right(dist, y), # ipdf_right is provided by ZigguratTools.jl
-    x -> sampler(truncated(dist, lower=x))
-)
-UnboundedMonotonicZiggurat...
+    x, y = search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
 
-julia> import Random; Random.seed!(1234);
+    if tailmapping === nothing
+        x2 = x[2]
+        ta = tailarea(x2)
+        td = modalboundary > argminboundary ? (nextfloat(typemin(x2)), x2) : (x2, prevfloat(typemax(x2)))
+        tailcdf_or_ccdf = let tailarea=tailarea, ta=ta
+            x -> tailarea(x)/ta
+        end
+        # TODO: See Jalalvand & Charsooghi 2018, the choice of mapping function
+        # matters.
+        # TODO: The choice of mapping function may depend on the choice of RNG? 
 
-julia> rand(z)
-0.8937377790003791
-```
-"""
-function monotonic_ziggurat(N, modalboundary, tailarea::Function, pdf, ipdf, tailsampler)
+        # TODO: We don't allow discontinuous (c)cdf's (delta functions), and
+        # (c)cdf's can't normally be constant on an interval (They can be
+        # constant on and interval that starts or ends on the boundary of the
+        # domian, but a constant interval anywhere else would imply that pdf is
+        # non-monotonic). Even in the case where the pdf goes to exactly zero in
+        # floating point (which is common), ZigguratTools.inverse will return
+        # infinity which is probably not the correct behavior for tailmapping. A
+        # root finding algorithm from Root.jl or SciML would be able to return
+        # without doing all 64 iterations when an exact result is found, or
+        # within some tolerance. This would be faster and fit for purpose.
+        # ZigguratTools.inverse is probably only needed for the generalized
+        # inverse of the pdf.
+        tailmapping = inverse(tailcdf_or_ccdf, td)
+    end
+
+    UnboundedZiggurat(x, y, pdf, modalboundary, tailmapping)
+end
+
+function monotonic_ziggurat(N, domain, pdf, ipdf)
+    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
+
+    if isinf(domain[1]) || isinf(domain[2])
+        error("The tailarea argument must be provided for unbounded domains.")
+    end
+
+    search(N, modalboundary, argminboundary, pdf, ipdf)
+end
+
+function monotonic_ziggurat(N, domain, pdf, ipdf, tailarea)
+    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf, ipdf)
+
+    if !isinf(domain[1]) && !isinf(domain[2])
+        error("The domain is expected to be unbounded when the tailarea argument is provided")
+    end
+
+    search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
+end
+
+function _bareziggurat_helper(N, domain, pdf)
+    _bareziggurat_args_check(N, domain)
+    modalboundary, argminboundary = _identify_mode(domain, pdf)
+
+    if pdf(modalboundary) == 0
+        error("pdf expected to be non-zero on at least one boundary.")
+    end
+
+    modalboundary, argminboundary
+end
+
+function _bareziggurat_args_check(N, domain)
     if N < 1
         throw(DomainError(N, "N must be a positive integer."))
     end
-    x, y = search(N, modalboundary, tailarea, pdf, ipdf)
-    UnboundedMonotonicZiggurat(x, y, pdf, modalboundary, tailsampler(x[2]))
+
+    # Check if the domain is well formed and appropriate for a monotonic
+    # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
+    # infinite.
+    if domain[1] == domain[2]
+        error("Empty domains are not allowed.")
+    end
+    if domain[1] > domain[2]
+        error("malformed domain. domain[1] must be less than domain[2].")
+    end
+    if isinf(domain[1]) && isinf(domain[2])
+        error("A domain of (-Inf, Inf) is impossible for a monotonic distribution.")
+    end
+
+    return nothing
 end
 
-"""
-    search(N, modalboundary, argminboundary::Number, pdf, ipdf)
-    search(N, modalboundary, tailarea::Function, pdf, ipdf)
+function _identify_mode(domain, pdf)
+    # Return the modalboundary (mb) and argminboundary (am).
+    # Assume that the domain is well formed and appropriate for a monotonic
+    # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
+    # infinite. _domain_check checks these conditions.
+    if isinf(domain[1])
+        mb = domain[2]
+        am = domain[1]
+    elseif isinf(domain[2])
+        mb = domain[1]
+        am = domain[2]
+    else
+        boundarypdf = pdf.(domain)
+        if boundarypdf[1] == boundarypdf[2]
+            error("pdf should be monotonic and non-constant.")
+        else
+            mb = domain[argmax(boundarypdf)]
+            am = domain[argmin(boundarypdf)]
+        end
+    end
 
-Returns x and y arrays for a correct and optimal ziggurat with N layers or
-nothing if the search fails. Note that a ziggurat with N layers satisfies
-length(x) == length(y) == N+1.
-"""
-function search(N, modalboundary, tail, pdf, ipdf)
+    mb, am
+end
+
+# Bounded
+function search(N, modalboundary, argminboundary, pdf, ipdf)
+    x, y, y_domain, modalpdf = _search_setup(N, modalboundary, pdf)
+    buildargs = (modalboundary, argminboundary, ipdf, modalpdf)
+    p = (; x, y, modalpdf, buildargs)
+    _search(y_domain, p)
+end
+
+# Unbounded
+function search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
+    x, y, y_domain, modalpdf = _search_setup(N, modalboundary, pdf)
+    buildargs = (modalboundary, argminboundary, ipdf, modalpdf, tailarea)
+    p = (; x, y, modalpdf, buildargs)
+    _search(y_domain, p)
+end
+
+function _search_setup(N, modalboundary, pdf)
     modalpdf = pdf(modalboundary)
     x = Vector{typeof(float(modalboundary))}(undef, N + 1)
     y = Vector{typeof(modalpdf)}(undef, N + 1)
 
-    function attemptziggurat!(y2)
-        zig = build!(x, y, y2, modalboundary, tail, ipdf, modalpdf)
-        if zig === nothing
-            return Inf
-        end
+    y_domain = (nextfloat(zero(modalpdf)), modalpdf)
 
-        x, y = zig
-        y[end] - modalpdf
-    end
+    x, y, y_domain, modalpdf
+end
 
-    # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML?)
+function _search(y_domain, p)
+    # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML, or in-house?)
     tracker = Roots.Tracks()
     ystar = find_zero(
-        attemptziggurat!,
-        (nextfloat(zero(modalpdf)), modalpdf),
-        Bisection();
+        ziggurat_residual,
+        y_domain,
+        Bisection(),
+        p;
         tracks = tracker
     )
 
@@ -120,10 +200,15 @@ function search(N, modalboundary, tail, pdf, ipdf)
     if tracker.convergence_flag !== :exact_zero
         ystar = tracker.abₛ[end][2]
     end
-    #TODO handle non-convergence. Bisection is guarenteed to converge, but not all
-    #algorithms are.
+    # TODO handle non-convergence. Bisection is guarenteed to converge, but not all
+    # algorithms are.
 
-    build!(x, y, ystar, modalboundary, tail, ipdf, modalpdf)
+    build!(p.x, p.y, ystar, p.buildargs...)
+end
+
+function ziggurat_residual(y2, p)
+    _x, _y = build!(p.x, p.y, y2, p.buildargs...)
+    _y[end] - p.modalpdf
 end
 
 # The caller of build!() is responsible for ensuring consistancy of the build
@@ -137,37 +222,34 @@ end
 #       such that pdf(x) >= y for increasing pdfs)
 
 # Bounded support
-function build!(x, y, y2, modalboundary, argminboundary::Number, ipdf, modalpdf)
+function build!(x, y, y2, modalboundary, argminboundary, ipdf, modalpdf)
     initialize!(y, y2)
 
     A = layerarea(y[2], modalboundary, argminboundary)
+    if A == 0
+        # y2 is too small
+        y[end] = zero(eltype(y))
+        return x, y
+    end
     x[1] = argminboundary
 
     finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
 
 # Unbounded support
-function build!(x, y, y2, modalboundary, tailarea::Function, ipdf, modalpdf)
+function build!(x, y, y2, modalboundary, argminboundary, ipdf, modalpdf, tailarea)
     initialize!(y, y2)
 
     x2 = ipdf(y2)
     if isinf(x2)
-        # TODO: find a more consistant way for build!() to indicate when y2 is
-        # too small or too large.
-
         # y2 is too small
         y[end] = zero(eltype(y))
         return x, y
     end
     A = layerarea(y[2], x2, modalboundary, tailarea)
 
-    if x2 == modalboundary
-        s = sign(ipdf(y2 / 2) - modalboundary)
-    else
-        s = sign(x2 - modalboundary)
-    end
-
-    x[1] = modalboundary + s * A / y[2]
+    slopesign = sign(modalboundary - argminboundary)
+    x[1] = modalboundary - slopesign * A / y[2]
 
     finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
@@ -192,7 +274,8 @@ function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
     for i in eachindex(x)[(begin + 1):(end - 1)]
         if y[i] >= modalpdf
             # failed to build ziggurat, y2 is too large.
-            return nothing
+            y[end] = typemax(eltype(y))
+            return x, y
         end
         x[i] = ipdf(y[i])
         y[i + 1] = A / abs(x[i] - modalboundary) + y[i]
@@ -208,7 +291,10 @@ function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
 
 ## Sampling
-function Base.rand(rng::AbstractRNG, z::MonotonicZiggurat)
+Random.eltype(::Type{<:MonotonicZiggurat{X}}) where {X} = X
+
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat})
+    z = zig_sampler[]
     N = length(z.x) - 1 # number of layers
 
     while true
@@ -235,12 +321,15 @@ function simple_rejection(rng, z, l, x)
     nothing
 end
 
-function slowpath(rng, z::UnboundedMonotonicZiggurat, l, x)
+function slowpath(rng, z::UnboundedZiggurat, l, x)
     if l == 1
-        return rand(rng, z.tailsampler)
+        # TODO: u will be uniform (0,1), but it may not span all possible floating point values.
+        # Would it be better to just generate a new random number and discard x?
+        u = (x - z.x[2]) / (z.x[1] - z.x[2])
+        return z.tailmapping(u)
     end
 
     simple_rejection(rng, z, l, x)
 end
 
-slowpath(rng, z::BoundedMonotonicZiggurat, l, x) = simple_rejection(rng, z, l, x)
+slowpath(rng, z::BoundedZiggurat, l, x) = simple_rejection(rng, z, l, x)
