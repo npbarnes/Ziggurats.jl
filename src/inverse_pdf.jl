@@ -51,8 +51,8 @@ returned. If f is increasing then the smallest x such that f(x) >= y is
 returned. If there is no solution (i.e. when y is not between f(a) and f(b))
 then an error is thrown. If f is constant, then an error is thrown. If
 non-monotonicity is detected in f then an error is thrown, but in general the
-result is undefined if f is not monotonic. Note that while f cannot be constant,
-it need not be strictly monotonic.
+result is undefined if f is not monotonic. Note that while f cannot be constant
+on the whole domain, it need not be strictly monotonic.
 """
 inverse(f, (a, b), y) = inverse(f, promote(float(a), float(b)), y)
 
