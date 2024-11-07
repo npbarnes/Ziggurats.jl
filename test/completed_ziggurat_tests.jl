@@ -36,9 +36,11 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
     # Upper boundary is close to and greater than or equal to f(m)
     @test y[end] ≈ mypdf(mode(dist)) && y[end] >= mypdf(mode(dist))
 
-    # x = f^-1(y), but not for i=1 because of the artificial base and not for
-    # i=N+1 because y might be greater than pdf(mode), so ipdf(y) might not be
-    # defined.
+    # x[i] is the generalized inverse of y[i] for all i in 2:N. i=1 is excluded
+    # because distributions with an unbounded domain will have an artificial
+    # base, and distributions with a bounded domain will always have
+    # x[1]==argminboundary. i=N+1 is excluded because y might be greater
+    # than pdf(mode), so ipdf(y) might not be defined.
     @test all(x[i] ≈ myipdf(y[i]) for i in 2:N)
 end
 
