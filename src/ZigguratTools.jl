@@ -22,6 +22,5 @@ end
 
 include("inverse_pdf.jl")
 include("monotonic.jl")
-include("plotting.jl")
 
 end # module
