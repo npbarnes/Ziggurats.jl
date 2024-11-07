@@ -70,7 +70,7 @@ function inverse(f, domain::NTuple{2,<:AbstractFloat}, y)
         error("f must be non-constant.")
     end
 
-    if !between(fa, fb, y)
+    if y > max(fa, fb)
         error("no solutions.")
     end
 

@@ -113,8 +113,9 @@
         end
 
         @test_throws "no solutions." inverse(cos, (0, π), 2)
-        @test_throws "no solutions." inverse(cos, (0, π), -2)
-        @test_throws "no solutions." inverse(slowdecay, (0, Inf), -2)
+        @test inverse(cos, (0, π), -2) == float(π)
+        @test inverse(slowdecay, (0, Inf), -2) == Inf
+        @test inverse(slowdecay, (0, Inf), nextfloat(0.0)) == prevfloat(Inf)
 
         @test inverse(x -> s_curve(-x), (-2, 2), -1) == 2
         @test inverse(x -> s_curve(-x), (-2, 2), 0) == 0
@@ -140,7 +141,7 @@
         @test inverse(x -> slowdecay(-x), (-Inf, 0), nextfloat(0.0)) == nextfloat(-Inf)
 
         @test_throws "no solutions." inverse(cos, (-π, 0), 2)
-        @test_throws "no solutions." inverse(cos, (-π, 0), -2)
+        @test inverse(cos, (-π, 0), -2) == float(-π)
 
         @test inverse(s_curve, (-2, 2), -1) == -2
         @test inverse(s_curve, (-2, 2), 0) == 0
@@ -227,16 +228,16 @@
         @test inverse(sign, (-1.0, Inf), -1.0) == -1.0
         @test inverse(sign, (-1.0, 1.0), -1.0) == -1.0
 
-        @test_throws "no solutions." inverse(sign, (-Inf, Inf), -2.0)
-        @test_throws "no solutions." inverse(sign, (-Inf, 1.0), -2.0)
-        @test_throws "no solutions." inverse(sign, (-1.0, Inf), -2.0)
-        @test_throws "no solutions." inverse(sign, (-1.0, 1.0), -2.0)
+        @test inverse(sign, (-Inf, Inf), -2.0) == -Inf
+        @test inverse(sign, (-Inf, 1.0), -2.0) == -Inf
+        @test inverse(sign, (-1.0, Inf), -2.0) == -1.0
+        @test inverse(sign, (-1.0, 1.0), -2.0) == -1.0
 
         @test_throws "no solutions." inverse(sign, (-10.0, 10.0), 2.0)
         @test inverse(sign, (-10.0, 10.0), 1.0) == nextfloat(0.0)
         @test inverse(sign, (-10.0, 10.0), 0.0) == 0.0
         @test inverse(sign, (-10.0, 10.0), -1.0) == -10
-        @test_throws "no solutions." inverse(sign, (-10.0, 10.0), -2.0)
+        @test inverse(sign, (-10.0, 10.0), -2.0) == -10.0
 
         # domain ends at zero
         @test_throws "no solutions." inverse(sign, (-Inf, 0.0), 2.0)
@@ -251,14 +252,14 @@
         @test inverse(sign, (-Inf, 0.0), -1.0) == -Inf
         @test inverse(sign, (-1.0, 0.0), -1.0) == -1.0
 
-        @test_throws "no solutions." inverse(sign, (-Inf, 0.0), -2.0)
-        @test_throws "no solutions." inverse(sign, (-1.0, 0.0), -2.0)
+        @test inverse(sign, (-Inf, 0.0), -2.0) == -Inf
+        @test inverse(sign, (-1.0, 0.0), -2.0) == -1.0
 
         @test_throws "no solutions." inverse(sign, (-10.0, 0.0), 2.0)
         @test_throws "no solutions." inverse(sign, (-10.0, 0.0), 1.0)
         @test inverse(sign, (-10.0, 0.0), 0.0) == 0.0
         @test inverse(sign, (-10.0, 0.0), -1.0) == -10
-        @test_throws "no solutions." inverse(sign, (-10.0, 0.0), -2.0)
+        @test inverse(sign, (-10.0, 0.0), -2.0) == -10.0
 
         # Out of order domains
         @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -1.0), 2.0)
@@ -289,7 +290,7 @@
         @test inverse(msign, (-10.0, 10.0), 0.0) == 0.0
         @test inverse(msign, (-10.0, 10.0), -0.5) == 0.0
         @test inverse(msign, (-10.0, 10.0), -1.0) == 10.0
-        @test_throws "no solutions." inverse(msign, (-10.0, 10.0), -2.0)
+        @test inverse(msign, (-10.0, 10.0), -2.0) == 10.0
     end
 end
 
