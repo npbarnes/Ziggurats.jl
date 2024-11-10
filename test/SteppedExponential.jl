@@ -62,11 +62,3 @@ Distributions.insupport(::SteppedExponential, x::Real) = x >= 0.0
 StatsBase.mode(::Union{SteppedExponential,Type{SteppedExponential}}) = 0.0
 
 Distributions.params(d::SteppedExponential) = (d.θ,)
-
-function ZigguratTools.ipdf_right(d::SteppedExponential, y)
-    if y > pdf(d, 0)
-        throw(DomainError(y, "y must be between zero and the maximum of the pdf."))
-    end
-
-    ceil(scale(d) * (log(pdf(d, 0)) - log(y)))
-end
