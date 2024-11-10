@@ -4,7 +4,6 @@ using Roots
 using Random
 using QuadGK
 using LinearAlgebra
-using FastClosures
 
 export
     # Abstract types
