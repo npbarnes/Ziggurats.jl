@@ -80,7 +80,7 @@ function testset_body(
         end
     end
     if !initiallyflat
-        @test x[end] ≈ modalboundary atol=1e-5
+        @test x[end] ≈ modalboundary atol = 1e-5
     end
     if tailarea === nothing
         test_bounded_domain(x, argminboundary)
@@ -198,6 +198,37 @@ end
     )
 end
 
+@testset "Two Steps" begin
+    # Designed so that the current build algorithm cannot produce an optimal ziggurat (i.e. y[end] ≈ f(mode))
+    f(x) = if 0 <= x <= 1
+        4.5
+    elseif 1 < x <= 2
+        1.0
+    else
+        0.0
+    end
+    invf(y) = if 0 <= y <= 1
+        2.0
+    elseif 1 < y <= 4.5
+        1.0
+    else
+        error()
+    end
+    
+
+    testset_body(
+        3,
+        0.0,
+        2.0,
+        -1,
+        f,
+        invf,
+        nothing;
+        continuouspdf=false,
+        initiallyflat=true
+    )
+end
+
 @testset "SteppedExponential" begin
     dist = SteppedExponential()
     test_dist_ziggurats(
@@ -207,6 +238,54 @@ end
         continuouspdf = false,
         initiallyflat = true,
         boundeddomain = false
+    )
+end
+
+@testset "Truncated Normal (0.5 <= x <= 1)" begin
+    dist = truncated(Normal(); lower=0.5, upper = 1)
+    test_dist_ziggurats(
+        [1, 2, 256],
+        dist,
+        0.5, 1.0;
+        continuouspdf = true,
+        initiallyflat = false,
+        boundeddomain = true
+    )
+end
+
+@testset "Truncated Normal (0.5 <= x <= 10)" begin
+    dist = truncated(Normal(); lower=0.5, upper = 10)
+    test_dist_ziggurats(
+        [1, 2, 256],
+        dist,
+        0.5, 10.0;
+        continuouspdf = true,
+        initiallyflat = false,
+        boundeddomain = true
+    )
+end
+
+@testset "Truncated Normal (-1 <= x <= -0.5)" begin
+    dist = truncated(Normal(); lower = -1, upper = -0.5)
+    test_dist_ziggurats(
+        [1, 2, 256],
+        dist,
+        -0.5, -1.0;
+        continuouspdf = true,
+        initiallyflat = false,
+        boundeddomain = true
+    )
+end
+
+@testset "Truncated Normal (-10 <= x <= -0.5)" begin
+    dist = truncated(Normal(); lower = -10, upper = -0.5)
+    test_dist_ziggurats(
+        [1, 2, 256],
+        dist,
+        -0.5, -10.0;
+        continuouspdf = true,
+        initiallyflat = false,
+        boundeddomain = true
     )
 end
 
