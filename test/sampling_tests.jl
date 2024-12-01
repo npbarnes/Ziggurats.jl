@@ -21,7 +21,7 @@ end
         x -> ccdf(dist, x)
     end
     domain = (0, Inf)
-    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
+    z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
     testsampling(truncated(dist; lower = mode(dist)), z)
 end
@@ -41,7 +41,7 @@ end
         x -> cdf(dist, x)
     end
     domain = (-Inf, 0)
-    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
+    z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
     testsampling(truncated(dist; upper = mode(dist)), z)
 end
@@ -57,7 +57,7 @@ end
         x -> ccdf(dist, x)
     end
     domain = (0, Inf)
-    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
+    z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
     testsampling(dist, z)
 end
@@ -73,7 +73,7 @@ end
         x -> ccdf(dist, x)
     end
     domain = (0, Inf)
-    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
+    z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
     testsampling(dist, z)
 end
