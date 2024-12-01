@@ -4,7 +4,7 @@
 Returns a function that will compute the inverse of f on the domain. Similar to
 `y -> inverse(f, domain, y)`.
 """
-function inverse(f, (a,b))
+function inverse(f, (a, b))
     let f = f, domain = promote(float(a), float(b))
         y -> inverse(f, domain, y)
     end

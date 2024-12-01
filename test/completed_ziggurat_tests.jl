@@ -92,7 +92,15 @@ function testset_body(
 end
 
 # Test ziggurats produced from Distributions.jl.
-function test_dist_ziggurats(Ns, dist, modalboundary, argminboundary; continuouspdf, initiallyflat, boundeddomain)
+function test_dist_ziggurats(
+    Ns,
+    dist,
+    modalboundary,
+    argminboundary;
+    continuouspdf,
+    initiallyflat,
+    boundeddomain
+)
     f = Base.Fix1(pdf, dist)
     domain = extrema(dist)
     invf = inverse(f, domain)
@@ -111,7 +119,7 @@ function test_dist_ziggurats(Ns, dist, modalboundary, argminboundary; continuous
     if boundeddomain
         tailarea = nothing
     else
-        if slopesign == -1 
+        if slopesign == -1
             tailarea = Base.Fix1(ccdf, dist)
         elseif slopesign == 1
             tailarea = Base.Fix1(cdf, dist)
@@ -167,7 +175,8 @@ end
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        0.0, Inf;
+        0.0,
+        Inf;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = false
@@ -179,7 +188,8 @@ end
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        0.0, -Inf;
+        0.0,
+        -Inf;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = false
@@ -191,7 +201,8 @@ end
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        1.0, -Inf;
+        1.0,
+        -Inf;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = false
@@ -200,21 +211,22 @@ end
 
 @testset "Two Steps" begin
     # Designed so that the current build algorithm cannot produce an optimal ziggurat (i.e. y[end] ≈ f(mode))
-    f(x) = if 0 <= x <= 1
-        4.5
-    elseif 1 < x <= 2
-        1.0
-    else
-        0.0
-    end
-    invf(y) = if 0 <= y <= 1
-        2.0
-    elseif 1 < y <= 4.5
-        1.0
-    else
-        error()
-    end
-    
+    f(x) =
+        if 0 <= x <= 1
+            4.5
+        elseif 1 < x <= 2
+            1.0
+        else
+            0.0
+        end
+    invf(y) =
+        if 0 <= y <= 1
+            2.0
+        elseif 1 < y <= 4.5
+            1.0
+        else
+            error()
+        end
 
     testset_body(
         3,
@@ -224,8 +236,8 @@ end
         f,
         invf,
         nothing;
-        continuouspdf=false,
-        initiallyflat=true
+        continuouspdf = false,
+        initiallyflat = true
     )
 end
 
@@ -234,7 +246,8 @@ end
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        0.0, Inf;
+        0.0,
+        Inf;
         continuouspdf = false,
         initiallyflat = true,
         boundeddomain = false
@@ -242,11 +255,12 @@ end
 end
 
 @testset "Truncated Normal (0.5 <= x <= 1)" begin
-    dist = truncated(Normal(); lower=0.5, upper = 1)
+    dist = truncated(Normal(); lower = 0.5, upper = 1)
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        0.5, 1.0;
+        0.5,
+        1.0;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = true
@@ -254,11 +268,12 @@ end
 end
 
 @testset "Truncated Normal (0.5 <= x <= 10)" begin
-    dist = truncated(Normal(); lower=0.5, upper = 10)
+    dist = truncated(Normal(); lower = 0.5, upper = 10)
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        0.5, 10.0;
+        0.5,
+        10.0;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = true
@@ -270,7 +285,8 @@ end
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        -0.5, -1.0;
+        -0.5,
+        -1.0;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = true
@@ -282,7 +298,8 @@ end
     test_dist_ziggurats(
         [1, 2, 256],
         dist,
-        -0.5, -10.0;
+        -0.5,
+        -10.0;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = true

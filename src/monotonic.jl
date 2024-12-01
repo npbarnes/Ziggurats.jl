@@ -1,13 +1,13 @@
 abstract type MonotonicZiggurat{X} end
 
-struct BoundedZiggurat{X, Y, F<:Function} <: MonotonicZiggurat{X}
+struct BoundedZiggurat{X,Y,F<:Function} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
     modalboundary::X
 end
 
-struct UnboundedZiggurat{X, Y, F<:Function, FB<:Function} <: MonotonicZiggurat{X}
+struct UnboundedZiggurat{X,Y,F<:Function,FB<:Function} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
@@ -15,7 +15,12 @@ struct UnboundedZiggurat{X, Y, F<:Function, FB<:Function} <: MonotonicZiggurat{X
     tailmapping::FB
 end
 
-function BoundedZiggurat(N::Integer, domain, pdf::Function, ipdf::Function=inverse(pdf,domain))
+function BoundedZiggurat(
+    N::Integer,
+    domain,
+    pdf::Function,
+    ipdf::Function = inverse(pdf, domain)
+)
     domain = promote(float(domain[1]), float(domain[2]))
     modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
 
@@ -24,11 +29,18 @@ function BoundedZiggurat(N::Integer, domain, pdf::Function, ipdf::Function=inver
     end
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf)
-    
+
     BoundedZiggurat(x, y, pdf, modalboundary)
 end
 
-function UnboundedZiggurat(pdf::Function, N, domain; ipdf=inverse(pdf, domain), tailarea=nothing, tailmapping=nothing)
+function UnboundedZiggurat(
+    pdf::Function,
+    N,
+    domain;
+    ipdf = inverse(pdf, domain),
+    tailarea = nothing,
+    tailmapping = nothing
+)
     UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, tailmapping)
 end
 
@@ -41,15 +53,20 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
     end
 
     if tailarea === nothing
-        tailarea = let pdf=pdf, modalboundary=modalboundary, argminboundary=argminboundary, modepdf
-            modepdf = pdf(modalboundary)
-            domain_type = typeof(modalboundary)
-            range_type = typeof(modepdf)
-            error_type = typeof(norm(modepdf))
-            segbuf = alloc_segbuf(domain_type, range_type, error_type)
-            # TODO: Add error tolerance and check the returned error estimate.
-            x -> abs(quadgk(pdf, x, argminboundary; segbuf)[1])
-        end
+        tailarea =
+            let pdf = pdf,
+                modalboundary = modalboundary,
+                argminboundary = argminboundary,
+                modepdf
+
+                modepdf = pdf(modalboundary)
+                domain_type = typeof(modalboundary)
+                range_type = typeof(modepdf)
+                error_type = typeof(norm(modepdf))
+                segbuf = alloc_segbuf(domain_type, range_type, error_type)
+                # TODO: Add error tolerance and check the returned error estimate.
+                x -> abs(quadgk(pdf, x, argminboundary; segbuf)[1])
+            end
     end
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
@@ -57,9 +74,13 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
     if tailmapping === nothing
         x2 = x[2]
         ta = tailarea(x2)
-        td = modalboundary > argminboundary ? (nextfloat(typemin(x2)), x2) : (x2, prevfloat(typemax(x2)))
-        tailcdf_or_ccdf = let tailarea=tailarea, ta=ta
-            x -> tailarea(x)/ta
+        td = if modalboundary > argminboundary
+            (nextfloat(typemin(x2)), x2)
+        else
+            (x2, prevfloat(typemax(x2)))
+        end
+        tailcdf_or_ccdf = let tailarea = tailarea, ta = ta
+            x -> tailarea(x) / ta
         end
         # TODO: See Jalalvand & Charsooghi 2018, the choice of mapping function
         # matters.
@@ -139,7 +160,7 @@ function _identify_mode(domain, pdf)
     # Return the modalboundary (mb) and argminboundary (am).
     # Assume that the domain is well formed and appropriate for a monotonic
     # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
-    # infinite. _domain_check checks these conditions.
+    # infinite.
     if isinf(domain[1])
         mb = domain[2]
         am = domain[1]
@@ -188,13 +209,7 @@ end
 function _search(y_domain, p)
     # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML, or in-house?)
     tracker = Roots.Tracks()
-    ystar = find_zero(
-        ziggurat_residual,
-        y_domain,
-        Bisection(),
-        p;
-        tracks = tracker
-    )
+    ystar = find_zero(ziggurat_residual, y_domain, Bisection(), p; tracks = tracker)
 
     # y[N] needs to be either exact or a slightly over
     if tracker.convergence_flag !== :exact_zero
@@ -293,7 +308,10 @@ end
 ## Sampling
 Random.eltype(::Type{<:MonotonicZiggurat{X}}) where {X} = X
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat})
+function Base.rand(
+    rng::AbstractRNG,
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat}
+)
     z = zig_sampler[]
     N = length(z.x) - 1 # number of layers
 

@@ -14,8 +14,12 @@ end
     # the fallback branch gets chosen with high probability and its confidence
     # intervals can be tested.
     N = 3
-    f = let dist=dist; x -> pdf(dist, x) end
-    ta = let dist=dist; x -> ccdf(dist,x) end
+    f = let dist = dist
+        x -> pdf(dist, x)
+    end
+    ta = let dist = dist
+        x -> ccdf(dist, x)
+    end
     domain = (0, Inf)
     z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
@@ -30,8 +34,12 @@ end
     # the fallback branch gets chosen with high probability and its confidence
     # intervals can be tested.
     N = 3
-    f = let dist=dist; x -> pdf(dist, x) end
-    ta = let dist=dist; x -> cdf(dist,x) end
+    f = let dist = dist
+        x -> pdf(dist, x)
+    end
+    ta = let dist = dist
+        x -> cdf(dist, x)
+    end
     domain = (-Inf, 0)
     z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
@@ -42,8 +50,12 @@ end
     dist = Exponential()
 
     N = 3
-    f = let dist=dist; x -> pdf(dist, x) end
-    ta = let dist=dist; x -> ccdf(dist,x) end
+    f = let dist = dist
+        x -> pdf(dist, x)
+    end
+    ta = let dist = dist
+        x -> ccdf(dist, x)
+    end
     domain = (0, Inf)
     z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
@@ -54,13 +66,16 @@ end
     dist = SteppedExponential()
 
     N = 3
-    f = let dist=dist; x -> pdf(dist, x) end
-    ta = let dist=dist; x -> ccdf(dist,x) end
+    f = let dist = dist
+        x -> pdf(dist, x)
+    end
+    ta = let dist = dist
+        x -> ccdf(dist, x)
+    end
     domain = (0, Inf)
     z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
     testsampling(dist, z)
 end
-
 
 nothing
