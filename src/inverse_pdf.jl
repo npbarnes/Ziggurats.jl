@@ -28,18 +28,18 @@ function inverse(f, domain::NTuple{2,<:AbstractFloat}, y)
     a, b = domain
 
     if a > b
-        error("domain must be an ordered tuple.")
+        error("domain must be an ordered tuple, got domain=$domain.")
     end
 
     fa = f(a)
     fb = f(b)
 
     if fa == fb
-        error("f must be non-constant.")
+        error("f must be non-constant, got f(a) == f(b) == $fa.")
     end
 
     if y > max(fa, fb)
-        error("no solutions.")
+        error("no solutions exist when y > max(f(a), f(b)), got y=$y, f(a)=$fa, and f(b)=$fb.")
     end
 
     if fa >= fb
@@ -64,7 +64,7 @@ function _decreasing_inverse(f, fa, fb, a, b, y)
         fc = f(c)
 
         if !(fb <= fc <= fa)
-            error("f must be monotonic.")
+            error("f must be monotonic, got f($a) = $fa, f($c) = $fc, and f($b) = $fb.")
         end
 
         if fc >= y
@@ -86,7 +86,7 @@ function _increasing_inverse(f, fa, fb, a, b, y)
         fc = f(c)
 
         if !(fa <= fc <= fb)
-            error("f must be monotonic.")
+            error("f must be monotonic, got f($a) = $fa, f($c) = $fc, and f($b) = $fb.")
         end
 
         if fc >= y

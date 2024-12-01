@@ -25,7 +25,7 @@ function BoundedZiggurat(
     modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
 
     if isinf(domain[1]) || isinf(domain[2])
-        error("The domain must be bounded.")
+        error("expected a bounded domain, got domain=$domain.")
     end
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf)
@@ -49,7 +49,7 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
     modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
 
     if !isinf(domain[1]) && !isinf(domain[2])
-        error("The domain must be unbounded.")
+        error("expected an unbounded domain, got domain=$domain.")
     end
 
     if tailarea === nothing
@@ -109,7 +109,7 @@ function _bareziggurat_helper(N, domain, pdf)
     modalboundary, argminboundary = _identify_mode(domain, pdf)
 
     if pdf(modalboundary) == 0
-        error("pdf expected to be non-zero on at least one boundary.")
+        error("expected the pdf to be non-zero on at least one boundary.")
     end
 
     modalboundary, argminboundary
@@ -117,20 +117,20 @@ end
 
 function _bareziggurat_args_check(N, domain)
     if N < 1
-        throw(DomainError(N, "N must be a positive integer."))
+        throw(DomainError(N, "N must be a positive integer, got N=$N."))
     end
 
     # Check if the domain is well formed and appropriate for a monotonic
     # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
     # infinite.
     if domain[1] == domain[2]
-        error("Empty domains are not allowed.")
+        error("empty domains are not allowed, got domain=$domain.")
     end
     if domain[1] > domain[2]
-        error("malformed domain. domain[1] must be less than domain[2].")
+        error("malformed domain. domain[1] must be less than domain[2], got domain=$domain.")
     end
     if isinf(domain[1]) && isinf(domain[2])
-        error("A domain of (-Inf, Inf) is impossible for a monotonic distribution.")
+        error("a domain of (-Inf, Inf) is impossible for a monotonic distribution.")
     end
 
     return nothing
@@ -150,7 +150,7 @@ function _identify_mode(domain, pdf)
     else
         boundarypdf = pdf.(domain)
         if boundarypdf[1] == boundarypdf[2]
-            error("pdf should be monotonic and non-constant.")
+            error("pdf must be monotonic and non-constant.")
         else
             mb = domain[argmax(boundarypdf)]
             am = domain[argmin(boundarypdf)]

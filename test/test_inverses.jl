@@ -112,7 +112,7 @@
             end
         end
 
-        @test_throws "no solutions." inverse(cos, (0, π), 2)
+        @test_throws "no solutions exist" inverse(cos, (0, π), 2)
         @test inverse(cos, (0, π), -2) == float(π)
         @test inverse(slowdecay, (0, Inf), -2) == Inf
         @test inverse(slowdecay, (0, Inf), nextfloat(0.0)) == prevfloat(Inf)
@@ -140,7 +140,7 @@
         @test inverse(x -> slowdecay(-x), (-Inf, 0), 0) == -Inf
         @test inverse(x -> slowdecay(-x), (-Inf, 0), nextfloat(0.0)) == nextfloat(-Inf)
 
-        @test_throws "no solutions." inverse(cos, (-π, 0), 2)
+        @test_throws "no solutions exist" inverse(cos, (-π, 0), 2)
         @test inverse(cos, (-π, 0), -2) == float(-π)
 
         @test inverse(s_curve, (-2, 2), -1) == -2
@@ -162,14 +162,14 @@
         @test inverse(heaviside3, (-1, 1), 1) == nextfloat(0.0)
 
         # Non-monotonicity is sometimes detected
-        @test_throws "f must be monotonic." inverse(cos, (-1.3, π), 0)
+        @test_throws "f must be monotonic" inverse(cos, (-1.3, π), 0)
 
         # Non-monotonicity is not always detected. Ideally, it would be, but that's
         # probably impossible to do in general.
         @test_broken try
             inverse(x -> x == 1 ? 7.0 : cos(x), (0, π), 0)
         catch e
-            if e.msg == "f must be monotonic."
+            if e.msg == "f must be monotonic"
                 true # test passes if non-monotonicity is detected.
             else
                 rethrow()
@@ -179,14 +179,14 @@
         end
 
         # Constant functions are not allowed.
-        @test_throws "f must be non-constant." inverse(x -> 1.0, (-1, 1), 1)
-        @test_throws "f must be non-constant." inverse(sign, (-2, -1), -1)
-        @test_throws "f must be non-constant." inverse(sign, (1, 2), 1)
+        @test_throws "f must be non-constant" inverse(x -> 1.0, (-1, 1), 1)
+        @test_throws "f must be non-constant" inverse(sign, (-2, -1), -1)
+        @test_throws "f must be non-constant" inverse(sign, (1, 2), 1)
 
         # These have no solution, but f being constant is detected first.
-        @test_throws "f must be non-constant." inverse(x -> 1.0, (-1, 1), 2)
-        @test_throws "f must be non-constant." inverse(sign, (-2, -1), -2)
-        @test_throws "f must be non-constant." inverse(sign, (1, 2), 2)
+        @test_throws "f must be non-constant" inverse(x -> 1.0, (-1, 1), 2)
+        @test_throws "f must be non-constant" inverse(sign, (-2, -1), -2)
+        @test_throws "f must be non-constant" inverse(sign, (1, 2), 2)
 
         # Sometimes constant functions and non-monotonic functions get mixed up.
         @test_broken try
@@ -194,7 +194,7 @@
         catch e
             if e.msg == "f must be monotonic"
                 true # test passes
-            elseif e.msg == "f must be non-constant."
+            elseif e.msg == "f must be non-constant"
                 false # test fails
             else
                 rethrow()
@@ -203,9 +203,9 @@
             false # test fails if no error is thrown
         end
 
-        @test_throws "domain must be an ordered tuple." inverse(cos, (π, 0), 0)
-        @test_throws "domain must be an ordered tuple." inverse(s_curve, (1, -1), 0)
-        @test_throws "domain must be an ordered tuple." inverse(slowdecay, (Inf, 0), 0)
+        @test_throws "domain must be an ordered tuple" inverse(cos, (π, 0), 0)
+        @test_throws "domain must be an ordered tuple" inverse(s_curve, (1, -1), 0)
+        @test_throws "domain must be an ordered tuple" inverse(slowdecay, (Inf, 0), 0)
 
         # Domains that include some positive numbers
         @test_throws "no solutions" inverse(sign, (-Inf, Inf), 2.0)
@@ -233,18 +233,18 @@
         @test inverse(sign, (-1.0, Inf), -2.0) == -1.0
         @test inverse(sign, (-1.0, 1.0), -2.0) == -1.0
 
-        @test_throws "no solutions." inverse(sign, (-10.0, 10.0), 2.0)
+        @test_throws "no solutions exist" inverse(sign, (-10.0, 10.0), 2.0)
         @test inverse(sign, (-10.0, 10.0), 1.0) == nextfloat(0.0)
         @test inverse(sign, (-10.0, 10.0), 0.0) == 0.0
         @test inverse(sign, (-10.0, 10.0), -1.0) == -10
         @test inverse(sign, (-10.0, 10.0), -2.0) == -10.0
 
         # domain ends at zero
-        @test_throws "no solutions." inverse(sign, (-Inf, 0.0), 2.0)
-        @test_throws "no solutions." inverse(sign, (-1.0, 0.0), 2.0)
+        @test_throws "no solutions exist" inverse(sign, (-Inf, 0.0), 2.0)
+        @test_throws "no solutions exist" inverse(sign, (-1.0, 0.0), 2.0)
 
-        @test_throws "no solutions." inverse(sign, (-Inf, 0.0), 1.0)
-        @test_throws "no solutions." inverse(sign, (-1.0, 0.0), 1.0)
+        @test_throws "no solutions exist" inverse(sign, (-Inf, 0.0), 1.0)
+        @test_throws "no solutions exist" inverse(sign, (-1.0, 0.0), 1.0)
 
         @test inverse(sign, (-Inf, 0.0), 0.0) == 0.0
         @test inverse(sign, (-1.0, 0.0), 0.0) == 0.0
@@ -255,36 +255,36 @@
         @test inverse(sign, (-Inf, 0.0), -2.0) == -Inf
         @test inverse(sign, (-1.0, 0.0), -2.0) == -1.0
 
-        @test_throws "no solutions." inverse(sign, (-10.0, 0.0), 2.0)
-        @test_throws "no solutions." inverse(sign, (-10.0, 0.0), 1.0)
+        @test_throws "no solutions exist" inverse(sign, (-10.0, 0.0), 2.0)
+        @test_throws "no solutions exist" inverse(sign, (-10.0, 0.0), 1.0)
         @test inverse(sign, (-10.0, 0.0), 0.0) == 0.0
         @test inverse(sign, (-10.0, 0.0), -1.0) == -10
         @test inverse(sign, (-10.0, 0.0), -2.0) == -10.0
 
         # Out of order domains
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -1.0), 2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -1.0), 2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -Inf), 2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -Inf), 2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -1.0), 1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -1.0), 1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -Inf), 1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -Inf), 1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -1.0), 0.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -1.0), 0.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -Inf), 0.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -Inf), 0.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -1.0), -1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -1.0), -1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -Inf), -1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -Inf), -1.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -1.0), -2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -1.0), -2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (1.0, -Inf), -2.0)
-        @test_throws "domain must be an ordered tuple." inverse(sign, (Inf, -Inf), -2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -1.0), 2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -1.0), 2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -Inf), 2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -Inf), 2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -1.0), 1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -1.0), 1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -Inf), 1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -Inf), 1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -1.0), 0.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -1.0), 0.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -Inf), 0.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -Inf), 0.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -1.0), -1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -1.0), -1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -Inf), -1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -Inf), -1.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -1.0), -2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -1.0), -2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (1.0, -Inf), -2.0)
+        @test_throws "domain must be an ordered tuple" inverse(sign, (Inf, -Inf), -2.0)
 
         msign = x -> -sign(x)
-        @test_throws "no solutions." inverse(msign, (-10.0, 10.0), 2.0)
+        @test_throws "no solutions exist" inverse(msign, (-10.0, 10.0), 2.0)
         @test inverse(msign, (-10.0, 10.0), 1.0) == prevfloat(0.0)
         @test inverse(msign, (-10.0, 10.0), 0.5) == prevfloat(0.0)
         @test inverse(msign, (-10.0, 10.0), 0.0) == 0.0
