@@ -104,26 +104,6 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
     UnboundedZiggurat(x, y, pdf, modalboundary, tailmapping)
 end
 
-function monotonic_ziggurat(N, domain, pdf, ipdf)
-    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
-
-    if isinf(domain[1]) || isinf(domain[2])
-        error("The tailarea argument must be provided for unbounded domains.")
-    end
-
-    search(N, modalboundary, argminboundary, pdf, ipdf)
-end
-
-function monotonic_ziggurat(N, domain, pdf, ipdf, tailarea)
-    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf, ipdf)
-
-    if !isinf(domain[1]) && !isinf(domain[2])
-        error("The domain is expected to be unbounded when the tailarea argument is provided")
-    end
-
-    search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
-end
-
 function _bareziggurat_helper(N, domain, pdf)
     _bareziggurat_args_check(N, domain)
     modalboundary, argminboundary = _identify_mode(domain, pdf)
