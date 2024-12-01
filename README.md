@@ -12,17 +12,10 @@ The table generation algorithm requires several inputs: pdf, inverse pdf, cdf, a
 At first, I am focusing on monotonic distributions with finite density. That includes functions that are not strictly monotonic. The ziggurat algorithm is usually applied to unimodal distributions by randomly selecting a sign, but I believe I can extend that to piecewise monotonic distributions using an alias table. In the future, I may also implement the Generalized Ziggurat Method from Jalavand and Charsooghi[^2] to support distributions with unbounded densities.
 
 ## Status
-I would currently describe the status of this package with three words:
- * Incomplete
- * Buggy
- * Slow
-
-But I am making progress on all three of those fronts.
-
-I'm currently working on monotonic distributions. They will be the foundation of more complicated distributions, so it is important to get them right. Right now I can often make simple ziggurats and sample from them correctly, but there remain a lot of dangerous corner cases. For example, I started with a few manually written inverse pdfs, but I've found that floating point rounding can cause problems in specific circumstances. Counterintuitively, I think it's better to compute the generalized inverse using a bisection method since it can make certain guarantees that can't be made with floating point algebra. I would have liked to use Roots.jl or NonlinearSolve.jl for this problem, but they're inappropriate for this job because they return if they find an exact zero. In my case, having *an* x that satisfies the equation isn't enough. I need the *largest* x that satisfies the equation. That's a slightly different problem. Fortunately, a bisection search is not a complicated algorithm to implement.
+The current status of the project is incomplete. Only a few preliminary features are implemented. Mainly regarding monotonic distributions. Monotonic distributions will be the foundation of more complicated distributions, so it is important to get them right. Right now I can often make simple ziggurats and sample from them correctly. However, the sampling algorithm is a naive implementation that is about 10 times slower than Julia's randn and randexp. There are a number of well-known optimizations that I hope will close the gap.
 
 ## Installation
-If it's not already obvious, this package isn't ready for widespread use, but you can play around with it if you'd like.
+This package isn't ready for widespread use, but you can play around with it if you'd like.
 
 I intend to register v0.1 once I have most of the basic features working. Until then you can install it by tracking the main branch of this repo. Open a Julia REPL and type `]` to enter package mode. Then run
 ```julia
@@ -30,20 +23,19 @@ pkg> add https://github.com/npbarnes/ZigguratTools#main
 ```
 
 ## Examples
-These examples appear to work right now. That doesn't mean that everything you try will work.
-
 #### Distributions with Bounded Support
-First define a pdf and its inverse. The pdf does not need to be normalized.
+First define a pdf. The pdf does not need to be normalized.
 ```julia-repl
-julia> f(x) = 0 <= x <= 1 ? exp(-x^2) : zero(float(x))
-julia> inv_f(x) = min(1.0, sqrt(-log(y)))
+julia> f(x) = exp(-x^2)
 ```
-Then build the ziggurat
+Then build the ziggurat.
 ```julia-repl
 julia> using ZigguratTools
-julia> z = monotonic_ziggurat(10, 0.0, 1.0, f, inv_f)
+julia> z = BoundedZiggurat(256, (0, 1), f) # f will not be evaluated outside of the domain
 ```
-`z` can now be used like any other sampler.
+By default, the inverse of f is computed using a bisection algorithm. Overriding it with a manual implementation may improve the performance of the ziggurat construction, but does not affect sampling performance.
+
+`z` can be used like any other sampler.
 ```julia-repl
 julia> rand(z)
 0.2977446038532221
@@ -75,44 +67,28 @@ julia> rand(rng, z, 3)
  0.005040015479099047
 ```
 
-You can visualize the ziggurat layers
-```julia-repl
-julia> plotziggurat(z)
-```
-<img src="/assets/BoundedMonotonicZiggurat.svg" width=350/>
-(right now Plots.jl is a dependency of ZigguratTools.jl just to define this function. Whenever I get around to it, I will make a plotting recipe with RecipesBase.jl. That should help with loading time.) 
-
-You can also qualitatively validate the distribution with a histogram. Make sure everything is correctly normalized!
+We can qualitatively validate the distribution with a histogram.
 ```julia-repl
 julia> using Plots
 julia> histogram(rand(z, 10^6), norm=:pdf)
-julia> plot!(x -> f(x)/0.746824, color=:black, lw=3)
+julia> plot!(x -> f(x)/0.746824, color=:black, lw=3) # make sure f is normalized correctly
 ```
 <img src="/assets/BoundedMonotonicZiggurat_Histogram.svg" width=350/>
 
 #### Distributions with Unbounded Support
-Distributions with unbounded support need a different arguments than the bounded ziggurats. First, it needs a function to determine the area of the tail, and second it needs a function that can produce a fallback sampler for the infinite tail.
-
 This time, let's get our pdf from Distributions.jl
 ```julia-repl
 julia> using Distributions
 julia> dist = truncated(Normal(), lower=0.0)
-julia> z = monotonic_ziggurat(
-    10,
-    0.0,
-    x -> ccdf(dist, x),
-    x -> pdf(dist, x),
-    y -> ipdf_right(dist, y),
-    x -> sampler(truncated(dist, lower=x))
-)
+julia> z = UnboundedZiggurat(Base.Fix1(pdf, dist), 256, (0, Inf))
 ```
-I also used `ipdf_right()` which is a function provided by ZigguratTools.jl. For now, it's only defined on a few distributions. In the future, ZigguratTools.jl will use root finding by default to invert the pdf. Also note that makeing closures over `dist` like this has performance implications. See the performance tips seciton of the Julia manual for details and workarounds.
+By default, ZigguratTools uses bisection for the inverse pdf, makes use of QuadGK.jl to compute the tail area, and uses bisection to invert the tail area to get the fallback algorithm. Any combination of these steps can be overridden. The performance of the fallback algorithm has a small effect on sampling performance.
+
 ```julia-repl
-julia> plotziggurat(z)
 julia> histogram(rand(z, 10^6), norm=:pdf)
 julia> plot!(x -> pdf(dist, x), color=:black, lw=3)
 ```
-<img src="/assets/UnboundedMonotonicZiggurat.svg" width=350/> <img src="/assets/UnboundedMonotonicZiggurat_Histogram.svg" width=350/>
+<img src="/assets/UnboundedMonotonicZiggurat_Histogram.svg" width=350/>
 
 [^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables. Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
 [^2]: Jalalvand, M., & Charsooghi, M. A. (2018). Generalized ziggurat algorithm for unimodal and unbounded probability density functions with Zest. arXiv preprint arXiv:1810.04744.
