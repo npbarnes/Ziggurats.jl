@@ -16,10 +16,10 @@ struct UnboundedZiggurat{X,Y,F<:Function,FB<:Function} <: MonotonicZiggurat{X}
 end
 
 function BoundedZiggurat(
-    N::Integer,
-    domain,
     pdf::Function,
-    ipdf::Function = inverse(pdf, domain)
+    domain,
+    N;
+    ipdf = inverse(pdf, domain)
 )
     domain = promote(float(domain[1]), float(domain[2]))
     modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
@@ -35,8 +35,8 @@ end
 
 function UnboundedZiggurat(
     pdf::Function,
-    N,
-    domain;
+    domain,
+    N;
     ipdf = inverse(pdf, domain),
     tailarea = nothing,
     tailmapping = nothing

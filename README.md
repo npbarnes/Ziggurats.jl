@@ -31,7 +31,7 @@ julia> f(x) = exp(-x^2)
 Then build the ziggurat.
 ```julia-repl
 julia> using ZigguratTools
-julia> z = BoundedZiggurat(256, (0, 1), f) # f will not be evaluated outside of the domain
+julia> z = BoundedZiggurat(f, (0, 1), 256) # f will not be evaluated outside of the domain
 ```
 By default, the inverse of f is computed using a bisection algorithm. Overriding it with a manual implementation may improve the performance of the ziggurat construction, but does not affect sampling performance.
 
@@ -80,13 +80,14 @@ This time, let's get our pdf from Distributions.jl
 ```julia-repl
 julia> using Distributions
 julia> dist = truncated(Normal(), lower=0.0)
-julia> z = UnboundedZiggurat(Base.Fix1(pdf, dist), 256, (0, Inf))
+julia> g = Base.Fix1(pdf, dist)
+julia> z = UnboundedZiggurat(g, extrema(dist), 256)
 ```
 By default, ZigguratTools uses bisection for the inverse pdf, makes use of QuadGK.jl to compute the tail area, and uses bisection to invert the tail area to get the fallback algorithm. Any combination of these steps can be overridden. The performance of the fallback algorithm has a small effect on sampling performance.
 
 ```julia-repl
 julia> histogram(rand(z, 10^6), norm=:pdf)
-julia> plot!(x -> pdf(dist, x), color=:black, lw=3)
+julia> plot!(g, color=:black, lw=3)
 ```
 <img src="/assets/UnboundedMonotonicZiggurat_Histogram.svg" width=350/>
 
