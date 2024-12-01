@@ -1,13 +1,4 @@
-function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, mypdf, myipdf)
-    true_base_area = abs(x[2] - modalboundary) * y[2] + tailarea(x[2])
-    artificial_base_area = abs(x[1] - modalboundary) * y[2]
-
-    # Base area
-    @test true_base_area ≈ artificial_base_area
-
-    # boundary is mode
-    @test modalboundary ≈ only(modes(dist))
-
+function test_common_layer_properties(x, y, N, modalboundary, slopesign, pdf, ipdf)
     # Initialization
     @test y[1] == zero(eltype(y))
 
@@ -19,81 +10,110 @@ function test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, my
 
     # The ziggurat may extend to the left or right of the modal boundary, but not both.
     # The last x may be on the same side as the rest, or it may equal the modal boundary.
-    firstsign = sign(x[1] - modalboundary)
-    lastsign = sign(x[N + 1] - modalboundary)
-    @testset begin
-        @test lastsign == firstsign || lastsign == 0
-        @test all(sign(x[i] - modalboundary) == firstsign for i in 2:N)
-    end
+    lastsign = sign(modalboundary - x[end])
+    @test lastsign == slopesign || lastsign == 0
+    @test all(sign(modalboundary - x[i]) == slopesign for i in 1:N)
 
     # Ziggurats never get wider as you go up the tower (they can get narrower or
     # stay the same width)
     @test all(abs(x[i] - modalboundary) >= abs(x[i + 1] - modalboundary) for i in 1:N)
 
     # Layer areas are all equal
-    @test all(abs(x[i] - modalboundary) * (y[i + 1] - y[i]) ≈ true_base_area for i in 1:N)
+    A = abs(x[1] - modalboundary) * (y[2] - y[1])
+    @test all(abs(x[i] - modalboundary) * (y[i + 1] - y[i]) ≈ A for i in 2:N)
 
-    # Upper boundary is close to and greater than or equal to f(m)
-    @test y[end] ≈ mypdf(mode(dist)) && y[end] >= mypdf(mode(dist))
+    # An optimal ziggurat will have its upper boundary close to the pdf.
+    @test y[end] ≈ pdf(modalboundary)
+
+    # A valid ziggurat will have its upper boundary greater than or equal to the pdf.
+    @test y[end] >= pdf(modalboundary)
 
     # x[i] is the generalized inverse of y[i] for all i in 2:N. i=1 is excluded
     # because distributions with an unbounded domain will have an artificial
     # base, and distributions with a bounded domain will always have
     # x[1]==argminboundary. i=N+1 is excluded because y might be greater
     # than pdf(mode), so ipdf(y) might not be defined.
-    @test all(x[i] ≈ myipdf(y[i]) for i in 2:N)
+    @test all(x[i] ≈ ipdf(y[i]) for i in 2:N)
 
-    if y[end] == mypdf(modalboundary)
-        @test x[end] ≈ myipdf(y[end])
+    if y[end] == pdf(modalboundary)
+        @test x[end] ≈ ipdf(y[end])
     end
+end
+
+function test_unbounded_domain(x, y, modalboundary, tailarea)
+    true_base_area = abs(x[2] - modalboundary) * y[2] + tailarea(x[2])
+    artificial_base_area = abs(x[1] - modalboundary) * y[2]
+
+    @test true_base_area ≈ artificial_base_area
+end
+
+function test_bounded_domain(x, argminboundary)
+    @test x[1] == argminboundary
 end
 
 function testset_body(
     N,
-    dist,
     modalboundary,
     argminboundary,
-    f, # f and invf are passed explicitly since they may be scaled relative to pdf(dist, x)
+    slopesign,
+    f,
     invf,
-    tailarea=nothing;
+    tailarea;
     continuouspdf,
     initiallyflat
 )
-    if tailarea !== nothing
-        x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
-    else
+    if tailarea === nothing
         x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+    else
+        x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
     end
 
     # General tests
-    test_common_layer_properties(dist, x, y, N, modalboundary, tailarea, f, invf)
+    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
     # Additional tests for special cases
     if continuouspdf
-        @test all(y[i] ≈ f(x[i]) for i in 2:(N + 1))
+        for i in 2:(N + 1)
+            if x[i] != argminboundary
+                @test y[i] ≈ f(x[i])
+            end
+        end
     end
     if !initiallyflat
         @test x[end] ≈ modalboundary atol=1e-5
     end
     if tailarea === nothing
-        @test x[1] == argminboundary
+        test_bounded_domain(x, argminboundary)
+    else
+        test_unbounded_domain(x, y, modalboundary, tailarea)
     end
 
     x, y
 end
 
-function test_dist_ziggurats(Ns, dist; continuouspdf, initiallyflat, boundeddomain)
+# Test ziggurats produced from Distributions.jl.
+function test_dist_ziggurats(Ns, dist, modalboundary, argminboundary; continuouspdf, initiallyflat, boundeddomain)
     f = Base.Fix1(pdf, dist)
     domain = extrema(dist)
     invf = inverse(f, domain)
-    modalboundary, argminboundary = ZigguratTools._identify_mode(domain, f)
+
+    @test domain == minmax(modalboundary, argminboundary)
+    @test (modalboundary, argminboundary) == ZigguratTools._identify_mode(domain, f)
+
+    if domain[1] == modalboundary # Decreasing distribution
+        slopesign = -1
+    elseif domain[2] == modalboundary # Increasing distribution
+        slopesign = 1
+    else
+        error("modalboundary is not on the boundary of the support of dist.")
+    end
 
     if boundeddomain
         tailarea = nothing
     else
-        if domain[1] == modalboundary # Decreasing distribution
+        if slopesign == -1 
             tailarea = Base.Fix1(ccdf, dist)
-        elseif domain[2] == modalboundary # Increasing distribution
+        elseif slopesign == 1
             tailarea = Base.Fix1(cdf, dist)
         else
             error("modalboundary is not on the boundary of the support of dist.")
@@ -103,15 +123,19 @@ function test_dist_ziggurats(Ns, dist; continuouspdf, initiallyflat, boundeddoma
     # Unnormalized
     uf(x) = 3 * f(x)
     uinvf(y) = invf(y / 3)
-    utailarea(x) = 3 * tailarea(x)
+    if tailarea === nothing
+        utailarea = nothing
+    else
+        utailarea = x -> 3 * tailarea(x)
+    end
 
     @testset "Normalized pdf" begin
         @testset "N = $N" for N in Ns
             testset_body(
                 N,
-                dist,
                 modalboundary,
                 argminboundary,
+                slopesign,
                 f,
                 invf,
                 tailarea;
@@ -125,9 +149,9 @@ function test_dist_ziggurats(Ns, dist; continuouspdf, initiallyflat, boundeddoma
         @testset "N = $N" for N in Ns
             testset_body(
                 N,
-                dist,
                 modalboundary,
                 argminboundary,
+                slopesign,
                 uf,
                 uinvf,
                 utailarea;
@@ -142,7 +166,8 @@ end
     dist = truncated(Normal(); lower = 0.0)
     test_dist_ziggurats(
         [1, 2, 256],
-        dist;
+        dist,
+        0.0, Inf;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = false
@@ -153,7 +178,8 @@ end
     dist = truncated(Normal(); upper = 0.0)
     test_dist_ziggurats(
         [1, 2, 256],
-        dist;
+        dist,
+        0.0, -Inf;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = false
@@ -164,7 +190,8 @@ end
     dist = truncated(Normal(1.5, 3); upper = 1)
     test_dist_ziggurats(
         [1, 2, 256],
-        dist;
+        dist,
+        1.0, -Inf;
         continuouspdf = true,
         initiallyflat = false,
         boundeddomain = false
@@ -175,9 +202,12 @@ end
     dist = SteppedExponential()
     test_dist_ziggurats(
         [1, 2, 256],
-        dist;
+        dist,
+        0.0, Inf;
         continuouspdf = false,
         initiallyflat = true,
         boundeddomain = false
     )
 end
+
+nothing

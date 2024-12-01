@@ -17,13 +17,7 @@ end
     f = let dist=dist; x -> pdf(dist, x) end
     ta = let dist=dist; x -> ccdf(dist,x) end
     domain = (0, Inf)
-    z = UnboundedZiggurat(
-        N,
-        domain,
-        f,
-        inverse(f, domain),
-        ta
-    )
+    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
     testsampling(truncated(dist; lower = mode(dist)), z)
 end
@@ -39,13 +33,7 @@ end
     f = let dist=dist; x -> pdf(dist, x) end
     ta = let dist=dist; x -> cdf(dist,x) end
     domain = (-Inf, 0)
-    z = UnboundedZiggurat(
-        N,
-        domain,
-        f,
-        inverse(f, domain),
-        ta
-    )
+    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
     testsampling(truncated(dist; upper = mode(dist)), z)
 end
@@ -57,13 +45,7 @@ end
     f = let dist=dist; x -> pdf(dist, x) end
     ta = let dist=dist; x -> ccdf(dist,x) end
     domain = (0, Inf)
-    z = UnboundedZiggurat(
-        N,
-        domain,
-        f,
-        inverse(f, domain),
-        ta
-    )
+    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
     testsampling(dist, z)
 end
@@ -75,13 +57,10 @@ end
     f = let dist=dist; x -> pdf(dist, x) end
     ta = let dist=dist; x -> ccdf(dist,x) end
     domain = (0, Inf)
-    z = UnboundedZiggurat(
-        N,
-        domain,
-        f,
-        inverse(f, domain),
-        ta
-    )
+    z = UnboundedZiggurat(f, N, domain; tailarea = ta)
 
     testsampling(dist, z)
 end
+
+
+nothing
