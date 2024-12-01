@@ -22,7 +22,13 @@ function BoundedZiggurat(
     ipdf = inverse(pdf, domain)
 )
     domain = promote(float(domain[1]), float(domain[2]))
-    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
+
+    _check_arguments(N, domain)
+    modalboundary, argminboundary = _identify_mode(domain, pdf)
+
+    if pdf(modalboundary) == 0
+        error("expected the pdf to be non-zero on at least one boundary.")
+    end
 
     if isinf(domain[1]) || isinf(domain[2])
         error("expected a bounded domain, got domain=$domain.")
@@ -46,7 +52,13 @@ end
 
 function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping)
     domain = promote(float(domain[1]), float(domain[2]))
-    modalboundary, argminboundary = _bareziggurat_helper(N, domain, pdf)
+
+    _check_arguments(N, domain)
+    modalboundary, argminboundary = _identify_mode(domain, pdf)
+
+    if pdf(modalboundary) == 0
+        error("expected the pdf to be non-zero on at least one boundary.")
+    end
 
     if !isinf(domain[1]) && !isinf(domain[2])
         error("expected an unbounded domain, got domain=$domain.")
@@ -104,18 +116,7 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
     UnboundedZiggurat(x, y, pdf, modalboundary, tailmapping)
 end
 
-function _bareziggurat_helper(N, domain, pdf)
-    _bareziggurat_args_check(N, domain)
-    modalboundary, argminboundary = _identify_mode(domain, pdf)
-
-    if pdf(modalboundary) == 0
-        error("expected the pdf to be non-zero on at least one boundary.")
-    end
-
-    modalboundary, argminboundary
-end
-
-function _bareziggurat_args_check(N, domain)
+function _check_arguments(N, domain)
     if N < 1
         throw(DomainError(N, "N must be a positive integer, got N=$N."))
     end
