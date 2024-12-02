@@ -5,26 +5,22 @@ This package will be a collection of tools for generating fast ziggurat-type ran
 
 ## Goals
 
-This package aims to make using the Ziggurat Method[^1] for random variate generation as simple as possible. Julia provides implementations of the ziggurat algorithm for normal and exponential distributions, but the algorithm could be adapted to a large class of distributions. The annoying part is generating the tables of values used by the algorithm. 
+This package aims to make using the Ziggurat Method[^1] for random variate generation as simple as possible. Julia provides implementations of the ziggurat algorithm for normal and exponential distributions, but the algorithm can be adapted to a large class of distributions. The primary goal of this package is to provide tools to generate high-performance ziggurat-type samplers for a wide variety of distributions. There are no available implementations of this functionality in Julia that I am aware of. 
 
-The table generation algorithm requires several inputs: pdf, inverse pdf, cdf, and mode. In addition, a fallback algorithm for the tail is needed (most likely using an inverse cdf). Having the user figure all that out is too much to ask, in my opinion. I want to automate it as much as possible. I plan to use root finding, autodifferentiation, and numerical integration to compute the inverse pdf, cdf, mode, and inverse cdf. Ideally, I'd like to be able to provide a pdf and get a sampler back that implements a ziggurat algorithm with performance similar to Julia's `randn` and `randexp` functions.  I expect to be able to achieve that high level of performance for sampling, but the ziggurat generation will be a potentially slow operation. Therefore, this algorithm will only make sense in contexts where many samples are needed from a fixed distribution.
-
-At first, I am focusing on monotonic distributions with finite density. That includes functions that are not strictly monotonic. The ziggurat algorithm is usually applied to unimodal distributions by randomly selecting a sign, but I believe I can extend that to piecewise monotonic distributions using an alias table. In the future, I may also implement the Generalized Ziggurat Method from Jalavand and Charsooghi[^2] to support distributions with unbounded densities.
+Implementations in other languages normally require the user to manually provide inputs like an inverse pdf function, a cdf function, etc.. A lot of that auxiliary information can be computed with e.g. rootfinding algorithms, and numerical integration. Therefore, a secondary goal of this package is to make the generation of ziggurat-type samplers as easy as possible. Ideally, it should be possible to produce a sampler using only a pdf function.
 
 ## Status
-The current status of the project is incomplete. Only a few preliminary features are implemented. Mainly regarding monotonic distributions. Monotonic distributions will be the foundation of more complicated distributions, so it is important to get them right. Right now I can often make simple ziggurats and sample from them correctly. However, the sampling algorithm is a naive implementation that is about 10 times slower than Julia's randn and randexp. There are a number of well-known optimizations that I hope will close the gap.
+The project is incomplete, but it is under active development. Only a few preliminary features are implemented. Ziggurat samplers for monotonic distributions are working. However, the sampling algorithm is a naive implementation that is about 10 times slower than Julia's randn and randexp. There are well-known optimizations that will help close the gap.
 
 ## Installation
-This package isn't ready for widespread use, but you can play around with it if you'd like.
-
-I intend to register v0.1 once I have most of the basic features working. Until then you can install it by tracking the main branch of this repo. Open a Julia REPL and type `]` to enter package mode. Then run
+This package isn't ready for widespread use yet. I intend to register v0.1 once I have most of the basic features working. Until then you can install it by tracking the main branch of this repo. Open a Julia REPL and type `]` to enter package mode. Then run
 ```julia
 pkg> add https://github.com/npbarnes/ZigguratTools#main
 ```
 
 ## Examples
 #### Distributions with Bounded Support
-First define a pdf. The pdf does not need to be normalized.
+First, define a pdf. The pdf does not need to be normalized.
 ```julia-repl
 julia> f(x) = exp(-x^2)
 ```
@@ -92,4 +88,3 @@ julia> plot!(g, color=:black, lw=3)
 <img src="/assets/UnboundedMonotonicZiggurat_Histogram.svg" width=350/>
 
 [^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables. Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
-[^2]: Jalalvand, M., & Charsooghi, M. A. (2018). Generalized ziggurat algorithm for unimodal and unbounded probability density functions with Zest. arXiv preprint arXiv:1810.04744.
