@@ -15,12 +15,8 @@ end
             # the fallback branch gets chosen with high probability and its confidence
             # intervals can be tested.
             N = 3
-            f = let dist = dist
-                x -> pdf(dist, x)
-            end
-            ta = let dist = dist
-                x -> ccdf(dist, x)
-            end
+            f = Base.Fix1(pdf, dist)
+            ta = Base.Fix1(ccdf, dist)
             domain = (0, Inf)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
@@ -35,12 +31,8 @@ end
             # the fallback branch gets chosen with high probability and its confidence
             # intervals can be tested.
             N = 3
-            f = let dist = dist
-                x -> pdf(dist, x)
-            end
-            ta = let dist = dist
-                x -> cdf(dist, x)
-            end
+            f = Base.Fix1(pdf, dist)
+            ta = Base.Fix1(cdf, dist)
             domain = (-Inf, 0)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
@@ -51,12 +43,8 @@ end
             dist = Exponential()
 
             N = 3
-            f = let dist = dist
-                x -> pdf(dist, x)
-            end
-            ta = let dist = dist
-                x -> ccdf(dist, x)
-            end
+            f = Base.Fix1(pdf, dist)
+            ta = Base.Fix1(ccdf, dist)
             domain = (0, Inf)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
@@ -67,12 +55,8 @@ end
             dist = SteppedExponential()
 
             N = 3
-            f = let dist = dist
-                x -> pdf(dist, x)
-            end
-            ta = let dist = dist
-                x -> ccdf(dist, x)
-            end
+            f = Base.Fix1(pdf, dist)
+            ta = Base.Fix1(ccdf, dist)
             domain = (0, Inf)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
