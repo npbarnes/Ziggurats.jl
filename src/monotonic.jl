@@ -21,6 +21,15 @@ function BoundedZiggurat(
     N;
     ipdf = inverse(pdf, domain)
 )
+    BoundedZiggurat(pdf, domain, N, ipdf)
+end
+
+function BoundedZiggurat(
+    pdf::Function,
+    domain,
+    N,
+    ipdf
+)
     domain = promote(float(domain[1]), float(domain[2]))
 
     _check_arguments(N, domain)
