@@ -211,7 +211,7 @@ end
 
 @testset "Two Steps" begin
     # Designed so that the current build algorithm cannot produce an optimal ziggurat (i.e. y[end] ≈ f(mode))
-    f(x) =
+    function f(x)
         if 0 <= x <= 1
             4.5
         elseif 1 < x <= 2
@@ -219,7 +219,9 @@ end
         else
             0.0
         end
-    invf(y) =
+    end
+
+    function invf(y)
         if 0 <= y <= 1
             2.0
         elseif 1 < y <= 4.5
@@ -227,6 +229,7 @@ end
         else
             error()
         end
+    end
 
     testset_body(
         3,
