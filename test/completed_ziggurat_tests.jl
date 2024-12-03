@@ -1,4 +1,4 @@
-function test_common_layer_properties(x, y, N, modalboundary, slopesign, pdf, ipdf)
+function test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
     # Initialization
     @test y[1] == zero(eltype(y))
 
@@ -26,17 +26,17 @@ function test_common_layer_properties(x, y, N, modalboundary, slopesign, pdf, ip
     @test y[end] ≈ pdf(modalboundary)
 
     # A valid ziggurat will have its upper boundary greater than or equal to the pdf.
-    @test y[end] >= pdf(modalboundary)
+    @test y[end] >= f(modalboundary)
 
     # x[i] is the generalized inverse of y[i] for all i in 2:N. i=1 is excluded
     # because distributions with an unbounded domain will have an artificial
     # base, and distributions with a bounded domain will always have
     # x[1]==argminboundary. i=N+1 is excluded because y might be greater
     # than pdf(mode), so ipdf(y) might not be defined.
-    @test all(x[i] ≈ ipdf(y[i]) for i in 2:N)
+    @test all(x[i] ≈ invf(y[i]) for i in 2:N)
 
-    if y[end] == pdf(modalboundary)
-        @test x[end] ≈ ipdf(y[end])
+    if y[end] == f(modalboundary)
+        @test x[end] ≈ invf(y[end])
     end
 end
 
