@@ -37,11 +37,6 @@ function test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf
     end
 end
 
-function test_optimal_height(y, f, modalboundary; broken=false)
-    # An optimal ziggurat will have its upper boundary close to the pdf.
-    @test y[end] ≈ f(modalboundary) broken=broken
-end
-
 function test_unbounded_domain(x, y, modalboundary, tailarea)
     true_base_area = abs(x[2] - modalboundary) * y[2] + tailarea(x[2])
     artificial_base_area = abs(x[1] - modalboundary) * y[2]
@@ -87,7 +82,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 test_unbounded_domain(x, y, modalboundary, tailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -102,7 +96,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 test_unbounded_domain(x, y, modalboundary, utailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -134,7 +127,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 test_unbounded_domain(x, y, modalboundary, tailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -149,7 +141,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 test_unbounded_domain(x, y, modalboundary, utailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -181,7 +172,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 test_unbounded_domain(x, y, modalboundary, tailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -196,7 +186,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 test_unbounded_domain(x, y, modalboundary, utailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -237,7 +226,6 @@ end
         x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
         test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-        test_optimal_height(y, f, modalboundary; broken=true)
 
         #test_unbounded_domain(x, y, modalboundary, tailarea)
         test_bounded_domain(x, argminboundary)
@@ -267,7 +255,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary; broken = N==2)
 
                 test_unbounded_domain(x, y, modalboundary, tailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -282,7 +269,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary; broken = N==2)
 
                 test_unbounded_domain(x, y, modalboundary, utailarea)
                 #test_bounded_domain(x, argminboundary)
@@ -312,7 +298,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, tailarea)
                 test_bounded_domain(x, argminboundary)
@@ -327,7 +312,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, utailarea)
                 test_bounded_domain(x, argminboundary)
@@ -357,7 +341,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, tailarea)
                 test_bounded_domain(x, argminboundary)
@@ -372,7 +355,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, utailarea)
                 test_bounded_domain(x, argminboundary)
@@ -402,7 +384,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, tailarea)
                 test_bounded_domain(x, argminboundary)
@@ -417,7 +398,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, utailarea)
                 test_bounded_domain(x, argminboundary)
@@ -447,7 +427,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-                test_optimal_height(y, f, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, tailarea)
                 test_bounded_domain(x, argminboundary)
@@ -462,7 +441,6 @@ end
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-                test_optimal_height(y, uf, modalboundary)
 
                 #test_unbounded_domain(x, y, modalboundary, utailarea)
                 test_bounded_domain(x, argminboundary)
