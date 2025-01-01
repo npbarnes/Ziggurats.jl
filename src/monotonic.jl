@@ -12,7 +12,7 @@ struct UnboundedZiggurat{X,Y,F<:Function,FB<:Function} <: MonotonicZiggurat{X}
     y::Vector{Y}
     pdf::F
     modalboundary::X
-    tailmapping::FB
+    fallback::FB
 end
 
 function BoundedZiggurat(
@@ -54,12 +54,12 @@ function UnboundedZiggurat(
     N;
     ipdf = inverse(pdf, domain),
     tailarea = nothing,
-    tailmapping = nothing
+    fallback_generator = nothing
 )
-    UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, tailmapping)
+    UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
 end
 
-function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping)
+function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, fallback_generator)
     domain = promote(float(domain[1]), float(domain[2]))
 
     _check_arguments(N, domain)
@@ -92,7 +92,7 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
 
-    if tailmapping === nothing
+    if fallback_generator === nothing
         x2 = x[2]
         ta = tailarea(x2)
         td = if modalboundary > argminboundary
@@ -103,26 +103,20 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, tailmapping
         tailcdf_or_ccdf = let tailarea = tailarea, ta = ta
             x -> tailarea(x) / ta
         end
-        # TODO: See Jalalvand & Charsooghi 2018, the choice of mapping function
-        # matters.
-        # TODO: The choice of mapping function may depend on the choice of RNG? 
-
-        # TODO: We don't allow discontinuous (c)cdf's (delta functions), and
-        # (c)cdf's can't normally be constant on an interval (They can be
-        # constant on and interval that starts or ends on the boundary of the
-        # domian, but a constant interval anywhere else would imply that pdf is
-        # non-monotonic). Even in the case where the pdf goes to exactly zero in
-        # floating point (which is common), ZigguratTools.inverse will return
-        # infinity which is probably not the correct behavior for tailmapping. A
+        # TODO: Replace ZigguratTools.inverse with another implementation. A
         # root finding algorithm from Root.jl or SciML would be able to return
         # without doing all 64 iterations when an exact result is found, or
         # within some tolerance. This would be faster and fit for purpose.
         # ZigguratTools.inverse is probably only needed for the generalized
         # inverse of the pdf.
-        tailmapping = inverse(tailcdf_or_ccdf, td)
+
+        # TODO: Support different output types (e.g. Float32).
+        fallback = rng -> inverse(tailcdf_or_ccdf, td, rand(rng))
+    else
+        fallback = fallback_generator(x2)
     end
 
-    UnboundedZiggurat(x, y, pdf, modalboundary, tailmapping)
+    UnboundedZiggurat(x, y, pdf, modalboundary, fallback)
 end
 
 function _check_arguments(N, domain)
@@ -331,10 +325,7 @@ end
 
 function slowpath(rng, z::UnboundedZiggurat, l, x)
     if l == 1
-        # TODO: u will be uniform (0,1), but it may not span all possible floating point values.
-        # Would it be better to just generate a new random number and discard x?
-        u = (x - z.x[2]) / (z.x[1] - z.x[2])
-        return z.tailmapping(u)
+        return z.fallback(rng)
     end
 
     simple_rejection(rng, z, l, x)
