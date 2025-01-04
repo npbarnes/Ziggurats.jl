@@ -33,7 +33,7 @@ function BoundedZiggurat(
     domain = promote(float(domain[1]), float(domain[2]))
 
     _check_arguments(N, domain)
-    modalboundary, argminboundary = _identify_mode(domain, pdf)
+    modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     if pdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
@@ -63,7 +63,7 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, fallback_ge
     domain = promote(float(domain[1]), float(domain[2]))
 
     _check_arguments(N, domain)
-    modalboundary, argminboundary = _identify_mode(domain, pdf)
+    modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     if pdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
@@ -140,7 +140,7 @@ function _check_arguments(N, domain)
     return nothing
 end
 
-function _identify_mode(domain, pdf)
+function _identify_mode(pdf, domain)
     # Return the modalboundary (mb) and argminboundary (am).
     # Assume that the domain is well formed and appropriate for a monotonic
     # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
