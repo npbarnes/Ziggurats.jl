@@ -15,6 +15,14 @@ struct UnboundedZiggurat{X,Y,F<:Function,FB<:Function} <: MonotonicZiggurat{X}
     fallback::FB
 end
 
+function monotonic_ziggurat(pdf, domain, N=256; kwargs...)
+    if isinf(doamin[1]) || isinf(domain[2])
+        UnboundedZiggurat(pdf, domain, N; kwargs...)
+    else
+        BoundedZiggurat(pdf, domain, N; kwargs...)
+    end
+end
+
 function BoundedZiggurat(
     pdf::Function,
     domain,
