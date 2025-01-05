@@ -1,10 +1,3 @@
-function testsampling(dist, z)
-    values = test_samples(z, dist, 10000)
-
-    @test eltype(values) === eltype(dist)
-    @test !any(isnan, values)
-    @test !any(isinf, values)
-end
 @testset "Sampling Tests" begin
     @testset "Unbounded Ziggurats" begin
         @testset "Normal (x>=0)" begin
@@ -20,7 +13,7 @@ end
             domain = (0, Inf)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
-            testsampling(truncated(dist; lower = mode(dist)), z)
+            test_samples(z, truncated(dist; lower = mode(dist)))
         end
 
         @testset "Normal (x<=0)" begin
@@ -36,7 +29,7 @@ end
             domain = (-Inf, 0)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
-            testsampling(truncated(dist; upper = mode(dist)), z)
+            test_samples(z, truncated(dist; upper = mode(dist)))
         end
 
         @testset "Exponential" begin
@@ -48,7 +41,7 @@ end
             domain = (0, Inf)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
-            testsampling(dist, z)
+            test_samples(z, dist)
         end
 
         @testset "SteppedExponential" begin
@@ -60,7 +53,7 @@ end
             domain = (0, Inf)
             z = UnboundedZiggurat(f, domain, N; tailarea = ta)
 
-            testsampling(dist, z)
+            test_samples(z, dist)
         end
     end
 
@@ -71,7 +64,7 @@ end
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (0.5, 1), 10)
     
-            testsampling(truncated(dist; lower=0.5, upper=1), z)
+            test_samples(z, truncated(dist; lower=0.5, upper=1))
         end
     
         @testset "Truncated Normal (-1 <= x <= -0.5)" begin
@@ -80,7 +73,7 @@ end
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (-1, -0.5), 10)
     
-            testsampling(truncated(dist; lower=-1, upper=-0.5), z)
+            test_samples(z, truncated(dist; lower=-1, upper=-0.5))
         end
     
         @testset "Truncated Normal (0.5 <= x <= 10)" begin
@@ -89,7 +82,7 @@ end
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (0.5, 10), 10)
     
-            testsampling(truncated(dist; lower=0.5, upper=10), z)
+            test_samples(z, truncated(dist; lower=0.5, upper=10))
         end
     
         @testset "Truncated Normal (-10 <= x <= -0.5)" begin
@@ -98,7 +91,7 @@ end
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (-10, -0.5), 10)
     
-            testsampling(truncated(dist; lower=-10, upper=-0.5), z)
+            test_samples(z, truncated(dist; lower=-10, upper=-0.5))
         end
     end
 end

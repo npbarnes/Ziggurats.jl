@@ -64,7 +64,7 @@ end
 function test_samples(
     s,    # the sampleable instance
     distr::ContinuousUnivariateDistribution,  # corresponding distribution
-    n::Int;                                   # number of samples to generate
+    n::Int = 10000;                                   # number of samples to generate
     nbins::Int = 50,                            # divide the main interval into nbins
     q::Float64 = 1.0e-6,                        # confidence interval, 1 - q as confidence
     verbose::Bool = false,                      # show intermediate info (for debugging)
@@ -176,6 +176,11 @@ function test_samples(
             error("The counts are out of the confidence interval.")
         end
     end
+
+    @test eltype(samples) === eltype(distr)
+    @test !any(isnan, samples)
+    @test !any(isinf, samples)
+
     return samples
 end
 
