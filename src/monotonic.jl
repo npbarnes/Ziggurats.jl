@@ -1,13 +1,13 @@
 abstract type MonotonicZiggurat{X} end
 
-struct BoundedZiggurat{X,Y,F<:Function} <: MonotonicZiggurat{X}
+struct BoundedZiggurat{X,Y,F} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
     modalboundary::X
 end
 
-struct UnboundedZiggurat{X,Y,F<:Function,FB<:Function} <: MonotonicZiggurat{X}
+struct UnboundedZiggurat{X,Y,F,FB} <: MonotonicZiggurat{X}
     x::Vector{X}
     y::Vector{Y}
     pdf::F
