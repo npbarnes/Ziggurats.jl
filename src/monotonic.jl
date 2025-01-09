@@ -16,8 +16,8 @@ struct UnboundedZiggurat{X,Y,F,FB} <: MonotonicZiggurat{X}
 end
 
 function monotonic_ziggurat(pdf, domain, N=256; kwargs...)
-    if isinf(doamin[1]) || isinf(domain[2])
         UnboundedZiggurat(pdf, domain, N; kwargs...)
+    if isinf(domain[1]) || isinf(domain[2])
     else
         BoundedZiggurat(pdf, domain, N; kwargs...)
     end
