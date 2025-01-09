@@ -4,9 +4,10 @@
 Returns a function that will compute the inverse of f on the domain. Similar to
 `y -> inverse(f, domain, y)`.
 """
-function inverse(f, (a, b))
-    let f = f, domain = promote(float(a), float(b))
-        y -> inverse(f, domain, y)
+function inverse(f, domain; xatol=zero(domain[1]))
+    a, b = domain
+    let f = f, (a,b,xatol) = promote(float(a), float(b), float(xatol))
+        y -> inverse(f, (a,b), y; xatol)
     end
 end
 
@@ -22,9 +23,13 @@ non-monotonicity is detected in f then an error is thrown, but in general the
 result is undefined if f is not monotonic. Note that while f cannot be constant
 on the whole domain, it need not be strictly monotonic.
 """
-inverse(f, (a, b), y) = inverse(f, promote(float(a), float(b)), y)
+function inverse(f, domain, y; xatol=zero(domain[1]))
+    a, b = domain
+    a, b, xatol = promote(float(a), float(b), float(xatol))
+    inverse(f, (a,b), y; xatol)
+end
 
-function inverse(f, domain::NTuple{2,<:AbstractFloat}, y)
+function inverse(f, domain::NTuple{2,T}, y; xatol::T=zero(domain[1])) where {T <: AbstractFloat}
     a, b = domain
 
     if a > b
@@ -46,20 +51,20 @@ function inverse(f, domain::NTuple{2,<:AbstractFloat}, y)
         if fb >= y
             b
         else
-            _decreasing_inverse(f, fa, fb, a, b, y)
+            _decreasing_inverse(f, fa, fb, a, b, y, xatol)
         end
     else
         if fa >= y
             a
         else
-            _increasing_inverse(f, fa, fb, a, b, y)
+            _increasing_inverse(f, fa, fb, a, b, y, xatol)
         end
     end
 end
 
 "Largest x such that f(x) >= y"
-function _decreasing_inverse(f, fa, fb, a, b, y)
-    while nextfloat(a) != b
+function _decreasing_inverse(f, fa, fb, a, b, y, xatol)
+    while nextfloat(a) != b && b - a >= xatol
         c = _middle(a, b)
         fc = f(c)
 
@@ -80,8 +85,8 @@ function _decreasing_inverse(f, fa, fb, a, b, y)
 end
 
 "Smallest x such that f(x) >= y"
-function _increasing_inverse(f, fa, fb, a, b, y)
-    while nextfloat(a) != b
+function _increasing_inverse(f, fa, fb, a, b, y, xatol)
+    while nextfloat(a) != b && b - a >= xatol
         c = _middle(a, b)
         fc = f(c)
 

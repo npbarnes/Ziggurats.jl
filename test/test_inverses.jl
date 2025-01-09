@@ -292,6 +292,20 @@
         @test inverse(msign, (-10.0, 10.0), -1.0) == 10.0
         @test inverse(msign, (-10.0, 10.0), -2.0) == 10.0
     end
+
+    @testset "Handle Floating Point Non-Monotone with xatol" begin
+        # Chisq(3) distribution in the form exp(logpdf(Chisq(3)))
+        # The extra set of paretheses is significant.
+        using SpecialFunctions
+        f(x) = exp((-log(gamma(1.5)) - log(2) -x/2) + (1.5 - 1)*log(x/2))
+        x = 0.19761117965603436
+        y = 0.16065901454232936
+
+        # This function is mathematically monotonic on (0,1), but in floating
+        # point this implementation is not monotonic.
+        @test_throws "f must be monotonic" inverse(f, (0,1), y)
+        @test f(inverse(f, (0,1), y, xatol=eps(1.0))) ≈ y
+    end
 end
 
 nothing
