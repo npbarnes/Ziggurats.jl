@@ -121,7 +121,7 @@ function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, fallback_ge
         # TODO: Support different output types (e.g. Float32).
         fallback = rng -> inverse(tailcdf_or_ccdf, td, rand(rng))
     else
-        fallback = fallback_generator(x2)
+        fallback = fallback_generator(x[2])
     end
 
     UnboundedZiggurat(x, y, pdf, modalboundary, fallback)
