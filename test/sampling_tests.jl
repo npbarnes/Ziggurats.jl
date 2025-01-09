@@ -60,38 +60,38 @@
     @testset "Bounded Ziggurats" begin
         @testset "Truncated Normal (0.5 <= x <= 1)" begin
             dist = Normal()
-    
+
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (0.5, 1), 10)
-    
-            test_samples(z, truncated(dist; lower=0.5, upper=1))
+
+            test_samples(z, truncated(dist; lower = 0.5, upper = 1))
         end
-    
+
         @testset "Truncated Normal (-1 <= x <= -0.5)" begin
             dist = Normal()
-    
+
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (-1, -0.5), 10)
-    
-            test_samples(z, truncated(dist; lower=-1, upper=-0.5))
+
+            test_samples(z, truncated(dist; lower = -1, upper = -0.5))
         end
-    
+
         @testset "Truncated Normal (0.5 <= x <= 10)" begin
             dist = Normal()
-    
+
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (0.5, 10), 10)
-    
-            test_samples(z, truncated(dist; lower=0.5, upper=10))
+
+            test_samples(z, truncated(dist; lower = 0.5, upper = 10))
         end
-    
+
         @testset "Truncated Normal (-10 <= x <= -0.5)" begin
             dist = Normal()
-    
+
             f = Base.Fix1(pdf, dist)
             z = BoundedZiggurat(f, (-10, -0.5), 10)
-    
-            test_samples(z, truncated(dist; lower=-10, upper=-0.5))
+
+            test_samples(z, truncated(dist; lower = -10, upper = -0.5))
         end
     end
 end

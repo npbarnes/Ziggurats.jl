@@ -4,10 +4,10 @@
 Returns a function that will compute the inverse of f on the domain. Similar to
 `y -> inverse(f, domain, y)`.
 """
-function inverse(f, domain; xatol=zero(domain[1]))
+function inverse(f, domain; xatol = zero(domain[1]))
     a, b = domain
-    let f = f, (a,b,xatol) = promote(float(a), float(b), float(xatol))
-        y -> inverse(f, (a,b), y; xatol)
+    let f = f, (a, b, xatol) = promote(float(a), float(b), float(xatol))
+        y -> inverse(f, (a, b), y; xatol)
     end
 end
 
@@ -23,13 +23,18 @@ non-monotonicity is detected in f then an error is thrown, but in general the
 result is undefined if f is not monotonic. Note that while f cannot be constant
 on the whole domain, it need not be strictly monotonic.
 """
-function inverse(f, domain, y; xatol=zero(domain[1]))
+function inverse(f, domain, y; xatol = zero(domain[1]))
     a, b = domain
     a, b, xatol = promote(float(a), float(b), float(xatol))
-    inverse(f, (a,b), y; xatol)
+    inverse(f, (a, b), y; xatol)
 end
 
-function inverse(f, domain::NTuple{2,T}, y; xatol::T=zero(domain[1])) where {T <: AbstractFloat}
+function inverse(
+    f,
+    domain::NTuple{2,T},
+    y;
+    xatol::T = zero(domain[1])
+) where {T<:AbstractFloat}
     a, b = domain
 
     if a > b

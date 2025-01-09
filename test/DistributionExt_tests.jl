@@ -3,9 +3,9 @@
         @testset "Bounded" begin
             @testset "Upward Slope" begin
                 dists = [
-                    truncated(Normal(), lower = -3, upper = 0),
-                    truncated(Normal(3, 5), lower = -1, upper=1.5),
-                    truncated(Cosine(0, 1), lower=0),
+                    truncated(Normal(); lower = -3, upper = 0),
+                    truncated(Normal(3, 5); lower = -1, upper = 1.5),
+                    truncated(Cosine(0, 1); lower = 0)
                 ]
 
                 @testset for d in dists
@@ -15,10 +15,17 @@
                 end
 
                 @testset "Accounting for poor numerical accuracy" begin
-                    d = truncated(Chisq(3), upper=1.0)
+                    d = truncated(Chisq(3); upper = 1.0)
                     @test_throws "f must be monotonic" monotonic_ziggurat(d)
 
-                    z = monotonic_ziggurat(d; ipdf=ZigguratTools.inverse(Base.Fix1(pdf, d), (0,1); xatol=1e-12))
+                    z = monotonic_ziggurat(
+                        d;
+                        ipdf = ZigguratTools.inverse(
+                            Base.Fix1(pdf, d),
+                            (0, 1);
+                            xatol = 1e-12
+                        )
+                    )
                     @test z isa BoundedZiggurat
                     test_samples(z, d)
                 end
@@ -26,10 +33,10 @@
 
             @testset "Downward Slope" begin
                 dists = [
-                    truncated(Normal(), lower = 0, upper = 3),
-                    truncated(Exponential(), upper=3),
-                    LogUniform(1,4),
-                    truncated(Semicircle(1), lower=0)
+                    truncated(Normal(); lower = 0, upper = 3),
+                    truncated(Exponential(); upper = 3),
+                    LogUniform(1, 4),
+                    truncated(Semicircle(1); lower = 0)
                 ]
 
                 @testset for d in dists
@@ -43,8 +50,8 @@
         @testset "Unbounded" begin
             @testset "Upward Slope" begin
                 dists = [
-                    truncated(Normal(), upper=0.0),
-                    truncated(Normal(3,5), upper=1.5),
+                    truncated(Normal(); upper = 0.0),
+                    truncated(Normal(3, 5); upper = 1.5)
                 ]
 
                 @testset for d in dists
@@ -56,8 +63,8 @@
 
             @testset "Downward Slope" begin
                 dists = [
-                    truncated(Normal(), lower=0.0),
-                    truncated(Normal(-3, 5), lower=-1.5),
+                    truncated(Normal(); lower = 0.0),
+                    truncated(Normal(-3, 5); lower = -1.5),
                     Exponential(),
                     SteppedExponential()
                 ]
@@ -73,26 +80,18 @@
     end
 
     @testset "Symmetric" begin
-        @testset "Bounded" begin
+        @testset "Bounded" begin end
 
-        end
-        
-        @testset "Unbounded" begin
-
-        end
+        @testset "Unbounded" begin end
     end
 
     @testset "Composite" begin
-        @testset "Bounded" begin
-        end
+        @testset "Bounded" begin end
 
-        @testset "Bounded Below" begin
-        end
+        @testset "Bounded Below" begin end
 
-        @testset "Bounded Above" begin
-        end
+        @testset "Bounded Above" begin end
 
-        @testset "Unbounded" begin
-        end
+        @testset "Unbounded" begin end
     end
 end

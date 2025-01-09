@@ -48,8 +48,8 @@ function test_bounded_domain(x, argminboundary)
     @test x[1] == argminboundary
 end
 
-function test_not_initially_flat(x, modalboundary; atol=1e-8)
-    @test x[end] ≈ modalboundary atol=atol
+function test_not_initially_flat(x, modalboundary; atol = 1e-8)
+    @test x[end] ≈ modalboundary atol = atol
 end
 
 function test_continuous_pdf(x, y, f, N, argminboundary)
@@ -79,7 +79,14 @@ end
 
         @testset "Normalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    f,
+                    invf,
+                    tailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
@@ -87,13 +94,20 @@ end
                 #test_bounded_domain(x, argminboundary)
 
                 test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol=1e-5)
+                test_not_initially_flat(x, modalboundary; atol = 1e-5)
             end
         end
 
         @testset "Unnormalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    uf,
+                    uinvf,
+                    utailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
 
@@ -101,7 +115,7 @@ end
                 #test_bounded_domain(x, argminboundary)
 
                 test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol=1e-5)
+                test_not_initially_flat(x, modalboundary; atol = 1e-5)
             end
         end
     end
@@ -124,7 +138,14 @@ end
 
         @testset "Normalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    f,
+                    invf,
+                    tailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
@@ -132,13 +153,20 @@ end
                 #test_bounded_domain(x, argminboundary)
 
                 test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol=1e-5)
+                test_not_initially_flat(x, modalboundary; atol = 1e-5)
             end
         end
 
         @testset "Unnormalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    uf,
+                    uinvf,
+                    utailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
 
@@ -146,7 +174,7 @@ end
                 #test_bounded_domain(x, argminboundary)
 
                 test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol=1e-5)
+                test_not_initially_flat(x, modalboundary; atol = 1e-5)
             end
         end
     end
@@ -169,7 +197,14 @@ end
 
         @testset "Normalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    f,
+                    invf,
+                    tailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
@@ -183,7 +218,14 @@ end
 
         @testset "Unnormalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    uf,
+                    uinvf,
+                    utailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
 
@@ -250,9 +292,16 @@ end
 
         Ns = [1, 2, 3, 256]
 
-        @testset "Normalized pdf" begin 
+        @testset "Normalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf, tailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    f,
+                    invf,
+                    tailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
@@ -266,7 +315,14 @@ end
 
         @testset "Unnormalized pdf" begin
             @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf, utailarea)
+                x, y = ZigguratTools.search(
+                    N,
+                    modalboundary,
+                    argminboundary,
+                    uf,
+                    uinvf,
+                    utailarea
+                )
 
                 test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
 
@@ -293,7 +349,7 @@ end
 
         Ns = [1, 2, 3, 256]
 
-        @testset "Normalized pdf" begin 
+        @testset "Normalized pdf" begin
             @testset for N in Ns
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
@@ -307,7 +363,7 @@ end
             end
         end
 
-        @testset "Unnormalized pdf" begin 
+        @testset "Unnormalized pdf" begin
             @testset for N in Ns
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
 
@@ -350,7 +406,7 @@ end
             end
         end
 
-        @testset "Unnormalized pdf" begin 
+        @testset "Unnormalized pdf" begin
             @testset for N in Ns
                 x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
 

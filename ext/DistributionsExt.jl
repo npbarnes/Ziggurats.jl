@@ -47,25 +47,30 @@ struct TailFallback{T<:Truncated}
 end
 
 function left_fallback(dist, x)
-    TailFallback(truncated(dist, upper=x))
+    TailFallback(truncated(dist; upper = x))
 end
 
 function right_fallback(dist, x)
-    TailFallback(truncated(dist, lower=x))
+    TailFallback(truncated(dist; lower = x))
 end
 
 function (tf::TailFallback)(rng)
     rand(rng, tf.truncdist)
 end
 
-ZigguratTools.monotonic_ziggurat(dist::Distribution, N::Integer=256; kwargs...) = monotonic_ziggurat(dist, extrema(dist), N; kwargs...)
-function ZigguratTools.monotonic_ziggurat(dist::Distribution, domain, N=256;
+function ZigguratTools.monotonic_ziggurat(dist::Distribution, N::Integer = 256; kwargs...)
+    monotonic_ziggurat(dist, extrema(dist), N; kwargs...)
+end
+
+function ZigguratTools.monotonic_ziggurat(
+    dist::Distribution,
+    domain,
+    N = 256;
     pdf = Base.Fix1(Distributions.pdf, dist),
     ipdf = Base.Fix1(DistributionsExt.ipdf, dist),
     tailarea = nothing,
     fallback_generator = nothing
-    )
-
+)
     if tailarea === nothing
         if isinf(domain[1])
             tailarea = Base.Fix1(cdf, dist)
