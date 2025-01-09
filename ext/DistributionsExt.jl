@@ -27,7 +27,7 @@ function ipdf(dist::ContinuousUnivariateDistribution, y)
     modaldensity = max(pdf(dist, minimum(dist)), pdf(dist, maximum(dist)))
 
     if y < 0 || y > modaldensity
-        raise(DomainError(y, "ipdf was called with an argument outside the range of the pdf of d."))
+        throw(DomainError(y, "y is outside the range of the pdf of dist."))
     end
 
     if y == 0
