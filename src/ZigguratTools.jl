@@ -11,7 +11,10 @@ export
 
     # Sampler types
     UnboundedZiggurat,
-    BoundedZiggurat
+    BoundedZiggurat,
+
+    # Smart constructors
+    monotonic_ziggurat
 
 # Utility
 function between(a, b, x)
