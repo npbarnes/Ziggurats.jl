@@ -1,4 +1,4 @@
-@testset "End to End DistributionExt Tests" begin
+@testset "End to End" begin
     @testset "Monotonic" begin
         @testset "Bounded" begin
             @testset "Upward Slope" begin
