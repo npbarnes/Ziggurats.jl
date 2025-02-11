@@ -14,14 +14,6 @@ end
 
 # TODO: Add more _ipdf methods for different distributions
 
-function _modaldensity(dist)
-    pdf(dist, mode(dist))
-end
-
-function _modaldensity(dist::Exponential)
-    rate(dist)
-end
-
 function ipdf(dist::ContinuousUnivariateDistribution, y)
     # assume that the pdf is monotonic and non-constant
     modaldensity = max(pdf(dist, minimum(dist)), pdf(dist, maximum(dist)))
