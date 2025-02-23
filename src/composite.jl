@@ -4,7 +4,7 @@ struct SymmetricZiggurat{X, Z<:MonotonicZiggurat{X}}
 end
 
 function SymmetricZiggurat(f, domain, N; ipdf_left=nothing, ipdf_right=nothing)
-    if xor(isinf(domain[1]), isinf(domain[2]))
+    if isinf(domain[1]) != isinf(domain[2])
         error("invalid domain. Symmetric distributions must have a bounded domain or (-Inf, Inf), got $domain.")
     end
 
