@@ -12,6 +12,7 @@ export
     # Sampler types
     UnboundedZiggurat,
     BoundedZiggurat,
+    SymmetricZiggurat,
 
     # Smart constructors
     monotonic_ziggurat
@@ -24,5 +25,6 @@ end
 
 include("inverse_pdf.jl")
 include("monotonic.jl")
+include("composite.jl")
 
 end # module
