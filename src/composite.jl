@@ -25,7 +25,7 @@ function SymmetricZiggurat(f, domain, N; ipdf_left=nothing, ipdf_right=nothing)
         ipdf = inverse(f, halfdomain)
     end
 
-    monotonic = monotonic_ziggurat(f, halfdomain, N, ipdf)
+    monotonic = monotonic_ziggurat(f, halfdomain, N; ipdf)
 
     SymmetricZiggurat(monotonic, center)
 end
