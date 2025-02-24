@@ -14,7 +14,7 @@
                     test_samples(z, d)
                 end
 
-                @testset "Accounting for poor numerical accuracy" begin
+                @testset "Decrease tolerance to account for poor numerical accuracy" begin
                     d = truncated(Chisq(3); upper = 1.0)
                     @test_throws "f must be monotonic" monotonic_ziggurat(d)
 
