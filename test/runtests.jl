@@ -33,6 +33,7 @@ include("Doorstop.jl")
 
     # Test ZigguratTools
     include("test_inverses.jl")
+    include("interface_tests.jl")
     include("ziggurat_tests.jl")
 end
 
