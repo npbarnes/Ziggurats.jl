@@ -32,7 +32,7 @@ end
 
 function Base.rand(
     rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{SymmetricZiggurat}
+    zig_sampler::Random.SamplerTrivial{<:SymmetricZiggurat}
 )
     monotonic = zig_sampler[].monotonic
     center = zig_sampler[].center
