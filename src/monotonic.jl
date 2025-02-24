@@ -30,11 +30,11 @@ function monotonic_ziggurat(
     end
 end
 
-function BoundedZiggurat(pdf::Function, domain, N; ipdf = inverse(pdf, domain))
+function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
     BoundedZiggurat(pdf, domain, N, ipdf)
 end
 
-function BoundedZiggurat(pdf::Function, domain, N, ipdf)
+function BoundedZiggurat(pdf, domain, N, ipdf)
     domain = promote(float(domain[1]), float(domain[2]))
 
     _check_arguments(N, domain)
@@ -54,7 +54,7 @@ function BoundedZiggurat(pdf::Function, domain, N, ipdf)
 end
 
 function UnboundedZiggurat(
-    pdf::Function,
+    pdf,
     domain,
     N;
     ipdf = inverse(pdf, domain),
@@ -64,7 +64,7 @@ function UnboundedZiggurat(
     UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
 end
 
-function UnboundedZiggurat(pdf::Function, N, domain, ipdf, tailarea, fallback_generator)
+function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
     domain = promote(float(domain[1]), float(domain[2]))
 
     _check_arguments(N, domain)
