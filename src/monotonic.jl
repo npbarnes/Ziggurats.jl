@@ -105,18 +105,11 @@ function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
         else
             (x2, prevfloat(typemax(x2)))
         end
-        tailcdf_or_ccdf = let tailarea = tailarea, ta = ta
-            x -> tailarea(x) / ta
+        inverse_tailprob = let tailarea = tailarea, ta = ta
+            inverse(x -> tailarea(x) / ta, td)
         end
-        # TODO: Replace ZigguratTools.inverse with another implementation. A
-        # root finding algorithm from Root.jl or SciML would be able to return
-        # without doing all 64 iterations when an exact result is found, or
-        # within some tolerance. This would be faster and fit for purpose.
-        # ZigguratTools.inverse is probably only needed for the generalized
-        # inverse of the pdf.
 
-        # TODO: Support different output types (e.g. Float32).
-        fallback = rng -> inverse(tailcdf_or_ccdf, td, rand(rng))
+        fallback = rng -> inverse_tailprob(rand(rng))
     else
         fallback = fallback_generator(x[2])
     end
