@@ -49,7 +49,7 @@ function inverse(
     end
 
     if y > max(fa, fb)
-        error("no solutions exist when y > max(f(a), f(b)), got y=$y, f(a)=$fa, and f(b)=$fb.")
+        throw(ArgumentError("No inverse exists when y > max(f(a), f(b))."))
     end
 
     if fa >= fb
