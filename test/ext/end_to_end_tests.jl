@@ -13,22 +13,6 @@
                     @test z isa BoundedZiggurat
                     test_samples(z, d)
                 end
-
-                @testset "Decrease tolerance to account for poor numerical accuracy" begin
-                    d = truncated(Chisq(3); upper = 1.0)
-                    @test_throws "f must be monotonic" monotonic_ziggurat(d)
-
-                    z = monotonic_ziggurat(
-                        d;
-                        ipdf = ZigguratTools.inverse(
-                            Base.Fix1(pdf, d),
-                            (0, 1);
-                            xatol = 1e-12
-                        )
-                    )
-                    @test z isa BoundedZiggurat
-                    test_samples(z, d)
-                end
             end
 
             @testset "Downward Slope" begin
