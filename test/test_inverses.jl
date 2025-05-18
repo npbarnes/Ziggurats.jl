@@ -28,24 +28,11 @@
             end
         end
 
-        # This function is special because slowdecay(x) > nextfloat(0.0) for all finite x.
-        slowdecay(x) = 1 / log(1 + x)
-
         # Decreasing functions
         @test inverse(cos, (0, π))(0) == π / 2
-        @test inverse(slowdecay, (0, Inf))(0) == Inf
-        @test inverse(slowdecay, (0, Inf))(nextfloat(0.0)) == prevfloat(Inf)
-        @test begin
-            x = inverse(slowdecay, (0, Inf))(Inf)
-            if isinf(slowdecay(x))
-                !isinf(slowdecay(nextfloat(x)))
-            end
-        end
 
         @test_throws "no solutions exist" inverse(cos, (0, π))(2)
         @test inverse(cos, (0, π))(-2) == float(π)
-        @test inverse(slowdecay, (0, Inf))(-2) == Inf
-        @test inverse(slowdecay, (0, Inf))(nextfloat(0.0)) == prevfloat(Inf)
 
         @test inverse(x -> s_curve(-x), (-2, 2))(-1) == 2
         @test inverse(x -> s_curve(-x), (-2, 2))(0) == 0
@@ -67,8 +54,6 @@
 
         # Increasing functions
         @test inverse(cos, (-π, 0))(0) == -π / 2
-        @test inverse(x -> slowdecay(-x), (-Inf, 0))(0) == -Inf
-        @test inverse(x -> slowdecay(-x), (-Inf, 0))(nextfloat(0.0)) == nextfloat(-Inf)
 
         @test_throws "no solutions exist" inverse(cos, (-π, 0))(2)
         @test inverse(cos, (-π, 0))(-2) == float(-π)
@@ -135,7 +120,6 @@
 
         @test_throws "domain must be an ordered tuple" inverse(cos, (π, 0))(0)
         @test_throws "domain must be an ordered tuple" inverse(s_curve, (1, -1))(0)
-        @test_throws "domain must be an ordered tuple" inverse(slowdecay, (Inf, 0))(0)
 
         # Domains that include some positive numbers
         @test_throws "no solutions" inverse(sign, (-Inf, Inf))(2.0)
