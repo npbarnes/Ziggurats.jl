@@ -31,7 +31,7 @@
         # Decreasing functions
         @test inverse(cos, (0, π))(0) == π / 2
 
-        @test_throws "no solutions exist" inverse(cos, (0, π))(2)
+        @test_throws "No inverse exists" inverse(cos, (0, π))(2)
         @test inverse(cos, (0, π))(-2) == float(π)
 
         @test inverse(x -> s_curve(-x), (-2, 2))(-1) == 2
@@ -55,7 +55,7 @@
         # Increasing functions
         @test inverse(cos, (-π, 0))(0) == -π / 2
 
-        @test_throws "no solutions exist" inverse(cos, (-π, 0))(2)
+        @test_throws "No inverse exists" inverse(cos, (-π, 0))(2)
         @test inverse(cos, (-π, 0))(-2) == float(-π)
 
         @test inverse(s_curve, (-2, 2))(-1) == -2
@@ -144,18 +144,18 @@
         @test inverse(sign, (-1.0, Inf))(-2.0) == -1.0
         @test inverse(sign, (-1.0, 1.0))(-2.0) == -1.0
 
-        @test_throws "no solutions exist" inverse(sign, (-10.0, 10.0))(2.0)
+        @test_throws "No inverse exists" inverse(sign, (-10.0, 10.0))(2.0)
         @test inverse(sign, (-10.0, 10.0))(1.0) == nextfloat(0.0)
         @test inverse(sign, (-10.0, 10.0))(0.0) == 0.0
         @test inverse(sign, (-10.0, 10.0))(-1.0) == -10
         @test inverse(sign, (-10.0, 10.0))(-2.0) == -10.0
 
         # domain ends at zero
-        @test_throws "no solutions exist" inverse(sign, (-Inf, 0.0))(2.0)
-        @test_throws "no solutions exist" inverse(sign, (-1.0, 0.0))(2.0)
+        @test_throws "No inverse exists" inverse(sign, (-Inf, 0.0))(2.0)
+        @test_throws "No inverse exists" inverse(sign, (-1.0, 0.0))(2.0)
 
-        @test_throws "no solutions exist" inverse(sign, (-Inf, 0.0))(1.0)
-        @test_throws "no solutions exist" inverse(sign, (-1.0, 0.0))(1.0)
+        @test_throws "No inverse exists" inverse(sign, (-Inf, 0.0))(1.0)
+        @test_throws "No inverse exists" inverse(sign, (-1.0, 0.0))(1.0)
 
         @test inverse(sign, (-Inf, 0.0))(0.0) == 0.0
         @test inverse(sign, (-1.0, 0.0))(0.0) == 0.0
@@ -166,14 +166,14 @@
         @test inverse(sign, (-Inf, 0.0))(-2.0) == -Inf
         @test inverse(sign, (-1.0, 0.0))(-2.0) == -1.0
 
-        @test_throws "no solutions exist" inverse(sign, (-10.0, 0.0))(2.0)
-        @test_throws "no solutions exist" inverse(sign, (-10.0, 0.0))(1.0)
+        @test_throws "No inverse exists" inverse(sign, (-10.0, 0.0))(2.0)
+        @test_throws "No inverse exists" inverse(sign, (-10.0, 0.0))(1.0)
         @test inverse(sign, (-10.0, 0.0))(0.0) == 0.0
         @test inverse(sign, (-10.0, 0.0))(-1.0) == -10
         @test inverse(sign, (-10.0, 0.0))(-2.0) == -10.0
 
         msign = x -> -sign(x)
-        @test_throws "no solutions exist" inverse(msign, (-10.0, 10.0))(2.0)
+        @test_throws "No inverse exists" inverse(msign, (-10.0, 10.0))(2.0)
         @test inverse(msign, (-10.0, 10.0))(1.0) == prevfloat(0.0)
         @test inverse(msign, (-10.0, 10.0))(0.5) == prevfloat(0.0)
         @test inverse(msign, (-10.0, 10.0))(0.0) == 0.0
