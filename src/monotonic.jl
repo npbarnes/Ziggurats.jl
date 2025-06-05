@@ -101,7 +101,7 @@ function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
         else
             (x2, prevfloat(typemax(x2)))
         end
-        inverse_tailprob = let tailarea = tailarea, ta = ta
+        inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
             inverse(x -> tailarea(x) / ta, td)
         end
 
