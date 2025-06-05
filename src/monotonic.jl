@@ -79,20 +79,16 @@ function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
     end
 
     if tailarea === nothing
-        tailarea =
-            let pdf = pdf,
-                modalboundary = modalboundary,
-                argminboundary = argminboundary,
-                modepdf
+        modepdf = pdf(modalboundary)
+        domain_type = typeof(modalboundary)
+        range_type = typeof(modepdf)
+        error_type = typeof(norm(modepdf))
+        segbuf = alloc_segbuf(domain_type, range_type, error_type)
 
-                modepdf = pdf(modalboundary)
-                domain_type = typeof(modalboundary)
-                range_type = typeof(modepdf)
-                error_type = typeof(norm(modepdf))
-                segbuf = alloc_segbuf(domain_type, range_type, error_type)
-                # TODO: Add error tolerance and check the returned error estimate.
-                x -> abs(quadgk(pdf, x, argminboundary; segbuf)[1])
-            end
+        # TODO: Add error tolerance and check the returned error estimate.
+        tailarea = let pdf=pdf, segbuf=segbuf, argminboundary=argminboundary
+            x -> abs(quadgk(pdf, x, argminboundary; segbuf)[1])
+        end
     end
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
