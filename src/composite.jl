@@ -1,9 +1,9 @@
-struct SymmetricZiggurat{X, Z<:MonotonicZiggurat{X}}
+struct SymmetricZiggurat{X,Z<:MonotonicZiggurat{X}}
     monotonic::Z
     center::X
 end
 
-function SymmetricZiggurat(f, domain, N; ipdf_left=nothing, ipdf_right=nothing)
+function SymmetricZiggurat(f, domain, N; ipdf_left = nothing, ipdf_right = nothing)
     if isinf(domain[1]) != isinf(domain[2])
         error("invalid domain. Symmetric distributions must have a bounded domain or (-Inf, Inf), got $domain.")
     end
@@ -13,7 +13,7 @@ function SymmetricZiggurat(f, domain, N; ipdf_left=nothing, ipdf_right=nothing)
     else
         center = (domain[1] + domain[2])/2
     end
-    
+
     if ipdf_left !== nothing
         halfdomain = (domain[1], center)
         ipdf = ipdf_left
@@ -40,4 +40,3 @@ function Base.rand(
     r = rand(rng, monotonic)
     ifelse(rand(rng, Bool), center + r, center - r)
 end
-

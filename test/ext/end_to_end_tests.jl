@@ -33,10 +33,8 @@
 
         @testset "Unbounded" begin
             @testset "Upward Slope" begin
-                dists = [
-                    truncated(Normal(); upper = 0.0),
-                    truncated(Normal(3, 5); upper = 1.5)
-                ]
+                dists =
+                    [truncated(Normal(); upper = 0.0), truncated(Normal(3, 5); upper = 1.5)]
 
                 @testset for d in dists
                     z = monotonic_ziggurat(d)
