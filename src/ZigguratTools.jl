@@ -4,6 +4,7 @@ using Roots
 using Random
 using QuadGK
 using LinearAlgebra
+using AliasTables
 
 export
     # Abstract types
@@ -13,6 +14,7 @@ export
     UnboundedZiggurat,
     BoundedZiggurat,
     SymmetricZiggurat,
+    CompositeZiggurat,
 
     # Smart constructors
     monotonic_ziggurat
