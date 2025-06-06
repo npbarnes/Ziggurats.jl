@@ -1,5 +1,3 @@
-using Roots
-
 function inverse(f, domain, args...; kwargs...)
     ex = extrema(domain)
     a, b = promote(float(ex[1]), float(ex[2]))
