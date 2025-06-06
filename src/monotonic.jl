@@ -79,6 +79,8 @@ function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
     end
 
     if tailarea === nothing
+        # TODO: the tailarea function should come from a 'tool' that has this as default
+        # and allows customization e.g. quadgk arguments or other integrators.
         modepdf = pdf(modalboundary)
         domain_type = typeof(modalboundary)
         range_type = typeof(modepdf)
@@ -94,6 +96,8 @@ function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
 
     if fallback_generator === nothing
+        # TODO: fallback_generators should come from a 'tool' with this as default but also allows customization.
+        # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
         x2 = x[2]
         ta = tailarea(x2)
         td = if modalboundary > argminboundary
