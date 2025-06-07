@@ -19,6 +19,8 @@ export
     # Smart constructors
     monotonic_ziggurat
 
+public inverse
+
 # Utility
 function between(a, b, x)
     l, r = minmax(a, b)
