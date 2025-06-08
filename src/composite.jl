@@ -172,6 +172,10 @@ function CompositeZiggurat(
         end
     end
 
+    if !(length(domain) - 1 == length(Ns) == length(ipdfs) == length(_p))
+        throw(ArgumentError("Ns, ipdfs, and p must all have a length one less than the length of domain."))
+    end
+
     # TODO: Handle fallback generators
     zig_gen =
         i -> begin
