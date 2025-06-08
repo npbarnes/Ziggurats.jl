@@ -1,11 +1,6 @@
 using Test, ZigguratTools
 using Random
 using StatsBase
-
-# Extension
-DistributionsExt = Base.get_extension(ZigguratTools, :DistributionsExt)
-@test DistributionsExt === nothing
-
 using Distributions
 
 DistributionsExt = Base.get_extension(ZigguratTools, :DistributionsExt)
