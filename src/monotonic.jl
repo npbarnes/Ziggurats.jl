@@ -27,7 +27,7 @@ function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
         if cdf !== nothing
             return cdf
         elseif ccdf !== nothing
-            throw(ArgumentError("A ccdf is provided for an increasing pdf, pass cdf or tailarea instead."))
+            throw(ArgumentError("a ccdf is provided for an increasing pdf, pass cdf or tailarea instead."))
         else
             error("Unreachable error: it should be impossible to throw this error.")
         end
@@ -35,7 +35,7 @@ function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
         if ccdf !== nothing
             return ccdf
         elseif cdf !== nothing
-            throw(ArgumentError("A cdf is provided for an increasing pdf, pass ccdf or tailarea instead."))
+            throw(ArgumentError("a cdf is provided for an increasing pdf, pass ccdf or tailarea instead."))
         else
             error("Unreachable error: it should be impossible to throw this error.")
         end
