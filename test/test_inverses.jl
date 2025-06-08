@@ -32,6 +32,7 @@
         @test inverse(cos, (0, π/2))(1/√2) ≈ π / 4
 
         @test_throws "No inverse exists" inverse(cos, (0, π))(2)
+        @test_throws "No inverse exists" inverse(cos, (0, π))(-2)
         @test inverse(cos, (0, π/4))(0) == π/4
 
         @test inverse(x -> s_curve(-x), (-2, 2))(0) >= 1
@@ -56,6 +57,7 @@
         @test inverse(cos, (-π/2, 0))(1/√2) ≈ -π / 4
 
         @test_throws "No inverse exists" inverse(cos, (-π, 0))(2)
+        @test_throws "No inverse exists" inverse(cos, (-π, 0))(-2)
         @test inverse(cos, (-π/4, 0))(0) ≈ -π/4
 
         @test inverse(s_curve, (-2, 2))(0) <= -1
@@ -88,6 +90,11 @@
         @test_throws "ArgumentError: No inverse" inverse(heaviside3, (-1.0, Inf))(2.0)
         @test_throws "ArgumentError: No inverse" inverse(heaviside3, (-1.0, 1.0))(2.0)
 
+        @test_throws "ArgumentError: No inverse" inverse(heaviside3, (-Inf, Inf))(-2.0)
+        @test_throws "ArgumentError: No inverse" inverse(heaviside3, (-Inf, 1.0))(-2.0)
+        @test_throws "ArgumentError: No inverse" inverse(heaviside3, (-1.0, Inf))(-2.0)
+        @test_throws "ArgumentError: No inverse" inverse(heaviside3, (-1.0, 1.0))(-2.0)
+
         @test inverse(heaviside3, (-Inf, Inf))(1.0) > 0
         @test inverse(heaviside3, (-Inf, 1.0))(1.0) > 0
         @test inverse(heaviside3, (-1.0, Inf))(1.0) > 0
@@ -104,10 +111,10 @@
         @test inverse(heaviside3, (-1.0, 1.0))(0) == -1.0
 
         @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 10.0))(2.0)
+        @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 10.0))(-2.0)
         @test inverse(heaviside3, (-10.0, 10.0))(1.0) > 0
         @test inverse(heaviside3, (-10.0, 10.0))(0.5) ≈ 0.0 atol = 1e-16
         @test inverse(heaviside3, (-10.0, 10.0))(0) < 0
-        @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 10.0))(-2.0) == -10.0
 
         # domain ends at zero
         @test_throws "No inverse exists" inverse(heaviside3, (-Inf, 0.0))(2.0)
@@ -116,20 +123,28 @@
         @test_throws "No inverse exists" inverse(heaviside3, (-Inf, 0.0))(1.0)
         @test_throws "No inverse exists" inverse(heaviside3, (-1.0, 0.0))(1.0)
 
+        @test_throws "No inverse exists" inverse(heaviside3, (-Inf, 0.0))(-2.0)
+        @test_throws "No inverse exists" inverse(heaviside3, (-1.0, 0.0))(-2.0)
+
+        @test_throws "No inverse exists" inverse(heaviside3, (-Inf, 0.0))(-1.0)
+        @test_throws "No inverse exists" inverse(heaviside3, (-1.0, 0.0))(-1.0)
+
         @test inverse(heaviside3, (-Inf, 0.0))(0.5) == 0.0
         @test inverse(heaviside3, (-1.0, 0.0))(0.5) == 0.0
 
         @test inverse(heaviside3, (-Inf, 0.0))(0) == -Inf
         @test inverse(heaviside3, (-1.0, 0.0))(0) == -1.0
 
-        @test_throws "No inverse exists" inverse(heaviside3, (-Inf, 0.0))(-2.0) == -Inf
-        @test_throws "No inverse exists" inverse(heaviside3, (-1.0, 0.0))(-2.0) == -1.0
+        @test_throws "No inverse exists" inverse(heaviside3, (-Inf, 0.0))(-2.0)
+        @test_throws "No inverse exists" inverse(heaviside3, (-1.0, 0.0))(-2.0)
 
         @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 0.0))(2.0)
         @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 0.0))(1.0)
+        @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 0.0))(-2.0)
+        @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 0.0))(-1.0)
         @test inverse(heaviside3, (-10.0, 0.0))(0.5) == 0.0
         @test inverse(heaviside3, (-10.0, 0.0))(0) == -10
-        @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 0.0))(-2.0) == -10.0
+        @test_throws "No inverse exists" inverse(heaviside3, (-10.0, 0.0))(-2.0)
 
         mheaviside3 = x -> heaviside3(-x)
         @test_throws "No inverse exists" inverse(mheaviside3, (-10.0, 10.0))(2.0)
@@ -138,7 +153,8 @@
         @test inverse(mheaviside3, (-10.0, 10.0))(0.5) ≈ 0.0 atol = 1e-16
         @test inverse(mheaviside3, (-10.0, 10.0))(0.25) ≈ 0.0 atol = 1e-16
         @test inverse(mheaviside3, (-10.0, 10.0))(0) > 0.0
-        @test_throws "No inverse exists" inverse(mheaviside3, (-10.0, 10.0))(-2.0) == 10.0
+        @test_throws "No inverse exists" inverse(mheaviside3, (-10.0, 10.0))(-0.25)
+        @test_throws "No inverse exists" inverse(mheaviside3, (-10.0, 10.0))(-2.0)
     end
 end
 
