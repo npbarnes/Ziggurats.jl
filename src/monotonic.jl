@@ -55,7 +55,7 @@ function monotonic_ziggurat(
     fallback_generator = nothing
 )
     if isinf(domain[1]) || isinf(domain[2])
-        tailarea = _choose_tailarea_func(pdf, tailarea, cdf, ccdf)
+        tailarea = _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
         UnboundedZiggurat(pdf, domain, N; ipdf, tailarea, fallback_generator)
     else
         BoundedZiggurat(pdf, domain, N; ipdf)
