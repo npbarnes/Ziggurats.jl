@@ -175,15 +175,7 @@ function CompositeZiggurat(
     # TODO: Handle fallback generators
     zig_gen =
         i -> begin
-            if i == 1
-                tailarea = cdf
-            elseif i == length(subdomains)
-                tailarea = ccdf
-            else
-                tailarea = nothing
-            end
-
-            monotonic_ziggurat(pdf, subdomains[i], Ns[i]; ipdf = ipdfs[i], tailarea)
+            monotonic_ziggurat(pdf, subdomains[i], Ns[i]; ipdf = ipdfs[i], cdf, ccdf)
         end
 
     zigs = ntuple(zig_gen, length(subdomains))
