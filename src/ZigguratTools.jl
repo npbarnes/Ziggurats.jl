@@ -27,6 +27,10 @@ function between(a, b, x)
     l <= x <= r
 end
 
+function regularize_domain(domain)
+    unique(sort!(collect(promote(float.(domain)...))))
+end
+
 include("inverse_pdf.jl")
 include("monotonic.jl")
 include("composite.jl")
