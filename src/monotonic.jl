@@ -153,6 +153,9 @@ function _check_arguments(N, domain)
     if N < 1
         throw(DomainError(N, "N must be a positive integer, got N=$N."))
     end
+    if isempty(domain)
+        error("empty domains are not allowed, got domain=$domain.")
+    end
 
     # Check if the domain is well formed and appropriate for a monotonic
     # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
