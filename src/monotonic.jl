@@ -67,7 +67,7 @@ function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
 end
 
 function BoundedZiggurat(pdf, domain, N, ipdf)
-    domain = promote(float(domain[1]), float(domain[2]))
+    domain = extrema(regularize_domain(domain))
 
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
@@ -97,7 +97,7 @@ function UnboundedZiggurat(
 end
 
 function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
-    domain = promote(float(domain[1]), float(domain[2]))
+    domain = extrema(regularize_domain(domain))
 
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
