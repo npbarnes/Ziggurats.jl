@@ -157,13 +157,11 @@ function _check_arguments(N, domain)
     # Check if the domain is well formed and appropriate for a monotonic
     # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
     # infinite.
-    if domain[1] == domain[2]
+    a, b = extrema(domain)
+    if a == b
         error("empty domains are not allowed, got domain=$domain.")
     end
-    if domain[1] > domain[2]
-        error("malformed domain. domain[1] must be less than domain[2], got domain=$domain.")
-    end
-    if isinf(domain[1]) && isinf(domain[2])
+    if isinf(a) && isinf(b)
         error("a domain of (-Inf, Inf) is impossible for a monotonic distribution.")
     end
 
