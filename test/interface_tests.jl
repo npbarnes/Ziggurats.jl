@@ -73,6 +73,9 @@
             end
 
             @testset "When the domain is invalid" begin
+                @test_throws "N must be" ZigguratTools._check_arguments(-1, ())
+                @test_throws "N must be" ZigguratTools._check_arguments(-1, (0,))
+                @test_throws "N must be" ZigguratTools._check_arguments(-1, (Inf,))
                 @test_throws "N must be" ZigguratTools._check_arguments(-1, (0, 0))
                 @test_throws "N must be" ZigguratTools._check_arguments(-1, (Inf, Inf))
                 @test_throws "N must be" ZigguratTools._check_arguments(-1, (-Inf, -Inf))
@@ -83,6 +86,9 @@
                 @test_throws "N must be" ZigguratTools._check_arguments(0, (-Inf, -Inf))
                 @test_throws "N must be" ZigguratTools._check_arguments(0, (-Inf, Inf))
 
+                @test_throws "N must be" ZigguratTools._check_arguments(-1, [])
+                @test_throws "N must be" ZigguratTools._check_arguments(-1, [0])
+                @test_throws "N must be" ZigguratTools._check_arguments(-1, [Inf])
                 @test_throws "N must be" ZigguratTools._check_arguments(-1, [0, 0])
                 @test_throws "N must be" ZigguratTools._check_arguments(-1, [Inf, Inf])
                 @test_throws "N must be" ZigguratTools._check_arguments(-1, [-Inf, -Inf])
@@ -97,11 +103,17 @@
 
         # Empty domian
         @testset "Empty domains throw an empty domain error" begin
+            @test_throws "empty domains" ZigguratTools._check_arguments(256, ())
+            @test_throws "empty domains" ZigguratTools._check_arguments(256, (0,))
+            @test_throws "empty domains" ZigguratTools._check_arguments(256, (Inf,))
             @test_throws "empty domains" ZigguratTools._check_arguments(256, (0, 0))
             @test_throws "empty domains" ZigguratTools._check_arguments(256, (Inf, Inf))
             @test_throws "empty domains" ZigguratTools._check_arguments(256, (-Inf, -Inf))
             @test_throws "empty domains" ZigguratTools._check_arguments(256, (0, 0, 0))
 
+            @test_throws "empty domains" ZigguratTools._check_arguments(256, [])
+            @test_throws "empty domains" ZigguratTools._check_arguments(256, [0])
+            @test_throws "empty domains" ZigguratTools._check_arguments(256, [Inf])
             @test_throws "empty domains" ZigguratTools._check_arguments(256, [0, 0])
             @test_throws "empty domains" ZigguratTools._check_arguments(256, [Inf, Inf])
             @test_throws "empty domains" ZigguratTools._check_arguments(256, [-Inf, -Inf])
