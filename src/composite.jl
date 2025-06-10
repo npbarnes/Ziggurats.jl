@@ -4,6 +4,8 @@ struct SymmetricZiggurat{X,Z<:MonotonicZiggurat{X}}
 end
 
 function SymmetricZiggurat(f, domain, N; ipdf_left = nothing, ipdf_right = nothing)
+    domian = regularize_domain(domain)
+
     if isinf(domain[1]) != isinf(domain[2])
         error("invalid domain. Symmetric distributions must have a bounded domain or (-Inf, Inf), got $domain.")
     end
@@ -118,10 +120,7 @@ function CompositeZiggurat(
     ccdf = nothing,
     p = nothing
 )
-    domain = promote(float.(domain)...)
-    if !issorted(domain)
-        error("domain must be in increasing order.")
-    end
+    domain = regularize_domain(domain)
 
     a, b = extrema(domain)
     subdomains = get_subdomains(pdf, domain)
