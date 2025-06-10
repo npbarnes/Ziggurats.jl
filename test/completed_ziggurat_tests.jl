@@ -53,6 +53,8 @@ function test_not_initially_flat(x, modalboundary; atol = 1e-8)
 end
 
 function test_continuous_pdf(x, y, f, N, argminboundary)
+    # Expect f(x) = y, but not on a discontinuity. The argminboundary is a discontinuity for
+    # bounded ziggurats, so it is excluded from this test.
     for i in 2:(N + 1)
         if x[i] != argminboundary
             @test y[i] ≈ f(x[i])
