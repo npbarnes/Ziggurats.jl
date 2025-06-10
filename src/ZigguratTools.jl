@@ -5,6 +5,8 @@ using Random
 using QuadGK
 using LinearAlgebra
 using AliasTables
+using IntervalRootFinding
+using ForwardDiff
 
 export
     # Abstract types
@@ -17,7 +19,10 @@ export
     CompositeZiggurat,
 
     # Smart constructors
-    monotonic_ziggurat
+    monotonic_ziggurat,
+
+    # Helper functions,
+    monotonic_segments
 
 public inverse
 

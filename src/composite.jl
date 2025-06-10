@@ -105,6 +105,13 @@ function _get_subdomains(f, domain)
     sd
 end
 
+function monotonic_segments(f, domain)
+    a, b = extrema(regularize_domain(domain))
+    df = x -> ForwardDiff.derivative(f, x)
+
+    unique([a; find_zeros(df, a, b); b])
+end
+
 # TODO: add option to autodetect monotonic subdomains.
 function CompositeZiggurat(pdf, domain, N::Integer; kwargs...)
     Ns = fill(N, length(domain)-1)

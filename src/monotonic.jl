@@ -224,7 +224,7 @@ end
 function _search(y_domain, p)
     # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML, or in-house?)
     tracker = Roots.Tracks()
-    ystar = find_zero(ziggurat_residual, y_domain, Bisection(), p; tracks = tracker)
+    ystar = find_zero(ziggurat_residual, y_domain, Roots.Bisection(), p; tracks = tracker)
 
     # y[N] needs to be either exact or a slightly over
     if tracker.convergence_flag !== :exact_zero
