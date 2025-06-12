@@ -171,21 +171,22 @@ end
 function _identify_mode(pdf, domain)
     # Return the modalboundary (mb) and argminboundary (am).
     # Assume that the domain is well formed and appropriate for a monotonic
-    # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
-    # infinite.
-    if isinf(domain[1])
-        mb = domain[2]
-        am = domain[1]
-    elseif isinf(domain[2])
-        mb = domain[1]
-        am = domain[2]
+    # distribution. A constant function is treated as decreasing.
+    a, b = extrema(domain)
+    if isinf(a)
+        mb = b
+        am = a
+    elseif isinf(b)
+        mb = a
+        am = b
     else
-        boundarypdf = pdf.(domain)
-        if boundarypdf[1] == boundarypdf[2]
-            error("pdf must be monotonic and non-constant.")
+        fa, fb = pdf(a), pdf(b)
+        if fa >= fb
+            mb = a
+            am = b
         else
-            mb = domain[argmax(boundarypdf)]
-            am = domain[argmin(boundarypdf)]
+            mb = b
+            am = a
         end
     end
 
