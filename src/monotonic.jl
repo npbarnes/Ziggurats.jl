@@ -15,35 +15,6 @@ struct UnboundedZiggurat{X,Y,F,FB} <: MonotonicZiggurat{X}
     fallback::FB
 end
 
-function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
-    if tailarea !== nothing || (cdf === nothing && ccdf === nothing)
-        return tailarea
-    end
-
-    # below here, tailarea is nothing, and cdf and ccdf are not both nothing.
-    a, b = extrema(domain)
-    fa, fb = pdf(a), pdf(b)
-    if fa < fb # pdf is increasing (constant functions are decreasing)
-        if cdf !== nothing
-            return cdf
-        elseif ccdf !== nothing
-            throw(ArgumentError("a ccdf is provided for an increasing pdf, pass cdf or tailarea instead."))
-        else
-            error("Unreachable error: it should be impossible to throw this error.")
-        end
-    else
-        if ccdf !== nothing
-            return ccdf
-        elseif cdf !== nothing
-            throw(ArgumentError("a cdf is provided for an increasing pdf, pass ccdf or tailarea instead."))
-        else
-            error("Unreachable error: it should be impossible to throw this error.")
-        end
-    end
-
-    error("Unreachable error: it should be impossible to throw this error.")
-end
-
 function monotonic_ziggurat(
     pdf,
     domain,
@@ -147,6 +118,35 @@ function UnboundedZiggurat(pdf, N, domain, ipdf, tailarea, fallback_generator)
     end
 
     UnboundedZiggurat(x, y, pdf, modalboundary, fallback)
+end
+
+function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
+    if tailarea !== nothing || (cdf === nothing && ccdf === nothing)
+        return tailarea
+    end
+
+    # below here, tailarea is nothing, and cdf and ccdf are not both nothing.
+    a, b = extrema(domain)
+    fa, fb = pdf(a), pdf(b)
+    if fa < fb # pdf is increasing (constant functions are decreasing)
+        if cdf !== nothing
+            return cdf
+        elseif ccdf !== nothing
+            throw(ArgumentError("a ccdf is provided for an increasing pdf, pass cdf or tailarea instead."))
+        else
+            error("Unreachable error: it should be impossible to throw this error.")
+        end
+    else
+        if ccdf !== nothing
+            return ccdf
+        elseif cdf !== nothing
+            throw(ArgumentError("a cdf is provided for an increasing pdf, pass ccdf or tailarea instead."))
+        else
+            error("Unreachable error: it should be impossible to throw this error.")
+        end
+    end
+
+    error("Unreachable error: it should be impossible to throw this error.")
 end
 
 function _check_arguments(N, domain)
