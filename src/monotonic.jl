@@ -157,9 +157,6 @@ function _check_arguments(N, domain)
         error("empty domains are not allowed, got domain=$domain.")
     end
 
-    # Check if the domain is well formed and appropriate for a monotonic
-    # distribution. I.e. d[1] < d[2], and at most one of d[1] and d[2] are
-    # infinite.
     a, b = extrema(domain)
     if a == b
         error("empty domains are not allowed, got domain=$domain.")
