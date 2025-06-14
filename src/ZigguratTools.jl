@@ -7,6 +7,7 @@ using LinearAlgebra
 using AliasTables
 using IntervalRootFinding
 using ForwardDiff
+using FixedPointNumbers
 
 export
     # Abstract types

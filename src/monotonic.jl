@@ -1,18 +1,42 @@
-abstract type MonotonicZiggurat{X} end
+abstract type MonotonicZiggurat{Mask,Shift,X} end
 
-struct BoundedZiggurat{X,Y,F} <: MonotonicZiggurat{X}
-    x::Vector{X}
+struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X}
+    w::Vector{X}
+    k::Vector{K}
     y::Vector{Y}
     pdf::F
     modalboundary::X
+    function BoundedZiggurat{M,S}(w, k, y, f, mb) where {M,S}
+        new{M,S,eltype(w),eltype(y),eltype(k),typeof(f)}(w, k, y, f, mb)
+    end
 end
 
-struct UnboundedZiggurat{X,Y,F,FB} <: MonotonicZiggurat{X}
-    x::Vector{X}
+struct UnboundedZiggurat{Mask,Shift,X,Y,K,F,FB} <: MonotonicZiggurat{Mask,Shift,X}
+    w::Vector{X}
+    k::Vector{K}
     y::Vector{Y}
     pdf::F
     modalboundary::X
     fallback::FB
+    function UnboundedZiggurat{M,S}(w, k, y, f, mb, fb) where {M,S}
+        new{M,S,eltype(w),eltype(y),eltype(k),typeof(f),typeof(fb)}(w, k, y, f, mb, fb)
+    end
+end
+
+corresponding_uint(::Type{Float64}) = UInt64
+corresponding_uint(::Type{Float32}) = UInt32
+corresponding_uint(::Type{Float16}) = UInt16
+
+function mask_shift(X, N)
+    maxpower = 8sizeof(X) - Base.significand_bits(X)
+    if N ∈ (2^m for m in 0:maxpower)
+        power = Int64(log2(N))
+        shift = 8sizeof(X) - power
+        mask = corresponding_uint(X)(2^power - 1) << shift
+        return mask, shift
+    else
+        return nothing, nothing
+    end
 end
 
 function monotonic_ziggurat(
@@ -51,7 +75,13 @@ function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
 
     x, y = search(N, modalboundary, argminboundary, pdf, ipdf)
 
-    BoundedZiggurat(x, y, pdf, modalboundary)
+    w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
+    k = [
+        fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for
+        i in 1:(length(x) - 1)
+    ]
+
+    BoundedZiggurat{mask_shift(eltype(domain), N)...}(w, k, y, pdf, modalboundary)
 end
 
 function UnboundedZiggurat(
@@ -111,7 +141,20 @@ function UnboundedZiggurat(
         fallback = fallback_generator(x[2])
     end
 
-    UnboundedZiggurat(x, y, pdf, modalboundary, fallback)
+    w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
+    k = [
+        fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for
+        i in 1:(length(x) - 1)
+    ]
+
+    UnboundedZiggurat{mask_shift(eltype(domain), N)...}(
+        w,
+        k,
+        y,
+        pdf,
+        modalboundary,
+        fallback
+    )
 end
 
 function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
@@ -322,45 +365,90 @@ function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
 
 ## Sampling
-Random.eltype(::Type{<:MonotonicZiggurat{X}}) where {X} = X
+Random.eltype(::Type{<:MonotonicZiggurat{M,S,X}}) where {M,S,X} = X
 
 function Base.rand(
     rng::AbstractRNG,
     zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat}
 )
     z = zig_sampler[]
-    N = length(z.x) - 1 # number of layers
-
-    while true
-        l = rand(rng, 1:N)
-        x = (z.modalboundary - z.x[l]) * rand(rng) + z.x[l]
-
-        if between(z.x[l + 1], z.modalboundary, x)
-            return x
-        else
-            sp = slowpath(rng, z, l, x)
-            if sp !== nothing
-                return sp
-            end
-        end
-    end
+    zigsample(rng, z)
 end
 
-function simple_rejection(rng, z, l, x)
-    y = (z.y[l + 1] - z.y[l]) * rand(rng) + z.y[l]
-    if y < z.pdf(x)
+function zigsample(rng, z::MonotonicZiggurat)
+    l = rand(rng, 1:(length(z.w) - 1))
+    u = rand(rng, eltype(z))
+    x = u * z.w[l] + z.modalboundary
+    if u <= z.k[l] # k and u are just fractions for non-FloatXX types, not integers.
         return x
     end
-
-    nothing
+    slowpath(rng, z, l, x)
 end
 
-function slowpath(rng, z::UnboundedZiggurat, l, x)
-    if l == 1
-        return z.fallback(rng)
+const FloatXX = Union{Float64,Float32,Float16}
+
+function zigsample(rng, z::MonotonicZiggurat{M,S,F}) where {M,S,F<:FloatXX}
+    @inbounds begin
+        r = rand(rng, corresponding_uint(F))
+        l = random_layer(rng, r, z)
+        u = r & significand_bitmask(eltype(z))
+        x = u * z.w[l] + z.modalboundary
+        if u <= z.k[l]
+            return x
+        end
+        slowpath(rng, z, l, x)
     end
-
-    simple_rejection(rng, z, l, x)
 end
 
-slowpath(rng, z::BoundedZiggurat, l, x) = simple_rejection(rng, z, l, x)
+function random_layer(rng, r, z::MonotonicZiggurat{M,S}) where {M,S}
+    ((r & M) >> S) + 1
+end
+
+function random_layer(rng, r, z::MonotonicZiggurat{nothing,nothing})
+    rand(rng, 1:(length(z.w) - 1))
+end
+
+@noinline function slowpath(rng, z::UnboundedZiggurat, l, x)
+    @inbounds begin
+        if l == 1
+            return z.fallback(rng)
+        end
+
+        y = (z.y[l + 1] - z.y[l]) * rand(rng, eltype(z)) + z.y[l]
+        if y < z.pdf(x)
+            return x
+        end
+
+        zigsample(rng, z)
+    end
+end
+
+@noinline function slowpath(rng, z::BoundedZiggurat, l, x)
+    @inbounds begin
+        y = (z.y[l + 1] - z.y[l]) * rand(rng, eltype(z)) + z.y[l]
+        if y < z.pdf(x)
+            return x
+        end
+
+        zigsample(rng, z)
+    end
+end
+
+significand_bitmask(::Type{Float64}) = 0x000fffffffffffff
+significand_bitmask(::Type{Float32}) = 0x007fffff
+significand_bitmask(::Type{Float16}) = 0x03ff
+
+function fixedbit_fraction(frac)
+    if !between(0.0, 1.0, frac)
+        error("successive layer width radio is not between zero and one. Got frac=$frac. \
+        This means the ziggurat was not constructed correctly.")
+    end
+    if frac === -zero(frac)
+        frac = zero(frac)
+    end
+    _fixedbit_fraction(frac)
+end
+_fixedbit_fraction(frac) = frac # fallback is just a fraction
+_fixedbit_fraction(frac::Float64) = reinterpret(Normed{UInt64,52}(frac))
+_fixedbit_fraction(frac::Float32) = reinterpret(Normed{UInt32,23}(frac))
+_fixedbit_fraction(frac::Float16) = reinterpret(Normed{UInt16,10}(frac))
