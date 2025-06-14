@@ -26,6 +26,10 @@ function inverse(f, domain, args...; kwargs...)
     ex = extrema(domain)
     a, b = promote(float(ex[1]), float(ex[2]))
     fa, fb = f(a), f(b)
+    if isnan(fa) || isnan(fb)
+        error("f returns NaN on at least one end point of the domain. The function f must \
+        return a number for all values in its domain to make a sensible inverse function.")
+    end
     smallx, smallf, bigf = fa < fb ? (a, fa, fb) : (b, fb, fa)
 
     let bigf=bigf, smallf=smallf, smallx=smallx, f=f, args=args, kwargs=kwargs
