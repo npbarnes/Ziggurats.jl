@@ -199,9 +199,11 @@ function Base.rand(
     rng::AbstractRNG,
     zig_sampler::Random.SamplerTrivial{<:CompositeZiggurat}
 )
-    zigs = zig_sampler[].zigs
-    at = zig_sampler[].at
+    @inbounds begin
+        zigs = zig_sampler[].zigs
+        at = zig_sampler[].at
 
-    i = rand(rng, at)
-    rand(rng, zigs[i])
+        i = rand(rng, at)
+        rand(rng, zigs[i])
+    end
 end
