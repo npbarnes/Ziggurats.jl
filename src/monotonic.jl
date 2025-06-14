@@ -175,6 +175,15 @@ function _identify_mode(pdf, domain)
         am = b
     else
         fa, fb = pdf(a), pdf(b)
+        if isnan(fa) || isnan(fb)
+            error("pdf(x) is NaN on the boundary. Check the definition of your pdf. It must \
+            return positive numbers everywhere on its domain, including the end points of \
+            the domain.")
+        end
+        if isinf(fa) || isinf(fb)
+            error("pdf(x) is infinite on the boundary. The Marsaglia & Tsang Ziggurat \
+            algorithm requires a finite pdf.")
+        end
         if fa >= fb
             mb = a
             am = b
