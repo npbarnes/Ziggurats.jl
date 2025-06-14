@@ -22,7 +22,8 @@
             z_lamb = UnboundedZiggurat(lamb, (0, Inf), 8)
             z_func = UnboundedZiggurat(func, (0, Inf), 8)
 
-            @test z_call.x == z_lamb.x == z_func.x
+            @test z_call.w == z_lamb.w == z_func.w
+            @test z_call.k == z_lamb.k == z_func.k
             @test z_call.y == z_lamb.y == z_func.y
             @test z_call.modalboundary == z_lamb.modalboundary == z_func.modalboundary
         end
