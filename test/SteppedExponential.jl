@@ -9,7 +9,7 @@ Distributions.rate(d::SteppedExponential) = 1 / d.θ
 
 function Distributions.pdf(d::SteppedExponential, x::Real)
     if x < zero(x)
-        return 0.0
+        return zero(eltype(x))
     end
 
     k = rate(d)
