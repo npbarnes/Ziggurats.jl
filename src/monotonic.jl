@@ -1,6 +1,6 @@
-abstract type MonotonicZiggurat{Mask,Shift,X} end
+abstract type MonotonicZiggurat{Mask,Shift,X,Y} end
 
-struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X}
+struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X,Y}
     w::Vector{X}
     k::Vector{K}
     y::Vector{Y}
@@ -11,7 +11,7 @@ struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X}
     end
 end
 
-struct UnboundedZiggurat{Mask,Shift,X,Y,K,F,FB} <: MonotonicZiggurat{Mask,Shift,X}
+struct UnboundedZiggurat{Mask,Shift,X,Y,K,F,FB} <: MonotonicZiggurat{Mask,Shift,X,Y}
     w::Vector{X}
     k::Vector{K}
     y::Vector{Y}
@@ -366,6 +366,8 @@ end
 
 ## Sampling
 Random.eltype(::Type{<:MonotonicZiggurat{M,S,X}}) where {M,S,X} = X
+Ytype(::Type{<:MonotonicZiggurat{M,S,X,Y}}) where {M,S,X,Y} = Y
+Ytype(::MonotonicZiggurat{M,S,X,Y}) where {M,S,X,Y} = Y
 
 function Base.rand(
     rng::AbstractRNG,
