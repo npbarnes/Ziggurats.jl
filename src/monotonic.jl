@@ -437,6 +437,8 @@ end
     end
 end
 
+# Fallback is to do nothing (not really a bitmask in that case)
+significand_bitmask(::Type{T}) where {T} = oneunit(T)
 significand_bitmask(::Type{Float64}) = 0x000fffffffffffff
 significand_bitmask(::Type{Float32}) = 0x007fffff
 significand_bitmask(::Type{Float16}) = 0x03ff
@@ -451,7 +453,8 @@ function fixedbit_fraction(frac)
     end
     _fixedbit_fraction(frac)
 end
-_fixedbit_fraction(frac) = frac # fallback is just a fraction
+# fallback is just a fraction (not really fixedbit in that case)
+_fixedbit_fraction(frac) = frac
 _fixedbit_fraction(frac::Float64) = reinterpret(Normed{UInt64,52}(frac))
 _fixedbit_fraction(frac::Float32) = reinterpret(Normed{UInt32,23}(frac))
 _fixedbit_fraction(frac::Float16) = reinterpret(Normed{UInt16,10}(frac))
