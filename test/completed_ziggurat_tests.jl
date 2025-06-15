@@ -18,8 +18,10 @@ function test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf
     # stay the same width)
     @test all(abs(x[i] - modalboundary) >= abs(x[i + 1] - modalboundary) for i in 1:N)
 
-    # Layer areas are all equal
     A = abs(x[1] - modalboundary) * (y[2] - y[1])
+    # Layer area is positive
+    @test A > 0
+    # Layer areas are all equal
     @test all(abs(x[i] - modalboundary) * (y[i + 1] - y[i]) ≈ A for i in 2:N)
 
     # A valid ziggurat will have its upper boundary greater than or equal to the pdf.
