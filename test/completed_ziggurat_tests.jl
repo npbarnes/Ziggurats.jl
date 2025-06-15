@@ -65,448 +65,525 @@ function test_continuous_pdf(x, y, f, N, argminboundary)
 end
 
 @testset "Completed Ziggurat" begin
-    @testset "Normal (x>=0)" begin
-        dist = truncated(Normal(); lower = 0.0)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
-        tailarea = Base.Fix1(ccdf, dist)
+    @testset "Domain type=$T" for T in (Float16, Float32, Float64)
+        @testset "Normal (x>=0)" begin
+            dist = truncated(Normal(); lower = 0.0)
+            domain = T.(extrema(dist))
+            f = Base.Fix1(pdf, dist)
+            invf = inverse(f, domain) # TODO: replace with direct implementation of inverse
+            tailarea = Base.Fix1(ccdf, dist)
 
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
-        utailarea(x) = 3 * tailarea(x)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
+            utailarea(x) = 3 * tailarea(x)
 
-        modalboundary = 0.0
-        argminboundary = Inf
-        slopesign = -1
+            modalboundary = T(0.0)
+            argminboundary = T(Inf)
+            slopesign = -1
 
-        Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 256]
 
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    f,
-                    invf,
-                    tailarea
-                )
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        f,
+                        invf,
+                        tailarea
+                    )
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+                    @test eltype(x) == eltype(y) == T
 
-                test_unbounded_domain(x, y, modalboundary, tailarea)
-                #test_bounded_domain(x, argminboundary)
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol = 1e-5)
+                    test_unbounded_domain(x, y, modalboundary, tailarea)
+                    #test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary; atol = 1e-5)
+                end
+            end
+
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        uf,
+                        uinvf,
+                        utailarea
+                    )
+
+                    @test eltype(x) == eltype(y) == T
+
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
+
+                    test_unbounded_domain(x, y, modalboundary, utailarea)
+                    #test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary; atol = 1e-5)
+                end
             end
         end
 
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    uf,
-                    uinvf,
-                    utailarea
-                )
+        @testset "Normal (x<=0)" begin
+            dist = truncated(Normal(); upper = 0.0)
+            f = Base.Fix1(pdf, dist)
+            domain = T.(extrema(dist))
+            invf = inverse(f, domain) # TODO: replace with direct implementation of inverse
+            tailarea = Base.Fix1(cdf, dist)
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
+            utailarea(x) = 3 * tailarea(x)
 
-                test_unbounded_domain(x, y, modalboundary, utailarea)
-                #test_bounded_domain(x, argminboundary)
+            modalboundary = T(0.0)
+            argminboundary = T(-Inf)
+            slopesign = 1
 
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol = 1e-5)
+            Ns = [1, 2, 3, 256]
+
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        f,
+                        invf,
+                        tailarea
+                    )
+
+                    @test eltype(x) == eltype(y) == T
+
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+                    test_unbounded_domain(x, y, modalboundary, tailarea)
+                    #test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary; atol = 1e-5)
+                end
             end
-        end
-    end
 
-    @testset "Normal (x<=0)" begin
-        dist = truncated(Normal(); upper = 0.0)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
-        tailarea = Base.Fix1(cdf, dist)
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        uf,
+                        uinvf,
+                        utailarea
+                    )
 
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
-        utailarea(x) = 3 * tailarea(x)
+                    @test eltype(x) == eltype(y) == T
 
-        modalboundary = 0.0
-        argminboundary = -Inf
-        slopesign = 1
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
 
-        Ns = [1, 2, 3, 256]
+                    test_unbounded_domain(x, y, modalboundary, utailarea)
+                    #test_bounded_domain(x, argminboundary)
 
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    f,
-                    invf,
-                    tailarea
-                )
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-                test_unbounded_domain(x, y, modalboundary, tailarea)
-                #test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol = 1e-5)
-            end
-        end
-
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    uf,
-                    uinvf,
-                    utailarea
-                )
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-
-                test_unbounded_domain(x, y, modalboundary, utailarea)
-                #test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary; atol = 1e-5)
-            end
-        end
-    end
-
-    @testset "Non-standard Normal" begin
-        dist = truncated(Normal(1.5, 3); upper = 1)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
-        tailarea = Base.Fix1(cdf, dist)
-
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
-        utailarea(x) = 3 * tailarea(x)
-
-        modalboundary = 1.0
-        argminboundary = -Inf
-        slopesign = 1
-
-        Ns = [1, 2, 3, 256]
-
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    f,
-                    invf,
-                    tailarea
-                )
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-                test_unbounded_domain(x, y, modalboundary, tailarea)
-                #test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary; atol = 1e-5)
+                end
             end
         end
 
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    uf,
-                    uinvf,
-                    utailarea
-                )
+        @testset "Non-standard Normal" begin
+            dist = truncated(Normal(1.5, 3); upper = 1)
+            f = Base.Fix1(pdf, dist)
+            domain = T.(extrema(dist))
+            invf = inverse(f, domain) # TODO: replace with direct implementation of inverse
+            tailarea = Base.Fix1(cdf, dist)
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
+            utailarea(x) = 3 * tailarea(x)
 
-                test_unbounded_domain(x, y, modalboundary, utailarea)
-                #test_bounded_domain(x, argminboundary)
+            modalboundary = T(1.0)
+            argminboundary = T(-Inf)
+            slopesign = 1
 
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+            Ns = [1, 2, 3, 256]
+
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        f,
+                        invf,
+                        tailarea
+                    )
+
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+                    test_unbounded_domain(x, y, modalboundary, tailarea)
+                    #test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
             end
-        end
-    end
 
-    @testset "Two Steps" begin
-        # Designed so that the current build algorithm cannot produce an optimal ziggurat (i.e. y[end] ≈ f(mode))
-        function f(x)
-            if 0 <= x <= 1
-                4.5
-            elseif 1 < x <= 2
-                1.0
-            else
-                0.0
-            end
-        end
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        uf,
+                        uinvf,
+                        utailarea
+                    )
 
-        function invf(y)
-            if 0 <= y <= 1
-                2.0
-            elseif 1 < y <= 4.5
-                1.0
-            else
-                error()
-            end
-        end
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
 
-        N = 3
-        modalboundary = 0.0
-        argminboundary = 2.0
-        slopesign = -1
+                    test_unbounded_domain(x, y, modalboundary, utailarea)
+                    #test_bounded_domain(x, argminboundary)
 
-        x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
-
-        test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-        #test_unbounded_domain(x, y, modalboundary, tailarea)
-        test_bounded_domain(x, argminboundary)
-
-        #test_continuous_pdf(x, y, f, N, argminboundary)
-        #test_not_initially_flat(x, modalboundary)
-    end
-
-    @testset "SteppedExponential" begin
-        dist = SteppedExponential()
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
-        tailarea = Base.Fix1(ccdf, dist)
-
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
-        utailarea(x) = 3 * tailarea(x)
-
-        modalboundary = 0.0
-        argminboundary = Inf
-        slopesign = -1
-
-        Ns = [1, 2, 3, 256]
-
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    f,
-                    invf,
-                    tailarea
-                )
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-                test_unbounded_domain(x, y, modalboundary, tailarea)
-                #test_bounded_domain(x, argminboundary)
-
-                #test_continuous_pdf(x, y, f, N, argminboundary)
-                #test_not_initially_flat(x, modalboundary)
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
             end
         end
 
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(
-                    N,
-                    modalboundary,
-                    argminboundary,
-                    uf,
-                    uinvf,
-                    utailarea
-                )
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-
-                test_unbounded_domain(x, y, modalboundary, utailarea)
-                #test_bounded_domain(x, argminboundary)
-
-                #test_continuous_pdf(x, y, uf, N, argminboundary)
-                #test_not_initially_flat(x, modalboundary)
+        @testset "Two Steps" begin
+            # Designed so that the current build algorithm cannot produce an optimal ziggurat (i.e. y[end] ≈ f(mode))
+            function f(x)
+                if 0 <= x <= 1
+                    4.5
+                elseif 1 < x <= 2
+                    1.0
+                else
+                    0.0
+                end
             end
-        end
-    end
 
-    @testset "Truncated Normal (0.5 <= x <= 1)" begin
-        dist = truncated(Normal(); lower = 0.5, upper = 1)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
-
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
-
-        modalboundary = 0.5
-        argminboundary = 1.0
-        slopesign = -1
-
-        Ns = [1, 2, 3, 256]
-
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-                #test_unbounded_domain(x, y, modalboundary, tailarea)
-                test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+            function invf(y)
+                if 0 <= y <= 1
+                    2.0
+                elseif 1 < y <= 4.5
+                    1.0
+                else
+                    error()
+                end
             end
+
+            N = 3
+            modalboundary = 0.0
+            argminboundary = 2.0
+            slopesign = -1
+
+            x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+
+            test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+            #test_unbounded_domain(x, y, modalboundary, tailarea)
+            test_bounded_domain(x, argminboundary)
+
+            #test_continuous_pdf(x, y, f, N, argminboundary)
+            #test_not_initially_flat(x, modalboundary)
         end
 
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+        @testset "SteppedExponential" begin
+            dist = SteppedExponential()
+            f = Base.Fix1(pdf, dist)
+            invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
+            tailarea = Base.Fix1(ccdf, dist)
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
+            utailarea(x) = 3 * tailarea(x)
 
-                #test_unbounded_domain(x, y, modalboundary, utailarea)
-                test_bounded_domain(x, argminboundary)
+            modalboundary = 0.0
+            argminboundary = Inf
+            slopesign = -1
 
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+            Ns = [1, 2, 3, 256]
+
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        f,
+                        invf,
+                        tailarea
+                    )
+
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+                    test_unbounded_domain(x, y, modalboundary, tailarea)
+                    #test_bounded_domain(x, argminboundary)
+
+                    #test_continuous_pdf(x, y, f, N, argminboundary)
+                    #test_not_initially_flat(x, modalboundary)
+                end
             end
-        end
-    end
 
-    @testset "Truncated Normal (0.5 <= x <= 10)" begin
-        dist = truncated(Normal(); lower = 0.5, upper = 10)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(
+                        N,
+                        modalboundary,
+                        argminboundary,
+                        uf,
+                        uinvf,
+                        utailarea
+                    )
 
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
 
-        modalboundary = 0.5
-        argminboundary = 10.0
-        slopesign = -1
+                    test_unbounded_domain(x, y, modalboundary, utailarea)
+                    #test_bounded_domain(x, argminboundary)
 
-        Ns = [1, 2, 3, 256]
-
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-                #test_unbounded_domain(x, y, modalboundary, tailarea)
-                test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
-            end
-        end
-
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
-
-                #test_unbounded_domain(x, y, modalboundary, utailarea)
-                test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
-            end
-        end
-    end
-
-    @testset "Truncated Normal (-1 <= x <= -0.5)" begin
-        dist = truncated(Normal(); lower = -1, upper = -0.5)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
-
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
-
-        modalboundary = -0.5
-        argminboundary = -1.0
-        slopesign = 1
-
-        Ns = [1, 2, 3, 256]
-
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
-
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
-
-                #test_unbounded_domain(x, y, modalboundary, tailarea)
-                test_bounded_domain(x, argminboundary)
-
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+                    #test_continuous_pdf(x, y, uf, N, argminboundary)
+                    #test_not_initially_flat(x, modalboundary)
+                end
             end
         end
 
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+        @testset "Truncated Normal (0.5 <= x <= 1)" begin
+            dist = truncated(Normal(); lower = 0.5, upper = 1)
+            f = Base.Fix1(pdf, dist)
+            invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
 
-                #test_unbounded_domain(x, y, modalboundary, utailarea)
-                test_bounded_domain(x, argminboundary)
+            modalboundary = 0.5
+            argminboundary = 1.0
+            slopesign = -1
 
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+            Ns = [1, 2, 3, 256]
+
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+                    #test_unbounded_domain(x, y, modalboundary, tailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
+            end
+
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
+
+                    #test_unbounded_domain(x, y, modalboundary, utailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
             end
         end
-    end
 
-    @testset "Truncated Normal (-10 <= x <= -0.5)" begin
-        dist = truncated(Normal(); lower = -10, upper = -0.5)
-        f = Base.Fix1(pdf, dist)
-        invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
+        @testset "Truncated Normal (0.5 <= x <= 10)" begin
+            dist = truncated(Normal(); lower = 0.5, upper = 10)
+            f = Base.Fix1(pdf, dist)
+            invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
 
-        uf(x) = 3 * f(x)
-        uinvf(y) = invf(y / 3)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
 
-        modalboundary = -0.5
-        argminboundary = -10.0
-        slopesign = 1
+            modalboundary = 0.5
+            argminboundary = 10.0
+            slopesign = -1
 
-        Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 256]
 
-        @testset "Normalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
 
-                #test_unbounded_domain(x, y, modalboundary, tailarea)
-                test_bounded_domain(x, argminboundary)
+                    #test_unbounded_domain(x, y, modalboundary, tailarea)
+                    test_bounded_domain(x, argminboundary)
 
-                test_continuous_pdf(x, y, f, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
+            end
+
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
+
+                    #test_unbounded_domain(x, y, modalboundary, utailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
             end
         end
 
-        @testset "Unnormalized pdf" begin
-            @testset for N in Ns
-                x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+        @testset "Truncated Normal (-1 <= x <= -0.5)" begin
+            dist = truncated(Normal(); lower = -1, upper = -0.5)
+            f = Base.Fix1(pdf, dist)
+            invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
 
-                test_common_layer_properties(x, y, N, modalboundary, slopesign, uf, uinvf)
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
 
-                #test_unbounded_domain(x, y, modalboundary, utailarea)
-                test_bounded_domain(x, argminboundary)
+            modalboundary = -0.5
+            argminboundary = -1.0
+            slopesign = 1
 
-                test_continuous_pdf(x, y, uf, N, argminboundary)
-                test_not_initially_flat(x, modalboundary)
+            Ns = [1, 2, 3, 256]
+
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+                    #test_unbounded_domain(x, y, modalboundary, tailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
+            end
+
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
+
+                    #test_unbounded_domain(x, y, modalboundary, utailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
+            end
+        end
+
+        @testset "Truncated Normal (-10 <= x <= -0.5)" begin
+            dist = truncated(Normal(); lower = -10, upper = -0.5)
+            f = Base.Fix1(pdf, dist)
+            invf = inverse(f, extrema(dist)) # TODO: replace with direct implementation of inverse
+
+            uf(x) = 3 * f(x)
+            uinvf(y) = invf(y / 3)
+
+            modalboundary = -0.5
+            argminboundary = -10.0
+            slopesign = 1
+
+            Ns = [1, 2, 3, 256]
+
+            @testset "Normalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, f, invf)
+
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf)
+
+                    #test_unbounded_domain(x, y, modalboundary, tailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, f, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
+            end
+
+            @testset "Unnormalized pdf" begin
+                @testset for N in Ns
+                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, uf, uinvf)
+
+                    test_common_layer_properties(
+                        x,
+                        y,
+                        N,
+                        modalboundary,
+                        slopesign,
+                        uf,
+                        uinvf
+                    )
+
+                    #test_unbounded_domain(x, y, modalboundary, utailarea)
+                    test_bounded_domain(x, argminboundary)
+
+                    test_continuous_pdf(x, y, uf, N, argminboundary)
+                    test_not_initially_flat(x, modalboundary)
+                end
             end
         end
     end
