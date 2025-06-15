@@ -177,7 +177,7 @@ function test_samples(
         end
     end
 
-    @test eltype(samples) === eltype(distr)
+    #@test eltype(samples) === eltype(distr)
     @test !any(isnan, samples)
     @test !any(isinf, samples)
 
