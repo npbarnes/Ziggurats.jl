@@ -27,7 +27,10 @@ corresponding_uint(::Type{Float64}) = UInt64
 corresponding_uint(::Type{Float32}) = UInt32
 corresponding_uint(::Type{Float16}) = UInt16
 
-function mask_shift(X, N)
+const FloatXX = Union{Float64,Float32,Float16}
+
+mask_shift(::Type, N) = nothing, nothing
+function mask_shift(X::Type{<:FloatXX}, N)
     maxpower = 8sizeof(X) - Base.significand_bits(X)
     if N ∈ (2^m for m in 0:maxpower)
         power = Int64(log2(N))
@@ -386,8 +389,6 @@ function zigsample(rng, z::MonotonicZiggurat)
     end
     slowpath(rng, z, l, x)
 end
-
-const FloatXX = Union{Float64,Float32,Float16}
 
 function zigsample(rng, z::MonotonicZiggurat{M,S,F}) where {M,S,F<:FloatXX}
     @inbounds begin
