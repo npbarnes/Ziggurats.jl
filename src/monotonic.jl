@@ -52,7 +52,7 @@ function monotonic_ziggurat(
     ccdf = nothing,
     fallback_generator = nothing
 )
-    domain = regularize_domain(domain)
+    domain = regularize(domain)
     a, b = extrema(domain)
     if isinf(a) || isinf(b)
         tailarea = _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
@@ -63,7 +63,7 @@ function monotonic_ziggurat(
 end
 
 function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
-    domain = extrema(regularize_domain(domain))
+    domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
@@ -95,7 +95,7 @@ function UnboundedZiggurat(
     tailarea = nothing,
     fallback_generator = nothing
 )
-    domain = extrema(regularize_domain(domain))
+    domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)

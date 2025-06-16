@@ -4,7 +4,7 @@ struct SymmetricZiggurat{X,Z<:MonotonicZiggurat{X}}
 end
 
 function SymmetricZiggurat(f, domain, N; ipdf_left = nothing, ipdf_right = nothing)
-    domian = regularize_domain(domain)
+    domian = regularize(domain)
 
     if isinf(domain[1]) != isinf(domain[2])
         error("invalid domain. Symmetric distributions must have a bounded domain or (-Inf, Inf), got $domain.")
@@ -106,7 +106,7 @@ function _get_subdomains(f, domain)
 end
 
 function monotonic_segments(f, domain)
-    a, b = extrema(regularize_domain(domain))
+    a, b = extrema(regularize(domain))
     df = x -> ForwardDiff.derivative(f, x)
 
     unique([a; find_zeros(df, a, b); b])
@@ -127,7 +127,7 @@ function CompositeZiggurat(
     ccdf = nothing,
     p = nothing
 )
-    domain = regularize_domain(domain)
+    domain = regularize(domain)
 
     a, b = extrema(domain)
     subdomains = get_subdomains(pdf, domain)

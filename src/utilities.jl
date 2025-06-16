@@ -3,6 +3,14 @@ function between(a, b, x)
     l <= x <= r
 end
 
-function regularize_domain(domain)
-    unique(sort!(collect(promote(float.(domain)...))))
+struct Regularized{T}
+    a::Vector{T}
 end
+
+regularize(domain::Regularized) = domain
+function regularize(domain)
+    Regularized(unique(sort!(collect(promote(float.(domain)...)))))
+end
+
+Base.getindex(r::Regularized, i) = r.a[i]
+Base.extrema(r::Regularized) = extrema(r.a)
