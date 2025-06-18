@@ -1,8 +1,10 @@
 # An unusual distribution to test discontinuities, and non-strict monotonicity.
-struct SteppedExponential <: ContinuousUnivariateDistribution
-    θ::Float64
+struct SteppedExponential{T} <: ContinuousUnivariateDistribution
+    θ::T
 end
 SteppedExponential() = SteppedExponential(1.0)
+
+Base.eltype(::SteppedExponential{T}) where {T} = T
 
 Distributions.scale(d::SteppedExponential) = d.θ
 Distributions.rate(d::SteppedExponential) = 1 / d.θ
@@ -18,7 +20,7 @@ end
 
 function Distributions.logpdf(d::SteppedExponential, x::Real)
     if x < zero(x)
-        return -Inf
+        return typemin(eltype(d))
     end
 
     k = rate(d)
@@ -27,7 +29,7 @@ end
 
 function Distributions.cdf(d::SteppedExponential, x::Real)
     if x <= zero(x)
-        return 0.0
+        return zero(eltype(d))
     end
 
     fpart, floorx = modf(x)
@@ -46,7 +48,7 @@ function Distributions.quantile(d::SteppedExponential, q::Real)
     end
 
     if q == oneunit(q)
-        return Inf
+        return typemax(eltype(d))
     end
     θ = scale(d)
     k = rate(d)
@@ -54,11 +56,18 @@ function Distributions.quantile(d::SteppedExponential, q::Real)
     (q + exp(-k * m) - 1) / ((1 - exp(-k)) * exp(-k * m)) + m
 end
 
-Base.minimum(::Union{SteppedExponential,Type{SteppedExponential}}) = 0.0
-Base.maximum(::Union{SteppedExponential,Type{SteppedExponential}}) = Inf
+Base.minimum(::Union{SteppedExponential{T},Type{SteppedExponential{T}}}) where {T} = zero(T)
+function Base.maximum(::Union{SteppedExponential{T},Type{SteppedExponential{T}}}) where {T}
+    typemax(T)
+end
 
-Distributions.insupport(::SteppedExponential, x::Real) = x >= 0.0
+Distributions.insupport(::SteppedExponential, x::Real) = x >= 0
 
-StatsBase.mode(::Union{SteppedExponential,Type{SteppedExponential}}) = 0.0
+function StatsBase.mode(::Union{
+    SteppedExponential{T},
+    Type{SteppedExponential{T}}
+}) where {T}
+    zero(T)
+end
 
 Distributions.params(d::SteppedExponential) = (d.θ,)

@@ -56,7 +56,7 @@
             end
 
             @testset "SteppedExponential" begin
-                dist = SteppedExponential()
+                dist = SteppedExponential(oneunit(T))
 
                 f = Base.Fix1(pdf, dist)
                 ta = Base.Fix1(ccdf, dist)
