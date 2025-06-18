@@ -10,23 +10,10 @@ using ForwardDiff
 using FixedPointNumbers
 using Logging
 
-export
-    # Abstract types
-    MonotonicZiggurat,
-
-    # Sampler types
-    UnboundedZiggurat,
-    BoundedZiggurat,
-    SymmetricZiggurat,
-    CompositeZiggurat,
-
-    # Smart constructors
-    monotonic_ziggurat,
-
-    # Helper functions,
-    monotonic_segments
-
-public inversepdf
+export Ziggurat, MonotonicZiggurat
+export BoundedZiggurat, UnboundedZiggurat, SymmetricZiggurat, CompositeZiggurat
+export ziggurat, monotonic_ziggurat
+export monotonic_segments, inversepdf
 
 include("utilities.jl")
 include("inverse_pdf.jl")
