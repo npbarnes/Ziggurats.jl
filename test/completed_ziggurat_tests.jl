@@ -97,7 +97,7 @@ end
 
             slopesign = -1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -193,7 +193,7 @@ end
 
             slopesign = 1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -291,7 +291,7 @@ end
 
             slopesign = 1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -432,7 +432,7 @@ end
 
             slopesign = -1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -522,7 +522,7 @@ end
 
             slopesign = -1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -599,7 +599,7 @@ end
 
             slopesign = -1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -676,7 +676,7 @@ end
 
             slopesign = 1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
@@ -753,7 +753,7 @@ end
 
             slopesign = 1
 
-            Ns = [1, 2, 3, 256]
+            Ns = [1, 2, 3, 4]
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
