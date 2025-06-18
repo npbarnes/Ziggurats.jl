@@ -123,6 +123,9 @@ function (ipdf::IPDFWrap)(y)
     end
 end
 
+wrapperloglevel(unwrapped, ll) = nothing
+wrapperloglevel(wipdf::IPDFWrap, ll) = wipdf.clamplog = ll
+
 """
     NoWrap(pdf)
     NoWrap(ipdf)
@@ -408,7 +411,7 @@ function _search(y_domain, p)
     # algorithms are.
 
     # Set the IPDF wrapper to issue warnings when ipdf produces points outside the domain.
-    p.buildargs[3].clamplog = Warn
+    wrapperloglevel(p.buildargs[3], Warn)
 
     # TODO: Check if the final build fails
     build!(p.x, p.y, ystar, p.buildargs...)
