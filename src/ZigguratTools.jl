@@ -15,6 +15,8 @@ export BoundedZiggurat, UnboundedZiggurat, SymmetricZiggurat, CompositeZiggurat
 export ziggurat, monotonic_ziggurat
 export monotonic_segments, inversepdf
 
+public NoWrap
+
 abstract type Ziggurat{X} end
 
 include("utilities.jl")
