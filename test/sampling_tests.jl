@@ -78,7 +78,7 @@
                 ipdf = y -> √(-2log(√T(2π)*y))
                 z = BoundedZiggurat(f, (T(0.5), T(1)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == Ytype(z) == T
+                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                 test_samples(z, truncated(dist; lower = 0.5, upper = 1))
             end
 
@@ -89,7 +89,7 @@
                 ipdf = y -> -√(-2log(√T(2π)*y))
                 z = BoundedZiggurat(f, (T(-1), T(-0.5)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == Ytype(z) == T
+                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                 test_samples(z, truncated(dist; lower = -1, upper = -0.5))
             end
 
@@ -100,7 +100,7 @@
                 ipdf = y -> √(-2log(√T(2π)*y))
                 z = BoundedZiggurat(f, (T(0.5), T(10)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == Ytype(z) == T
+                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                 test_samples(z, truncated(dist; lower = 0.5, upper = 10))
             end
 
@@ -111,7 +111,7 @@
                 ipdf = y -> -√(-2log(√T(2π)*y))
                 z = BoundedZiggurat(f, (T(-10), T(-0.5)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == Ytype(z) == T
+                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                 test_samples(z, truncated(dist; lower = -10, upper = -0.5))
             end
         end
