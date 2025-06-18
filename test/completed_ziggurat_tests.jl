@@ -22,7 +22,11 @@ function test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf
     # Layer area is positive
     @test A > 0
     # Layer areas are all equal
-    @test all(abs(x[i] - modalboundary) * (y[i + 1] - y[i]) ≈ A for i in 2:N)
+    @test all(isapprox(
+        abs(x[i] - modalboundary) * (y[i + 1] - y[i]),
+        A;
+        atol = √eps(eltype(x))
+    ) for i in 2:N)
 
     # A valid ziggurat will have its upper boundary greater than or equal to the pdf.
     @test y[end] >= f(modalboundary)
@@ -43,25 +47,22 @@ function test_unbounded_domain(x, y, modalboundary, tailarea)
     true_base_area = abs(x[2] - modalboundary) * y[2] + tailarea(x[2])
     artificial_base_area = abs(x[1] - modalboundary) * y[2]
 
-    @test true_base_area ≈ artificial_base_area
+    @test true_base_area ≈ artificial_base_area atol = √eps(eltype(x))
 end
 
 function test_bounded_domain(x, argminboundary)
     @test x[1] == argminboundary
 end
 
-function test_not_initially_flat(x, modalboundary; atol = 1e-8)
+function test_not_initially_flat(x, modalboundary; atol = sqrt(eps(oneunit(modalboundary))))
     @test x[end] ≈ modalboundary atol = atol
 end
 
 function test_continuous_pdf(x, y, f, N, argminboundary)
     # Expect f(x) = y, but not on a discontinuity. The argminboundary is a discontinuity for
     # bounded ziggurats, so it is excluded from this test.
-    for i in 2:(N + 1)
-        if x[i] != argminboundary
-            @test y[i] ≈ f(x[i])
-        end
-    end
+    @test all(isapprox(y[i], f(x[i]); atol = √eps(eltype(x))) for
+              i in 2:(N + 1) if x[i] != argminboundary)
 end
 
 @testset "Completed Ziggurat" begin
