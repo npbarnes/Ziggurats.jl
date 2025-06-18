@@ -94,10 +94,12 @@
 
                 f = x -> 1/√T(2π) * exp(-x^2/2)
                 ipdf = y -> √(-2log(√T(2π)*y))
-                z = BoundedZiggurat(f, (T(0.5), T(1)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
-                test_samples(z, truncated(dist; lower = 0.5, upper = 1))
+                @testset for N in [1, 2, 3, 4]
+                    z = BoundedZiggurat(f, (T(0.5), T(1)), N; ipdf)
+                    @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    test_samples(z, truncated(dist; lower = 0.5, upper = 1))
+                end
             end
 
             @testset "Truncated Normal (-1 <= x <= -0.5)" begin
@@ -105,10 +107,12 @@
 
                 f = x -> 1/√T(2π) * exp(-x^2/2)
                 ipdf = y -> -√(-2log(√T(2π)*y))
-                z = BoundedZiggurat(f, (T(-1), T(-0.5)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
-                test_samples(z, truncated(dist; lower = -1, upper = -0.5))
+                @testset for N in [1, 2, 3, 4]
+                    z = BoundedZiggurat(f, (T(-1), T(-0.5)), N; ipdf)
+                    @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    test_samples(z, truncated(dist; lower = -1, upper = -0.5))
+                end
             end
 
             @testset "Truncated Normal (0.5 <= x <= 10)" begin
@@ -116,10 +120,12 @@
 
                 f = x -> 1/√T(2π) * exp(-x^2/2)
                 ipdf = y -> √(-2log(√T(2π)*y))
-                z = BoundedZiggurat(f, (T(0.5), T(10)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
-                test_samples(z, truncated(dist; lower = 0.5, upper = 10))
+                @testset for N in [1, 2, 3, 4]
+                    z = BoundedZiggurat(f, (T(0.5), T(10)), N; ipdf)
+                    @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    test_samples(z, truncated(dist; lower = 0.5, upper = 10))
+                end
             end
 
             @testset "Truncated Normal (-10 <= x <= -0.5)" begin
@@ -127,10 +133,12 @@
 
                 f = x -> 1/√T(2π) * exp(-x^2/2)
                 ipdf = y -> -√(-2log(√T(2π)*y))
-                z = BoundedZiggurat(f, (T(-10), T(-0.5)), 10; ipdf)
 
-                @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
-                test_samples(z, truncated(dist; lower = -10, upper = -0.5))
+                @testset for N in [1, 2, 3, 4]
+                    z = BoundedZiggurat(f, (T(-10), T(-0.5)), N; ipdf)
+                    @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    test_samples(z, truncated(dist; lower = -10, upper = -0.5))
+                end
             end
         end
     end
