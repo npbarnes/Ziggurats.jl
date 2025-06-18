@@ -42,6 +42,95 @@ function mask_shift(X::Type{<:FloatXX}, N)
     end
 end
 
+"""
+Provide error messages for unexpected or invalid results.
+"""
+struct PDFWrap{F,X}
+    f::F
+    mb::X
+    am::X
+end
+
+function (pdf::PDFWrap)(x)
+    if !between(pdf.mb, pdf.am, x)
+        error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain.")
+    end
+
+    result = pdf.f(x)
+
+    if result < 0
+        error("pdf($x) is negative. Check the definition of your pdf. It must \
+        return positive numbers everywhere on its domain, including the end points of \
+        the domain.")
+    elseif isnan(result)
+        error("pdf($x) is NaN. Check the definition of your pdf. It must \
+        return positive numbers everywhere on its domain, including the end points of \
+        the domain.")
+    elseif isinf(result)
+        error("pdf($x) is infinite. The Marsaglia & Tsang Ziggurat \
+        algorithm requires a finite pdf.")
+    end
+
+    return result
+end
+
+"""
+Force the ipdf to respect the domain and codomain.
+"""
+mutable struct IPDFWrap{F,X,Y}
+    const ipdf::F
+    const mb::X
+    const am::X
+    const fmb::Y
+    const fam::Y
+    clamplog::LogLevel
+end
+
+IPDFWrap(ipdf, mb, am, fmb, fam, ll = Debug) = IPDFWrap(ipdf, mb, am, fmb, fam, ll)
+
+# TODO: make inverse and IPDFWrap give the same error messages.
+function (ipdf::IPDFWrap)(y)
+    if y < zero(y)
+        error("Unexpected error: ipdf was about to be evaluated at y = $y, but the argument \
+        to ipdf should always be positive.")
+    elseif y <= ipdf.fam
+        # handle the discontinuity at the boundary
+        return ipdf.am
+    elseif y == ipdf.fmb
+        # Ideally, ipdf(f(mb)) = mb would be true by definition, but floating point
+        # inaccuracies can cause problems. Making this evaluation exact may help avoid
+        # domain errors.
+        return ipdf.mb
+    elseif y > ipdf.fmb
+        error("ipdf evaluated at y = $y which is greater than the pdf at either boundary. \
+        Make sure your pdf is monotonic and the inverse pdf is correct.")
+    else
+        result = ipdf.ipdf(y)
+        lb, ub = minmax(ipdf.mb, ipdf.am)
+        if result > ub
+            @logmsg ipdf.clamplog "inverse pdf has returned a value outside the domain. The result was \
+            clamped to be within the domain, but this may indicate an error. Got \
+            ipdf($y) = $result, used ipdf($y) = $ub instead."
+            return ub
+        elseif result < lb
+            @logmsg ipdf.clamplog "inverse pdf has returned a value outside the domain. The result was \
+            clamped to be within the domain, but this may indicate an error. Got \
+            ipdf($y) = $result, used ipdf($y) = $lb instead."
+            return lb
+        else
+            return result
+        end
+    end
+end
+
+struct NoWrap{F}
+    f::F
+end
+
+# TODO: This needs documentation.
+PDFWrap(f::NoWrap, args...) = f.f
+IPDFWrap(f::NoWrap, args...) = f.f
+
 function monotonic_ziggurat(
     pdf,
     domain,
@@ -68,7 +157,16 @@ function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
-    if pdf(modalboundary) == 0
+    wpdf = PDFWrap(pdf, modalboundary, argminboundary)
+    wipdf = IPDFWrap(
+        ipdf,
+        modalboundary,
+        argminboundary,
+        wpdf(modalboundary),
+        wpdf(argminboundary)
+    )
+
+    if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
     end
 
@@ -76,7 +174,8 @@ function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
         error("expected a bounded domain, got domain=$domain.")
     end
 
-    x, y = search(N, modalboundary, argminboundary, pdf, ipdf)
+    # Build ziggurats using wrapped functions
+    x, y = search(N, modalboundary, argminboundary, wpdf, wipdf)
 
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
     k = [
@@ -84,6 +183,8 @@ function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
         i in 1:(length(x) - 1)
     ]
 
+    # final ziggurat uses the unwrapped function so that there is no effect on
+    # sampling performance
     BoundedZiggurat{mask_shift(eltype(domain), N)...}(w, k, y, pdf, modalboundary)
 end
 
@@ -100,7 +201,16 @@ function UnboundedZiggurat(
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
-    if pdf(modalboundary) == 0
+    wpdf = PDFWrap(pdf, modalboundary, argminboundary)
+    wipdf = IPDFWrap(
+        ipdf,
+        modalboundary,
+        argminboundary,
+        pdf(modalboundary),
+        pdf(argminboundary)
+    )
+
+    if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
     end
 
@@ -111,19 +221,20 @@ function UnboundedZiggurat(
     if tailarea === nothing
         # TODO: the tailarea function should come from a 'tool' that has this as default
         # and allows customization e.g. quadgk arguments or other integrators.
-        modepdf = pdf(modalboundary)
+        modepdf = wpdf(modalboundary)
         domain_type = typeof(modalboundary)
         range_type = typeof(modepdf)
         error_type = typeof(norm(modepdf))
         segbuf = alloc_segbuf(domain_type, range_type, error_type)
 
         # TODO: Add error tolerance and check the returned error estimate.
-        tailarea = let pdf=pdf, segbuf=segbuf, argminboundary=argminboundary
-            x -> abs(quadgk(pdf, x, argminboundary; segbuf)[1])
+        tailarea = let wpdf=wpdf, segbuf=segbuf, argminboundary=argminboundary
+            x -> abs(quadgk(wpdf, x, argminboundary; segbuf)[1])
         end
     end
 
-    x, y = search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
+    # Build ziggurats using wrapped functions
+    x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
 
     if fallback_generator === nothing
         # TODO: fallback_generators should come from a 'tool' with this as default but also allows customization.
@@ -150,6 +261,8 @@ function UnboundedZiggurat(
         i in 1:(length(x) - 1)
     ]
 
+    # final ziggurat uses the unwrapped function so that there is no effect on
+    # sampling performance
     UnboundedZiggurat{mask_shift(eltype(domain), N)...}(
         w,
         k,
@@ -280,6 +393,10 @@ function _search(y_domain, p)
     # TODO handle non-convergence. Bisection is guarenteed to converge, but not all
     # algorithms are.
 
+    # Set the IPDF wrapper to issue warnings when ipdf produces points outside the domain.
+    p.buildargs[3].clamplog = Warn
+
+    # TODO: Check if the final build fails
     build!(p.x, p.y, ystar, p.buildargs...)
 end
 
