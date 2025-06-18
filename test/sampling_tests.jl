@@ -68,6 +68,24 @@
                     test_samples(z, dist)
                 end
             end
+
+            @testset "TDist (x>0)" begin
+                dist = truncated(TDist(1); lower = 0)
+
+                f = x -> (1 + x^2)^-1
+                ipdf = y -> √(y^-1 - 1)
+                tailarea = x -> (T(π) - 2atan(x))/2
+                fallback_generator =
+                    x -> rng -> tan(-((T(π)-2atan(x))*rand(rng, T) - T(π))/2)
+                domain = (T(0), T(Inf))
+
+                @testset for N in [1, 2, 3, 4]
+                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback_generator)
+                    @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    q = T == Float16 ? 5e-7 : 1e-6 # Lower confidence in Float16s
+                    test_samples(z, dist; q = q)
+                end
+            end
         end
 
         @testset "Bounded Ziggurats" begin
