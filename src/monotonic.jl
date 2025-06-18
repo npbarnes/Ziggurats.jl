@@ -558,7 +558,7 @@ end
     end
 end
 
-# Fallback is to do nothing (not really a bitmask in that case)
+# Fallback for non-FloatXX types is to do nothing (not really a bitmask in that case)
 significand_bitmask(::Type{T}) where {T} = oneunit(T)
 significand_bitmask(::Type{Float64}) = 0x000fffffffffffff
 significand_bitmask(::Type{Float32}) = 0x007fffff
