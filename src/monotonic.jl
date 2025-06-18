@@ -250,7 +250,7 @@ function UnboundedZiggurat(
             inverse(x -> tailarea(x) / ta, td)
         end
 
-        fallback = rng -> inverse_tailprob(rand(rng))
+        fallback = rng -> inverse_tailprob(rand(rng, typeof(modalboundary)))
     else
         fallback = fallback_generator(x[2])
     end
@@ -383,7 +383,7 @@ end
 
 function _search(y_domain, p)
     # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML, or in-house?)
-    tracker = Roots.Tracks()
+    tracker = Roots.Tracks(eltype(p.x), eltype(p.y))
     ystar = find_zero(ziggurat_residual, y_domain, Roots.Bisection(), p; tracks = tracker)
 
     # y[N] needs to be either exact or a slightly over
@@ -534,7 +534,7 @@ end
             return z.fallback(rng)
         end
 
-        y = (z.y[l + 1] - z.y[l]) * rand(rng, eltype(z)) + z.y[l]
+        y = (z.y[l + 1] - z.y[l]) * rand(rng, Ytype(z)) + z.y[l]
         if y < z.pdf(x)
             return x
         end
@@ -545,7 +545,7 @@ end
 
 @noinline function slowpath(rng, z::BoundedZiggurat, l, x)
     @inbounds begin
-        y = (z.y[l + 1] - z.y[l]) * rand(rng, eltype(z)) + z.y[l]
+        y = (z.y[l + 1] - z.y[l]) * rand(rng, Ytype(z)) + z.y[l]
         if y < z.pdf(x)
             return x
         end
