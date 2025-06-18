@@ -497,6 +497,7 @@ function Base.rand(
     zigsample(rng, z)
 end
 
+# Slower fallback for types that don't have specialized sampling algorithms
 function zigsample(rng, z::MonotonicZiggurat)
     l = rand(rng, 1:(length(z.w) - 1))
     u = rand(rng, eltype(z))
@@ -507,6 +508,7 @@ function zigsample(rng, z::MonotonicZiggurat)
     slowpath(rng, z, l, x)
 end
 
+# Specialized/optimized implementation for floats.
 function zigsample(rng, z::MonotonicZiggurat{M,S,F}) where {M,S,F<:FloatXX}
     @inbounds begin
         r = rand(rng, corresponding_uint(F))
@@ -520,10 +522,12 @@ function zigsample(rng, z::MonotonicZiggurat{M,S,F}) where {M,S,F<:FloatXX}
     end
 end
 
+# Power of two number of layers is optimized
 function random_layer(rng, r, z::MonotonicZiggurat{M,S}) where {M,S}
     ((r & M) >> S) + 1
 end
 
+# Slower fallback
 function random_layer(rng, r, z::MonotonicZiggurat{nothing,nothing})
     rand(rng, 1:(length(z.w) - 1))
 end
