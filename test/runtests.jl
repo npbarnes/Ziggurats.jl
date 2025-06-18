@@ -2,6 +2,7 @@ using Test, ZigguratTools
 using Random
 using StatsBase
 using Distributions
+using SpecialFunctions
 
 DistributionsExt = Base.get_extension(ZigguratTools, :DistributionsExt)
 @test DistributionsExt !== nothing
