@@ -1,4 +1,4 @@
-abstract type MonotonicZiggurat{Mask,Shift,X,Y} end
+abstract type MonotonicZiggurat{Mask,Shift,X,Y} <: Ziggurat{X} end
 
 struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X,Y}
     w::Vector{X}
