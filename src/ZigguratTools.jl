@@ -26,7 +26,7 @@ export
     # Helper functions,
     monotonic_segments
 
-public inverse
+public inversepdf
 
 include("utilities.jl")
 include("inverse_pdf.jl")

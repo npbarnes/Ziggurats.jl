@@ -135,7 +135,7 @@ function monotonic_ziggurat(
     pdf,
     domain,
     N = 256;
-    ipdf = inverse(pdf, domain),
+    ipdf = inversepdf(pdf, domain),
     tailarea = nothing,
     cdf = nothing,
     ccdf = nothing,
@@ -151,7 +151,7 @@ function monotonic_ziggurat(
     end
 end
 
-function BoundedZiggurat(pdf, domain, N; ipdf = inverse(pdf, domain))
+function BoundedZiggurat(pdf, domain, N; ipdf = inversepdf(pdf, domain))
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
@@ -192,7 +192,7 @@ function UnboundedZiggurat(
     pdf,
     domain,
     N;
-    ipdf = inverse(pdf, domain),
+    ipdf = inversepdf(pdf, domain),
     tailarea = nothing,
     fallback_generator = nothing
 )
@@ -247,7 +247,7 @@ function UnboundedZiggurat(
             (x2, prevfloat(typemax(x2)))
         end
         inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
-            inverse(x -> tailarea(x) / ta, td)
+            inversepdf(x -> tailarea(x) / ta, td)
         end
 
         fallback = rng -> inverse_tailprob(rand(rng, typeof(modalboundary)))

@@ -4,7 +4,7 @@ using ZigguratTools
 using Distributions
 
 function _ipdf(dist, y)
-    ZigguratTools.inverse(Base.Fix1(pdf, dist), extrema(dist))(y)
+    ZigguratTools.inversepdf(Base.Fix1(pdf, dist), extrema(dist))(y)
 end
 
 function _ipdf(dist::Exponential, y)
