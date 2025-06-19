@@ -254,13 +254,18 @@ function monotonic_ziggurat(
     end
 end
 
-function BoundedZiggurat(pdf, domain, N; ipdf = inversepdf(pdf, domain))
+function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     wpdf = PDFWrap(pdf, modalboundary, argminboundary)
+
+    if ipdf === nothing
+        ipdf = inversepdf(wpdf, domain)
+    end
+
     wipdf = IPDFWrap(
         ipdf,
         modalboundary,
@@ -295,7 +300,7 @@ function UnboundedZiggurat(
     pdf,
     domain,
     N;
-    ipdf = inversepdf(pdf, domain),
+    ipdf = nothing,
     tailarea = nothing,
     fallback_generator = nothing
 )
@@ -305,6 +310,11 @@ function UnboundedZiggurat(
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     wpdf = PDFWrap(pdf, modalboundary, argminboundary)
+
+    if ipdf === nothing
+        ipdf = inversepdf(wpdf, domain)
+    end
+
     wipdf = IPDFWrap(
         ipdf,
         modalboundary,
