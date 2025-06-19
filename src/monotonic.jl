@@ -144,10 +144,10 @@ struct NoWrap{F}
     f::F
 end
 
-# TODO: This needs documentation.
 PDFWrap(f::NoWrap, args...) = f.f
 IPDFWrap(f::NoWrap, args...) = f.f
 
+# TODO: Need tests for unwrapped functions.
 """
     monotonic_ziggurat(pdf, domain, [N]; [ipdf, tailarea, fallback_generator, ...])
 
