@@ -152,21 +152,18 @@ IPDFWrap(f::NoWrap, args...) = f.f
     monotonic_ziggurat(pdf, domain, [N]; [ipdf, tailarea, fallback_generator, ...])
 
 Constructs a high-performance sampler for a univariate probability distribution defined by a
-monotonic probability density function (`pdf`). The pdf must not diverge to infinity anywhere
-on the domain, including at the endpoints, but may otherwise be arbitrary — including
-discontinuous functions. Optional components such as `ipdf`, `tailarea`, and `fallback_generator`
-can be customized to avoid slow numerical methods or to support challenging pdfs. Note that
-customizing `ipdf` and `tailarea` will only affect the speed and accuracy of the ziggurat
-construction, they are not used in the sampling algorithm. Conversely, customizing the
-`fallback_generator` will only affect the speed and accuracy of the samples coming from deep
-in the tail of the distribution, it is not used in the ziggurat construction algorithm.
+probability density function (`pdf`). The pdf must be monotonic on the domain and must not
+diverge to infinity anywhere on the domain, including at the endpoints, but may otherwise be
+arbitrary - including discontinuous functions. All ziggurats use an inverse pdf in their
+construction, and ziggurats with an unbounded domain also use a `tailarea` function
+during construction and a `fallback` during sampling. Normally these additional functions are
+computed numerically, but they can be provided explicity as keyword arguments if necessary.
 
 # Arguments
  - `pdf`: The probability density function of the desired distribution. It must be monotonic
     and must not diverge to infinity anywhere on the `domain`, including the endpoints. It
-    does not need to be normalized, but the other arguments need to be normalized the same
-    way. E.g., `ipdf` should be the inverse of the given `pdf` function and therefore must
-    have the same normalization.
+    does not need to be normalized, but `ipdf` and `tailarea` need to have the same
+    normalization.
 
  - `domain`: The domain of the pdf. `domain` may be any collection of numbers, but only its
     extrema will be used as the boundaries of the domain. The values will be passed into
@@ -176,8 +173,8 @@ in the tail of the distribution, it is not used in the ziggurat construction alg
 
  - `N`: (Optional) The number of layers in the ziggurat. If `N` is a power of two and the
     domain is Float64 with N <= 4096, Float32 with N <= 512, or Float16 with N <= 64, then
-    an optimized sampling algorithm is used, improving sampling performance. Normally, `N`
-    defaults to 256, but for Float16 domains it defaults to 64.
+    an optimized sampling algorithm is used. Normally, `N` defaults to 256, but for Float16
+    domains it defaults to 64.
 
  - `ipdf`: (Optional) This function is the inverse of the given `pdf` argument. It's used in
     the ziggurat construction algorithm, but not during sampling, so it may affect the
@@ -205,7 +202,7 @@ in the tail of the distribution, it is not used in the ziggurat construction alg
     bounded domians. If no fallback is provided, then inverse transform sampling will be used
     by numerically inverting the `tailarea` (which may itself may be a numerical estimate).
     Overriding the fallback can greatly improve the worst-case performance of the sampling
-    algorithm, but since the fallback is only called rarely, it will not have a large influence
+    algorithm, but since the fallback is only called rarely, it will have a smaller influence
     on the average performance.
 
 # Examples
