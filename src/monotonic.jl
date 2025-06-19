@@ -303,6 +303,17 @@ function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
     BoundedZiggurat{mask_shift(eltype(domain), N)...}(w, k, y, pdf, modalboundary)
 end
 
+"""
+    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback_generator])
+
+Constructs a high-performance sampler for a univariate probability distribution defined by a
+probability density function (`pdf`) with unbounded support. The pdf must be monotonic on the
+domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
+but may otherwise be arbitrary - including discontinuous functions. An inverse pdf and a
+tailarea function are used in the construction of the ziggurat, and a `fallback` is used
+during sampling. Normally these additional functions are computed numerically, but they can
+be provided explicity as keyword arguments if necessary.
+"""
 function UnboundedZiggurat(
     pdf,
     domain,
