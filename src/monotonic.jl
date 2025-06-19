@@ -251,6 +251,16 @@ function monotonic_ziggurat(
     end
 end
 
+"""
+    BoundedZiggurat(pdf, domain, N; [ipdf])
+
+Constructs a high-performance sampler for a univariate probability distribution defined by a
+probability density function (`pdf`) with bounded support. The pdf must be monotonic on the 
+domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
+but may otherwise be arbitrary - including discontinuous functions. An inverse function to the
+pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is computed
+numerically, but it can also be provided explicity if necessary. 
+"""
 function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
     domain = extrema(regularize(domain))
 
