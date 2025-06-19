@@ -232,7 +232,7 @@ julia> rand(z)
 function monotonic_ziggurat(
     pdf,
     domain,
-    N = 256;
+    N = nothing;
     ipdf = inversepdf(pdf, domain),
     tailarea = nothing,
     cdf = nothing,
@@ -240,6 +240,11 @@ function monotonic_ziggurat(
     fallback_generator = nothing
 )
     domain = regularize(domain)
+
+    if N === nothing
+        N = eltype(domain) == Float16 ? 64 : 256
+    end
+
     a, b = extrema(domain)
     if isinf(a) || isinf(b)
         tailarea = _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
