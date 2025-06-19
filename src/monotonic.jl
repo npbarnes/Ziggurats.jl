@@ -148,6 +148,87 @@ end
 PDFWrap(f::NoWrap, args...) = f.f
 IPDFWrap(f::NoWrap, args...) = f.f
 
+"""
+    monotonic_ziggurat(pdf, domain, [N]; [ipdf, tailarea, fallback_generator, ...])
+
+Constructs a high-performance sampler for a univariate probability distribution defined by a
+monotonic probability density function (`pdf`). The pdf must not diverge to infinity anywhere
+on the domain, including at the endpoints, but may otherwise be arbitrary — including
+discontinuous functions. Optional components such as `ipdf`, `tailarea`, and `fallback_generator`
+can be customized to avoid slow numerical methods or to support challenging pdfs. Note that
+customizing `ipdf` and `tailarea` will only affect the speed and accuracy of the ziggurat
+construction, they are not used in the sampling algorithm. Conversely, customizing the
+`fallback_generator` will only affect the speed and accuracy of the samples coming from deep
+in the tail of the distribution, it is not used in the ziggurat construction algorithm.
+
+# Arguments
+ - `pdf`: The probability density function of the desired distribution. It must be monotonic
+    and must not diverge to infinity anywhere on the `domain`, including the endpoints. It
+    does not need to be normalized, but the other arguments need to be normalized the same
+    way. E.g., `ipdf` should be the inverse of the given `pdf` function and therefore must
+    have the same normalization.
+
+ - `domain`: The domain of the pdf. `domain` may be any collection of numbers, but only its
+    extrema will be used as the boundaries of the domain. The values will be passed into
+    `float()` and promoted to a common type. This common type will be the the type produced
+    by sampling from the resulting ziggurat. The domain may be unbounded, for example,
+    `(0, Inf)`.
+
+ - `N`: (Optional) The number of layers in the ziggurat. If `N` is a power of two and the
+    domain is Float64 with N <= 4096, Float32 with N <= 512, or Float16 with N <= 64, then
+    an optimized sampling algorithm is used, improving sampling performance. Normally, `N`
+    defaults to 256, but for Float16 domains it defaults to 64.
+
+ - `ipdf`: (Optional) This function is the inverse of the given `pdf` argument. It's used in
+    the ziggurat construction algorithm, but not during sampling, so it may affect the
+    performance of the initial call to `z = monotonic_ziggurat(...)`, but not subsequent
+    calls to `rand(z)`. If no ipdf is provided then the inverse will be calculated numerically
+    using a root finding algorithm. See also [`inversepdf`](@ref).
+
+ - `tailarea`: (Optional) A function that computes the area of the tail of the `pdf` when the
+    domain is unbounded. If the domain has a finite length, this argument is ignored. The
+    `tailarea` argument takes precidence over the `cdf` and `ccdf` arguments. If neither
+    `tailarea`, nor an appropriate (c)cdf argument is provided then a numerical integral
+    will be computed.
+
+ - `cdf`: (Optional) The cumulative distribution function. It should be normalized the same
+    way the pdf is normalized. Superceeded by `tailarea`, and ignored when the domain is
+    bounded.
+
+ - `ccdf`: (Optional) The complementary cumulative distribution function. It should be
+    normalized the same way the pdf is normalized. Superceeded by `tailarea`, and ignored
+    when the domain is bounded.
+
+ - `fallback`: (Optional) A function that takes arguments (rng, a) and produces a random
+    variate in the tail beyond `a` (below `a` for increasing distributions, or above `a`
+    for decreasing distributions). This is only used on unbounded domains, it is ignored on
+    bounded domians. If no fallback is provided, then inverse transform sampling will be used
+    by numerically inverting the `tailarea` (which may itself may be a numerical estimate).
+    Overriding the fallback can greatly improve the worst-case performance of the sampling
+    algorithm, but since the fallback is only called rarely, it will not have a large influence
+    on the average performance.
+
+# Examples
+```julia-repl
+julia> z = monotonic_ziggurat(x->exp(-x), (0,Inf))
+UnboundedZiggurat{...}(...)
+
+julia> rand(z)
+0.3594408084987401
+
+julia> z = monotonic_ziggurat(sin, (0,π/2), 512)
+BoundedZiggurat{...}(...)
+
+julia> rand(z, 100)
+100-element Vector{Float64}
+[...]
+
+julia> z = monotonic_ziggurat(x->exp(-x^5), (0.0f0, Inf32), 512)
+UnboundedZiggurat{...}(...)
+
+julia> rand(z)
+0.29527622f0
+"""
 function monotonic_ziggurat(
     pdf,
     domain,
