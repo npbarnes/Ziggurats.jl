@@ -131,9 +131,10 @@ function CompositeZiggurat(
 end
 
 function monotonic_segments(f, domain)
-    a, b = extrema(regularize(domain))
+    domain = regularize(domain)
     df = x -> ForwardDiff.derivative(f, x)
-    unique([a; find_zeros(df, a, b); b])
+    boundaries = find_zeros(df, domain)
+    unique(sort!(vcat(domain.a, boundaries)))
 end
 
 """
