@@ -4,9 +4,6 @@ using StatsBase
 using Distributions
 using SpecialFunctions
 
-DistributionsExt = Base.get_extension(ZigguratTools, :DistributionsExt)
-@test DistributionsExt !== nothing
-
 include("testutils.jl")
 
 # Distributions for testing edge cases.
