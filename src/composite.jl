@@ -3,70 +3,6 @@ struct CompositeZiggurat{Z<:Tuple,AT<:AliasTable}
     at::AT
 end
 
-"""
-    get_subdomains(f, domain)
-
-Convert a list of subdomain boundaries -- `domain` -- into a list of pairs representing subdomains.
-Attempts to detect discontinuities in f, and account for them.
-
-# Examples
-
-```julia-repl
-julia> ZigguratTools.get_subdomains(cos, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, 0.0]
- [0.0, 1.0]
-
-julia> ZigguratTools.get_subdomains(x -> x>0 ? 1.0 : 0.0, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, 0.0]
- [5.0e-324, 1.0]
-
-julia> ZigguratTools.get_subdomains(x -> x>=0 ? 1.0 : 0.0, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, -5.0e-324]
- [0.0, 1.0]
-
-julia> ZigguratTools.get_subdomains(sign, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, -5.0e-324]
- [5.0e-324, 1.0]
-```
-"""
-get_subdomains(f, domain) = _get_subdomains(f, promote(float.(domain)...))
-get_subdomains(f, domain::NTuple{N,<:AbstractFloat}) where {N} = _get_subdomains(f, domain)
-get_subdomains(f, domain::AbstractArray{<:AbstractFloat}) = _get_subdomains(f, domain)
-function _get_subdomains(f, domain)
-    sd = Vector{Vector{eltype(domain)}}(undef, length(domain)-1)
-    for i in eachindex(sd)
-        sd[i] = Vector{eltype(domain)}(undef, 2)
-    end
-
-    sd[1][1] = domain[1]
-    for (i, x) in enumerate(domain[2:(end - 1)])
-        if isapprox(f(prevfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i][2] = x
-        else
-            sd[i][2] = prevfloat(x)
-        end
-
-        if isapprox(f(nextfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i + 1][1] = x
-        else
-            sd[i + 1][1] = nextfloat(x)
-        end
-    end
-    sd[end][2] = domain[end]
-    sd
-end
-
-function monotonic_segments(f, domain)
-    a, b = extrema(regularize(domain))
-    df = x -> ForwardDiff.derivative(f, x)
-
-    unique([a; find_zeros(df, a, b); b])
-end
-
 # TODO: add option to autodetect monotonic subdomains.
 function CompositeZiggurat(pdf, domain, N::Integer; kwargs...)
     Ns = fill(N, length(domain)-1)
@@ -148,6 +84,70 @@ function CompositeZiggurat(
     at = AliasTable(_p)
 
     CompositeZiggurat(zigs, at)
+end
+
+function monotonic_segments(f, domain)
+    a, b = extrema(regularize(domain))
+    df = x -> ForwardDiff.derivative(f, x)
+
+    unique([a; find_zeros(df, a, b); b])
+end
+
+"""
+    get_subdomains(f, domain)
+
+Convert a list of subdomain boundaries -- `domain` -- into a list of pairs representing subdomains.
+Attempts to detect discontinuities in f, and account for them.
+
+# Examples
+
+```julia-repl
+julia> ZigguratTools.get_subdomains(cos, [-1, 0, 1])
+2-element Vector{Vector{Float64}}:
+ [-1.0, 0.0]
+ [0.0, 1.0]
+
+julia> ZigguratTools.get_subdomains(x -> x>0 ? 1.0 : 0.0, [-1, 0, 1])
+2-element Vector{Vector{Float64}}:
+ [-1.0, 0.0]
+ [5.0e-324, 1.0]
+
+julia> ZigguratTools.get_subdomains(x -> x>=0 ? 1.0 : 0.0, [-1, 0, 1])
+2-element Vector{Vector{Float64}}:
+ [-1.0, -5.0e-324]
+ [0.0, 1.0]
+
+julia> ZigguratTools.get_subdomains(sign, [-1, 0, 1])
+2-element Vector{Vector{Float64}}:
+ [-1.0, -5.0e-324]
+ [5.0e-324, 1.0]
+```
+"""
+get_subdomains(f, domain) = _get_subdomains(f, promote(float.(domain)...))
+get_subdomains(f, domain::NTuple{N,<:AbstractFloat}) where {N} = _get_subdomains(f, domain)
+get_subdomains(f, domain::AbstractArray{<:AbstractFloat}) = _get_subdomains(f, domain)
+function _get_subdomains(f, domain)
+    sd = Vector{Vector{eltype(domain)}}(undef, length(domain)-1)
+    for i in eachindex(sd)
+        sd[i] = Vector{eltype(domain)}(undef, 2)
+    end
+
+    sd[1][1] = domain[1]
+    for (i, x) in enumerate(domain[2:(end - 1)])
+        if isapprox(f(prevfloat(x)), f(x); atol = sqrt(eps(x)))
+            sd[i][2] = x
+        else
+            sd[i][2] = prevfloat(x)
+        end
+
+        if isapprox(f(nextfloat(x)), f(x); atol = sqrt(eps(x)))
+            sd[i + 1][1] = x
+        else
+            sd[i + 1][1] = nextfloat(x)
+        end
+    end
+    sd[end][2] = domain[end]
+    sd
 end
 
 function Base.rand(
