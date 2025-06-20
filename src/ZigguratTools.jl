@@ -10,8 +10,8 @@ using ForwardDiff
 using FixedPointNumbers
 
 export Ziggurat, MonotonicZiggurat
-export BoundedZiggurat, UnboundedZiggurat, SymmetricZiggurat, CompositeZiggurat
-export ziggurat, monotonic_ziggurat
+export BoundedZiggurat, UnboundedZiggurat, CompositeZiggurat
+export monotonic_ziggurat
 export inversepdf
 
 public monotonic_segments, NoWrap
