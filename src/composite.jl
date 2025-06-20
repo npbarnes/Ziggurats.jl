@@ -5,6 +5,7 @@ end
 
 # TODO: add option to autodetect monotonic subdomains.
 function CompositeZiggurat(pdf, domain, N::Integer; kwargs...)
+    domain = regularize(domain)
     Ns = fill(N, length(domain)-1)
     CompositeZiggurat(pdf, domain, Ns; kwargs...)
 end
