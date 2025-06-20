@@ -66,6 +66,8 @@ function CompositeZiggurat(
             if p[i] === nothing
                 a, b = subdomains[i]
                 _p[i] = cdf(b) - cdf(a)
+            else
+                _p[i] = p[i]
             end
         end
     end
