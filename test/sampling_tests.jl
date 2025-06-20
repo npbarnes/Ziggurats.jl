@@ -148,6 +148,37 @@
                 end
             end
         end
+
+        @testset "Composite Ziggurats" begin
+            @testset "Normal" begin
+                dist = Normal()
+
+                f = x -> 1/√T(2π) * exp(-x^2/2)
+                left_ipdf = y -> -√(-2log(√T(2π)*y))
+                right_ipdf = y -> √(-2log(√T(2π)*y))
+                cdf = x -> (1 + erf(x/T(√2)))/2
+                ccdf = x -> erfc(x/T(√2))/2
+                left_fallback = (rng, x) -> T(√2 * erfinv(2cdf(x)*(1-rand(rng,)) - 1))
+                right_fallback = (rng, x) -> T(√2 * erfcinv(2ccdf(x)*(1-rand(rng))))
+                domain = (T(-Inf), T(0.0), T(Inf))
+
+                @testset for N in [1, 2, 3, 4]
+                    z = CompositeZiggurat(
+                        f,
+                        domain,
+                        N;
+                        ipdfs = [left_ipdf, right_ipdf],
+                        cdf,
+                        ccdf,
+                        left_fallback,
+                        right_fallback
+                    )
+                    @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
+                    test_samples(z, dist)
+                end
+            end
+        end
     end
 end
 
