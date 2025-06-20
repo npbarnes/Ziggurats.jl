@@ -18,6 +18,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, dist)
                 end
             end
@@ -34,6 +35,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, dist)
                 end
             end
@@ -50,6 +52,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, dist)
                 end
             end
@@ -64,6 +67,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = UnboundedZiggurat(f, domain, N; tailarea = ta)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, dist)
                 end
             end
@@ -80,6 +84,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     q = T == Float16 ? 5e-7 : 1e-6 # Lower confidence in Float16s
                     test_samples(z, dist; q = q)
                 end
@@ -96,6 +101,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = BoundedZiggurat(f, (T(0.5), T(1)), N; ipdf)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, truncated(dist; lower = 0.5, upper = 1))
                 end
             end
@@ -109,6 +115,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = BoundedZiggurat(f, (T(-1), T(-0.5)), N; ipdf)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, truncated(dist; lower = -1, upper = -0.5))
                 end
             end
@@ -122,6 +129,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = BoundedZiggurat(f, (T(0.5), T(10)), N; ipdf)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, truncated(dist; lower = 0.5, upper = 10))
                 end
             end
@@ -135,6 +143,7 @@
                 @testset for N in [1, 2, 3, 4]
                     z = BoundedZiggurat(f, (T(-10), T(-0.5)), N; ipdf)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
+                    @test eltype(rand(z, 3)) == T
                     test_samples(z, truncated(dist; lower = -10, upper = -0.5))
                 end
             end
