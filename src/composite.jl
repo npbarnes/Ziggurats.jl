@@ -1,4 +1,10 @@
-struct CompositeZiggurat{Z<:Tuple,AT<:AliasTable}
+struct CompositeZiggurat{
+    X,
+    Y,
+    N,
+    Z<:NTuple{N,MonotonicZiggurat{M,S,X,Y} where {M,S}},
+    AT<:AliasTable
+}
     zigs::Z
     at::AT
 end
@@ -108,7 +114,6 @@ end
 function monotonic_segments(f, domain)
     a, b = extrema(regularize(domain))
     df = x -> ForwardDiff.derivative(f, x)
-
     unique([a; find_zeros(df, a, b); b])
 end
 
@@ -168,6 +173,10 @@ function _get_subdomains(f, domain)
     sd[end][2] = domain[end]
     sd
 end
+
+Random.eltype(::Type{<:CompositeZiggurat{X}}) where {X} = X
+Ytype(::Type{<:CompositeZiggurat{X,Y}}) where {X,Y} = Y
+Ytype(::CompositeZiggurat{X,Y}) where {X,Y} = Y
 
 function Base.rand(
     rng::AbstractRNG,
