@@ -17,6 +17,8 @@ function CompositeZiggurat(
     ipdfs = nothing,
     cdf = nothing,
     ccdf = nothing,
+    left_fallback = nothing,
+    right_fallback = nothing,
     p = nothing
 )
     domain = regularize(domain)
@@ -76,10 +78,24 @@ function CompositeZiggurat(
         throw(ArgumentError("Ns, ipdfs, and p must all have a length one less than the length of domain."))
     end
 
-    # TODO: Handle tail fallbacks
     zig_gen =
         i -> begin
-            monotonic_ziggurat(pdf, subdomains[i], Ns[i]; ipdf = ipdfs[i], cdf, ccdf)
+            if i == 1
+                fallback = left_fallback
+            elseif i == length(subdomains)
+                fallback = right_fallback
+            else
+                fallback = nothing
+            end
+            monotonic_ziggurat(
+                pdf,
+                subdomains[i],
+                Ns[i];
+                ipdf = ipdfs[i],
+                cdf,
+                ccdf,
+                fallback
+            )
         end
 
     zigs = ntuple(zig_gen, length(subdomains))
