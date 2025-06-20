@@ -13,9 +13,9 @@ using Logging
 export Ziggurat, MonotonicZiggurat
 export BoundedZiggurat, UnboundedZiggurat, SymmetricZiggurat, CompositeZiggurat
 export ziggurat, monotonic_ziggurat
-export monotonic_segments, inversepdf
+export inversepdf
 
-public NoWrap
+public monotonic_segments, NoWrap
 
 abstract type Ziggurat{X} end
 
