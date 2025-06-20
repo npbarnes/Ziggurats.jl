@@ -34,20 +34,20 @@ function ipdf(dist::ContinuousUnivariateDistribution, y)
     _ipdf(dist, y)
 end
 
-struct TailFallback{T<:Truncated}
-    truncdist::T
+struct LeftFallback{T}
+    dist::T
 end
 
-function left_fallback(dist, x)
-    TailFallback(truncated(dist; upper = x))
+struct RightFallback{T}
+    dist::T
 end
 
-function right_fallback(dist, x)
-    TailFallback(truncated(dist; lower = x))
+function (f::LeftFallback)(rng, x)
+    rand(rng, truncated(f.dist; upper = x))
 end
 
-function (tf::TailFallback)(rng)
-    rand(rng, tf.truncdist)
+function (f::RightFallback)(rng, x)
+    rand(rng, truncated(f.dist; lower = x))
 end
 
 function ZigguratTools.monotonic_ziggurat(dist::Distribution, N::Integer = 256; kwargs...)
@@ -61,7 +61,7 @@ function ZigguratTools.monotonic_ziggurat(
     pdf = Base.Fix1(Distributions.pdf, dist),
     ipdf = Base.Fix1(DistributionsExt.ipdf, dist),
     tailarea = nothing,
-    fallback_generator = nothing
+    fallback = nothing
 )
     if tailarea === nothing
         if isinf(domain[1])
@@ -71,15 +71,15 @@ function ZigguratTools.monotonic_ziggurat(
         end
     end
 
-    if fallback_generator === nothing
+    if fallback === nothing
         if isinf(domain[1])
-            fallback_generator = Base.Fix1(left_fallback, dist)
+            fallback = LeftFallback(dist)
         elseif isinf(domain[2])
-            fallback_generator = Base.Fix1(right_fallback, dist)
+            fallback = RightFallback(dist)
         end
     end
 
-    monotonic_ziggurat(pdf, domain, N; ipdf, tailarea, fallback_generator)
+    monotonic_ziggurat(pdf, domain, N; ipdf, tailarea, fallback)
 end
 
 end # module

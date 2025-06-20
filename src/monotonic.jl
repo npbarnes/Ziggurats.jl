@@ -149,7 +149,7 @@ IPDFWrap(f::NoWrap, args...) = f.f
 
 # TODO: Need tests for unwrapped functions.
 """
-    monotonic_ziggurat(pdf, domain, [N]; [ipdf, tailarea, fallback_generator, ...])
+    monotonic_ziggurat(pdf, domain, [N]; [ipdf, tailarea, fallback, ...])
 
 Constructs a high-performance sampler for a univariate probability distribution defined by a
 probability density function (`pdf`). The pdf must be monotonic on the domain and must not
@@ -234,7 +234,7 @@ function monotonic_ziggurat(
     tailarea = nothing,
     cdf = nothing,
     ccdf = nothing,
-    fallback_generator = nothing
+    fallback = nothing
 )
     domain = regularize(domain)
 
@@ -245,7 +245,7 @@ function monotonic_ziggurat(
     a, b = extrema(domain)
     if isinf(a) || isinf(b)
         tailarea = _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
-        UnboundedZiggurat(pdf, domain, N; ipdf, tailarea, fallback_generator)
+        UnboundedZiggurat(pdf, domain, N; ipdf, tailarea, fallback)
     else
         BoundedZiggurat(pdf, domain, N; ipdf)
     end
@@ -304,7 +304,7 @@ function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
 end
 
 """
-    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback_generator])
+    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback])
 
 Constructs a high-performance sampler for a univariate probability distribution defined by a
 probability density function (`pdf`) with unbounded support. The pdf must be monotonic on the
@@ -320,7 +320,7 @@ function UnboundedZiggurat(
     N;
     ipdf = nothing,
     tailarea = nothing,
-    fallback_generator = nothing
+    fallback = nothing
 )
     domain = extrema(regularize(domain))
 
@@ -367,8 +367,8 @@ function UnboundedZiggurat(
     # Build ziggurats using wrapped functions
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
 
-    if fallback_generator === nothing
-        # TODO: fallback_generators should come from a 'tool' with this as default but also allows customization.
+    if fallback === nothing
+        # TODO: fallback should come from a 'tool' with this as default but also allows customization.
         # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
         x2 = x[2]
         ta = tailarea(x2)
@@ -381,9 +381,7 @@ function UnboundedZiggurat(
             inversepdf(x -> tailarea(x) / ta, td)
         end
 
-        fallback = rng -> inverse_tailprob(rand(rng, typeof(modalboundary)))
-    else
-        fallback = fallback_generator(x[2])
+        fallback = (rng, x) -> inverse_tailprob(rand(rng, typeof(modalboundary)))
     end
 
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
@@ -666,7 +664,8 @@ end
 @noinline function slowpath(rng, z::UnboundedZiggurat, l, x)
     @inbounds begin
         if l == 1
-            return z.fallback(rng)
+            r = z.w[2] * significand_bitmask(eltype(z)) + z.modalboundary
+            return z.fallback(rng, r)
         end
 
         y = (z.y[l + 1] - z.y[l]) * rand(rng, Ytype(z)) + z.y[l]

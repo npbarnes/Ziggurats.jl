@@ -7,7 +7,7 @@
                 f = x -> 1/√T(2π) * exp(-x^2/2)
                 ipdf = y -> √(-2log(√T(2π)*y))
                 tailarea = x -> erfc(x/T(√2))/2
-                fallback_generator = x -> rng -> T(√2 * erfcinv(2tailarea(x)*(1-rand(rng))))
+                fallback = (rng, x) -> T(√2 * erfcinv(2tailarea(x)*(1-rand(rng))))
                 domain = (T(0), T(Inf))
 
                 # Covers special cases:
@@ -16,7 +16,7 @@
                 # - N=3: not a power of two, with middle layer
                 # - N=4: power of two, with middle layers
                 @testset for N in [1, 2, 3, 4]
-                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback_generator)
+                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                     test_samples(z, dist)
                 end
@@ -28,12 +28,11 @@
                 f = x -> 1/√T(2π) * exp(-x^2/2)
                 ipdf = y -> -√(-2log(√T(2π)*y))
                 tailarea = x -> (1 + erf(x/T(√2)))/2
-                fallback_generator =
-                    x -> rng -> T(√2 * erfinv(2tailarea(x)*(1-rand(rng,)) - 1))
+                fallback = (rng, x) -> T(√2 * erfinv(2tailarea(x)*(1-rand(rng,)) - 1))
                 domain = (T(-Inf), T(0))
 
                 @testset for N in [1, 2, 3, 4]
-                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback_generator)
+                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                     test_samples(z, dist)
                 end
@@ -45,11 +44,11 @@
                 f = x -> exp(-x)
                 ipdf = y -> -log(y)
                 tailarea = x -> exp(-x)
-                fallback_generator = x -> rng -> x - log1p(-rand(rng, T))
+                fallback = (rng, x) -> x - log1p(-rand(rng, T))
                 domain = (T(0), T(Inf))
 
                 @testset for N in [1, 2, 3, 4]
-                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback_generator)
+                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                     test_samples(z, dist)
                 end
@@ -75,12 +74,11 @@
                 f = x -> (1 + x^2)^-1
                 ipdf = y -> √(y^-1 - 1)
                 tailarea = x -> (T(π) - 2atan(x))/2
-                fallback_generator =
-                    x -> rng -> tan(-((T(π)-2atan(x))*rand(rng, T) - T(π))/2)
+                fallback = (rng, x) -> tan(-((T(π)-2atan(x))*rand(rng, T) - T(π))/2)
                 domain = (T(0), T(Inf))
 
                 @testset for N in [1, 2, 3, 4]
-                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback_generator)
+                    z = UnboundedZiggurat(f, domain, N; ipdf, tailarea, fallback)
                     @test typeof(rand(z)) == eltype(z) == ZigguratTools.Ytype(z) == T
                     q = T == Float16 ? 5e-7 : 1e-6 # Lower confidence in Float16s
                     test_samples(z, dist; q = q)
