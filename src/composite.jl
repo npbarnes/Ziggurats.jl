@@ -4,7 +4,7 @@ struct CompositeZiggurat{
     N,
     Z<:NTuple{N,MonotonicZiggurat{M,S,X,Y} where {M,S}},
     AT<:AliasTable
-}
+} <: Ziggurat{X}
     zigs::Z
     at::AT
 end
