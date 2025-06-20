@@ -130,6 +130,13 @@ function CompositeZiggurat(
     CompositeZiggurat(zigs, at)
 end
 
+"""
+    monotonic_segments(f, domain)
+
+Divides the domain into its monotonic subdomains using automatic differentiation and root
+finding. The result will have every entry of `domain` as well as the detected critical points
+of `f` in sorted order with duplicates dropped.
+"""
 function monotonic_segments(f, domain)
     domain = regularize(domain)
     df = x -> ForwardDiff.derivative(f, x)
