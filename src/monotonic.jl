@@ -83,10 +83,7 @@ mutable struct IPDFWrap{F,X,Y}
     const am::X
     const fmb::Y
     const fam::Y
-    clamplog::LogLevel
 end
-
-IPDFWrap(ipdf, mb, am, fmb, fam, ll = Debug) = IPDFWrap(ipdf, mb, am, fmb, fam, ll)
 
 # TODO: make inverse and IPDFWrap give the same error messages.
 function (ipdf::IPDFWrap)(y)
@@ -107,24 +104,9 @@ function (ipdf::IPDFWrap)(y)
     else
         result = ipdf.ipdf(y)
         lb, ub = minmax(ipdf.mb, ipdf.am)
-        if result > ub
-            @logmsg ipdf.clamplog "inverse pdf has returned a value outside the domain. The result was \
-            clamped to be within the domain, but this may indicate an error. Got \
-            ipdf($y) = $result, used ipdf($y) = $ub instead."
-            return ub
-        elseif result < lb
-            @logmsg ipdf.clamplog "inverse pdf has returned a value outside the domain. The result was \
-            clamped to be within the domain, but this may indicate an error. Got \
-            ipdf($y) = $result, used ipdf($y) = $lb instead."
-            return lb
-        else
-            return result
-        end
+        return clamp(result, lb, ub)
     end
 end
-
-wrapperloglevel(unwrapped, ll) = nothing
-wrapperloglevel(wipdf::IPDFWrap, ll) = wipdf.clamplog = ll
 
 """
     NoWrap(pdf)
@@ -521,9 +503,6 @@ function _search(y_domain, p)
     end
     # TODO handle non-convergence. Bisection is guarenteed to converge, but not all
     # algorithms are.
-
-    # Set the IPDF wrapper to issue warnings when ipdf produces points outside the domain.
-    wrapperloglevel(p.buildargs[3], Warn)
 
     # TODO: Check if the final build fails
     build!(p.x, p.y, ystar, p.buildargs...)

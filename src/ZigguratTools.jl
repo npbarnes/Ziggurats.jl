@@ -8,7 +8,6 @@ using AliasTables
 using IntervalRootFinding
 using ForwardDiff
 using FixedPointNumbers
-using Logging
 
 export Ziggurat, MonotonicZiggurat
 export BoundedZiggurat, UnboundedZiggurat, SymmetricZiggurat, CompositeZiggurat
