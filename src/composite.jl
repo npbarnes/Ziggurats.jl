@@ -16,6 +16,25 @@ function CompositeZiggurat(pdf, domain, N::Integer; kwargs...)
     CompositeZiggurat(pdf, domain, Ns; kwargs...)
 end
 
+"""
+    CompositeZiggurat(pdf, domain, Ns; [ipdfs, cdf, ccdf, p])
+
+Create a sampler of a probability distribution defined by a peicewise monotonic `pdf`. The
+domain is a list of the end points of the support and all the boundaries between monotonic
+subdomains and Ns is the number of ziggurat layers to use in for each.
+
+# Examples
+```julia-repl
+julia> z = CompositeZiggurat(x->exp(-x^2), (-Inf, 0, Inf), 512)
+CompositeZiggurat{...}(...)
+
+julia> rand(z, 3)
+3-element Vector{Float64}:
+  0.756124133407901
+ -1.014527969936336
+ -1.3362254231230777
+```
+"""
 function CompositeZiggurat(
     pdf,
     domain,
