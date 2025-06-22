@@ -1,11 +1,10 @@
-struct CompositeZiggurat{
-    X,
-    Y,
-    N,
-    Z<:NTuple{N,MonotonicZiggurat{M,S,X,Y} where {M,S}},
-    AT<:AliasTable
-} <: Ziggurat{X}
-    zigs::Z
+struct CompositeZiggurat{X,Y,Z<:BareZiggurat{X,Y},F,LF,RF,M,S,AT<:AliasTable} <: Ziggurat{X}
+    zigs::Vector{Z}
+    pdf::F
+    left_fallback::LF
+    right_fallback::RF
+    masks::Vector{M}
+    shifts::Vector{S}
     at::AT
 end
 
@@ -123,11 +122,17 @@ function CompositeZiggurat(
             )
         end
 
-    zigs = ntuple(zig_gen, length(subdomains))
+    zigs = [zig_gen(i) for i in 1:length(subdomains)]
 
+    barezigs = bareziggurat.(zigs)
+    maskshift = mask_shift.(eltype.(barezigs), Ns)
+    masks = getindex.(maskshift, 1)
+    shifts = getindex.(maskshift, 2)
+    left_fallback = fallback(zigs[1])
+    right_fallback = fallback(zigs[end])
     at = AliasTable(_p)
 
-    CompositeZiggurat(zigs, at)
+    CompositeZiggurat(barezigs, pdf, left_fallback, right_fallback, masks, shifts, at)
 end
 
 """
@@ -211,9 +216,20 @@ function Base.rand(
 )
     @inbounds begin
         zigs = zig_sampler[].zigs
+        masks = zig_sampler[].masks
+        shifts = zig_sampler[].shifts
+        pdf = zig_sampler[].pdf
+        left_fallback = zig_sampler[].left_fallback
+        right_fallback = zig_sampler[].right_fallback
         at = zig_sampler[].at
 
         i = rand(rng, at)
-        rand(rng, zigs[i])
+        if i == 1
+            zigsample(rng, masks[i], shifts[i], zigs[i], pdf, left_fallback)
+        elseif i == length(zigs)
+            zigsample(rng, masks[i], shifts[i], zigs[i], pdf, right_fallback)
+        else
+            zigsample(rng, masks[i], shifts[i], zigs[i], pdf, nothing)
+        end
     end
 end

@@ -12,10 +12,11 @@
             z_lamb = BoundedZiggurat(lamb, (0, 1), 8)
             z_func = BoundedZiggurat(func, (0, 1), 8)
 
-            @test z_call.w == z_lamb.w == z_func.w
-            @test z_call.k == z_lamb.k == z_func.k
-            @test z_call.y == z_lamb.y == z_func.y
-            @test z_call.modalboundary == z_lamb.modalboundary == z_func.modalboundary
+            import ZigguratTools: widths, layerratios, heights, highside
+            @test widths(z_call) == widths(z_lamb) == widths(z_func)
+            @test layerratios(z_call) == layerratios(z_lamb) == layerratios(z_func)
+            @test heights(z_call) == heights(z_lamb) == heights(z_func)
+            @test highside(z_call) == highside(z_lamb) == highside(z_func)
         end
 
         @testset "UnboundedZiggurat" begin
@@ -23,10 +24,11 @@
             z_lamb = UnboundedZiggurat(lamb, (0, Inf), 8)
             z_func = UnboundedZiggurat(func, (0, Inf), 8)
 
-            @test z_call.w == z_lamb.w == z_func.w
-            @test z_call.k == z_lamb.k == z_func.k
-            @test z_call.y == z_lamb.y == z_func.y
-            @test z_call.modalboundary == z_lamb.modalboundary == z_func.modalboundary
+            import ZigguratTools: widths, layerratios, heights, highside
+            @test widths(z_call) == widths(z_lamb) == widths(z_func)
+            @test layerratios(z_call) == layerratios(z_lamb) == layerratios(z_func)
+            @test heights(z_call) == heights(z_lamb) == heights(z_func)
+            @test highside(z_call) == highside(z_lamb) == highside(z_func)
         end
     end
 

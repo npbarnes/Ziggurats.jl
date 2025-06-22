@@ -1,27 +1,50 @@
 abstract type MonotonicZiggurat{Mask,Shift,X,Y} <: Ziggurat{X} end
 
-struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X,Y}
+struct BareZiggurat{X,Y,K}
     w::Vector{X}
     k::Vector{K}
     y::Vector{Y}
-    pdf::F
     modalboundary::X
-    function BoundedZiggurat{M,S}(w, k, y, f, mb) where {M,S}
-        new{M,S,eltype(w),eltype(y),eltype(k),typeof(f)}(w, k, y, f, mb)
+end
+
+struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X,Y}
+    zig::BareZiggurat{X,Y,K}
+    pdf::F
+    function BoundedZiggurat{M,S}(bz::BareZiggurat{X,Y,K}, f) where {M,S,X,Y,K}
+        new{M,S,X,Y,K,typeof(f)}(bz, f)
     end
 end
 
 struct UnboundedZiggurat{Mask,Shift,X,Y,K,F,FB} <: MonotonicZiggurat{Mask,Shift,X,Y}
-    w::Vector{X}
-    k::Vector{K}
-    y::Vector{Y}
+    zig::BareZiggurat{X,Y,K}
     pdf::F
-    modalboundary::X
     fallback::FB
-    function UnboundedZiggurat{M,S}(w, k, y, f, mb, fb) where {M,S}
-        new{M,S,eltype(w),eltype(y),eltype(k),typeof(f),typeof(fb)}(w, k, y, f, mb, fb)
+    function UnboundedZiggurat{M,S}(bz::BareZiggurat{X,Y,K}, f, fb) where {M,S,X,Y,K}
+        new{M,S,X,Y,K,typeof(f),typeof(fb)}(bz, f, fb)
     end
 end
+
+bareziggurat(z::MonotonicZiggurat) = z.zig
+
+widths(z::BareZiggurat) = z.w
+widths(z::MonotonicZiggurat) = widths(bareziggurat(z))
+
+numlayers(z::BareZiggurat) = length(widths(z))-1
+numlayers(z::MonotonicZiggurat) = length(widths(z)) - 1
+
+layerratios(z::BareZiggurat) = z.k
+layerratios(z::MonotonicZiggurat) = layerratios(bareziggurat(z))
+
+heights(z::BareZiggurat) = z.y
+heights(z::MonotonicZiggurat) = heights(bareziggurat(z))
+
+highside(z::BareZiggurat) = z.modalboundary
+highside(z::MonotonicZiggurat) = highside(bareziggurat(z))
+
+density(z::MonotonicZiggurat) = z.pdf
+
+fallback(::BoundedZiggurat) = nothing
+fallback(z::UnboundedZiggurat) = z.fallback
 
 corresponding_uint(::Type{Float64}) = UInt64
 corresponding_uint(::Type{Float32}) = UInt32
@@ -244,6 +267,57 @@ pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is comp
 numerically, but it can also be provided explicity if necessary. 
 """
 function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
+    bz = BareZiggurat_bounded(pdf, domain, N; ipdf)
+
+    # final ziggurat uses the unwrapped function so that there is no effect on
+    # sampling performance
+    BoundedZiggurat{mask_shift(eltype(bz.w), length(bz.w)-1)...}(bz, pdf)
+end
+
+"""
+    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback])
+
+Constructs a high-performance sampler for a univariate probability distribution defined by a
+probability density function (`pdf`) with unbounded support. The pdf must be monotonic on the
+domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
+but may otherwise be arbitrary - including discontinuous functions. An inverse pdf and a
+tailarea function are used in the construction of the ziggurat, and a `fallback` is used
+during sampling. Normally these additional functions are computed numerically, but they can
+be provided explicity as keyword arguments if necessary.
+"""
+function UnboundedZiggurat(
+    pdf,
+    domain,
+    N;
+    ipdf = nothing,
+    tailarea = nothing,
+    fallback = nothing
+)
+    x2, bz, tailarea = BareZiggurat_unbounded(pdf, domain, N; ipdf, tailarea)
+    modalboundary = bz.modalboundary
+
+    if fallback === nothing
+        # TODO: fallback should come from a 'tool' with this as default but also allows customization.
+        # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
+        ta = tailarea(x2)
+        td = if modalboundary > x2
+            (nextfloat(typemin(x2)), x2)
+        else
+            (x2, prevfloat(typemax(x2)))
+        end
+        inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
+            inversepdf(x -> tailarea(x) / ta, td)
+        end
+
+        fallback = (rng, x) -> inverse_tailprob(rand(rng, typeof(modalboundary)))
+    end
+
+    # final ziggurat uses the unwrapped function so that there is no effect on
+    # sampling performance
+    UnboundedZiggurat{mask_shift(eltype(bz.w), length(bz.w)-1)...}(bz, pdf, fallback)
+end
+
+function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
@@ -280,30 +354,10 @@ function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
         i in 1:(length(x) - 1)
     ]
 
-    # final ziggurat uses the unwrapped function so that there is no effect on
-    # sampling performance
-    BoundedZiggurat{mask_shift(eltype(domain), N)...}(w, k, y, pdf, modalboundary)
+    BareZiggurat(w, k, y, modalboundary)
 end
 
-"""
-    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback])
-
-Constructs a high-performance sampler for a univariate probability distribution defined by a
-probability density function (`pdf`) with unbounded support. The pdf must be monotonic on the
-domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
-but may otherwise be arbitrary - including discontinuous functions. An inverse pdf and a
-tailarea function are used in the construction of the ziggurat, and a `fallback` is used
-during sampling. Normally these additional functions are computed numerically, but they can
-be provided explicity as keyword arguments if necessary.
-"""
-function UnboundedZiggurat(
-    pdf,
-    domain,
-    N;
-    ipdf = nothing,
-    tailarea = nothing,
-    fallback = nothing
-)
+function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothing)
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
@@ -349,39 +403,13 @@ function UnboundedZiggurat(
     # Build ziggurats using wrapped functions
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
 
-    if fallback === nothing
-        # TODO: fallback should come from a 'tool' with this as default but also allows customization.
-        # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
-        x2 = x[2]
-        ta = tailarea(x2)
-        td = if modalboundary > argminboundary
-            (nextfloat(typemin(x2)), x2)
-        else
-            (x2, prevfloat(typemax(x2)))
-        end
-        inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
-            inversepdf(x -> tailarea(x) / ta, td)
-        end
-
-        fallback = (rng, x) -> inverse_tailprob(rand(rng, typeof(modalboundary)))
-    end
-
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
     k = [
         fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for
         i in 1:(length(x) - 1)
     ]
 
-    # final ziggurat uses the unwrapped function so that there is no effect on
-    # sampling performance
-    UnboundedZiggurat{mask_shift(eltype(domain), N)...}(
-        w,
-        k,
-        y,
-        pdf,
-        modalboundary,
-        fallback
-    )
+    x[2], BareZiggurat(w, k, y, modalboundary), tailarea
 end
 
 function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
@@ -594,76 +622,90 @@ end
 
 ## Sampling
 Random.eltype(::Type{<:MonotonicZiggurat{M,S,X}}) where {M,S,X} = X
+Random.eltype(::Type{<:BareZiggurat{X}}) where {X} = X
+
+Ytype(::Type{<:BareZiggurat{X,Y}}) where {X,Y} = Y
+Ytype(::BareZiggurat{X,Y}) where {X,Y} = Y
 Ytype(::Type{<:MonotonicZiggurat{M,S,X,Y}}) where {M,S,X,Y} = Y
 Ytype(::MonotonicZiggurat{M,S,X,Y}) where {M,S,X,Y} = Y
 
 function Base.rand(
     rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat}
-)
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{M,S}}
+) where {M,S}
     z = zig_sampler[]
-    zigsample(rng, z)
+
+    zigsample(rng, M, S, bareziggurat(z), density(z), fallback(z))
 end
 
-# Slower fallback for types that don't have specialized sampling algorithms
-function zigsample(rng, z::MonotonicZiggurat)
-    l = rand(rng, 1:(length(z.w) - 1))
-    u = rand(rng, eltype(z))
-    x = u * z.w[l] + z.modalboundary
-    if u <= z.k[l] # k and u are just fractions for non-FloatXX types, not integers.
-        return x
-    end
-    slowpath(rng, z, l, x)
-end
-
-# Specialized/optimized implementation for floats.
-function zigsample(rng, z::MonotonicZiggurat{M,S,F}) where {M,S,F<:FloatXX}
+# Type parameters F and FB are required to force Julia to specialize this function
+@inline function zigsample(
+    rng,
+    mask,
+    shift,
+    bz::BareZiggurat{<:FloatXX},
+    pdf::F,
+    fb::FB
+) where {F,FB}
     @inbounds begin
-        r = rand(rng, corresponding_uint(F))
-        l = random_layer(rng, r, z)
-        u = r & significand_bitmask(eltype(z))
-        x = u * z.w[l] + z.modalboundary
-        if u <= z.k[l]
+        r = rand(rng, corresponding_uint(eltype(bz)))
+        l = random_layer(r, mask, shift, rng, numlayers(bz))
+        u = r & significand_bitmask(eltype(bz))
+        x = u * widths(bz)[l] + highside(bz)
+        if u <= layerratios(bz)[l]
             return x
         end
-        slowpath(rng, z, l, x)
+        slowpath(rng, mask, shift, bz, pdf, fb, l, x)
     end
 end
 
-# Power of two number of layers is optimized
-function random_layer(rng, r, z::MonotonicZiggurat{M,S}) where {M,S}
-    ((r & M) >> S) + 1
+# Type parameters F and FB are required to force Julia to specialize this function
+@inline function zigsample(rng, mask, shift, bz::BareZiggurat, pdf::F, fb::FB) where {F,FB}
+    @inbounds begin
+        l = rand(rng, 1:numlayers(bz))
+        u = rand(rng, eltype(bz))
+        x = u * widths(bz)[l] + highside(bz)
+        if u <= layerratios(bz)[l]
+            return x
+        end
+        slowpath(rng, mask, shift, bz, pdf, fb, l, x)
+    end
 end
 
-# Slower fallback
-function random_layer(rng, r, z::MonotonicZiggurat{nothing,nothing})
-    rand(rng, 1:(length(z.w) - 1))
+function random_layer(r, mask, shift, rng, N)
+    ((r & mask) >> shift) + 1
 end
 
-@noinline function slowpath(rng, z::UnboundedZiggurat, l, x)
+function random_layer(r, ::Nothing, ::Nothing, rng, N)
+    rand(rng, 1:N)
+end
+
+# Type parameter F is required to force Julia to specialize this function
+@noinline function slowpath(rng, mask, shift, bz, pdf::F, ::Nothing, l, x) where {F}
+    @inbounds begin
+        y = (heights(bz)[l + 1] - heights(bz)[l]) * rand(rng, Ytype(bz)) + heights(bz)[l]
+        if y < pdf(x)
+            return x
+        end
+
+        zigsample(rng, mask, shift, bz, pdf, nothing)
+    end
+end
+
+# Type parameters F and FB are required to force Julia to specialize this function
+@noinline function slowpath(rng, mask, shift, bz, pdf::F, fb::FB, l, x) where {F,FB}
     @inbounds begin
         if l == 1
-            r = z.w[2] * significand_bitmask(eltype(z)) + z.modalboundary
-            return z.fallback(rng, r)
+            r = widths(bz)[2] * significand_bitmask(eltype(bz)) + highside(bz)
+            return fb(rng, r)
         end
 
-        y = (z.y[l + 1] - z.y[l]) * rand(rng, Ytype(z)) + z.y[l]
-        if y < z.pdf(x)
+        y = (heights(bz)[l + 1] - heights(bz)[l]) * rand(rng, Ytype(bz)) + heights(bz)[l]
+        if y < pdf(x)
             return x
         end
 
-        zigsample(rng, z)
-    end
-end
-
-@noinline function slowpath(rng, z::BoundedZiggurat, l, x)
-    @inbounds begin
-        y = (z.y[l + 1] - z.y[l]) * rand(rng, Ytype(z)) + z.y[l]
-        if y < z.pdf(x)
-            return x
-        end
-
-        zigsample(rng, z)
+        zigsample(rng, mask, shift, bz, pdf, fb)
     end
 end
 
