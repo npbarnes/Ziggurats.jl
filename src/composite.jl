@@ -80,8 +80,8 @@ function CompositeZiggurat(
         segbuf = alloc_segbuf(domain_type, range_type, error_type)
 
         ccdf = let pdf=pdf, b=b, segbuf=segbuf
-            # Handle Inf explicitly since quadgk will produce NaN.
-            x -> x == Inf ? zero(domain_type) : abs(quadgk(pdf, min(b, x), b; segbuf)[1])
+            # Handle upper boundary explicitly since quadgk will produce NaN.
+            x -> x == b ? zero(domain_type) : abs(quadgk(pdf, min(b, x), b; segbuf)[1])
         end
     end
     if p === nothing
