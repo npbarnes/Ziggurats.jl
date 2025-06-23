@@ -42,9 +42,8 @@ function ziggurat(
         N = eltype(domain) == Float16 ? 64 : 256
     end
 
-    if length(domain) < 2
-        error("The domain needs at least two distinct points to mark the boundaries.")
-    elseif length(domain) == 2
+    # regularize guarentees that length(domain) >= 2
+    if length(domain) == 2
         monotonic_ziggurat(pdf, domain, N; ipdf, tailarea, cdf, ccdf, fallback)
     else
         CompositeZiggurat(
