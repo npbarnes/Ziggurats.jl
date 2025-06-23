@@ -9,7 +9,7 @@ end
 
 regularize(domain::Regularized) = domain
 function regularize(domain)
-    Regularized(unique(sort!(collect(promote(float.(domain)...)))))
+    Regularized(unique(sort!(collect(float.(promote(domain...))))))
 end
 
 Base.getindex(r::Regularized, i) = r.a[i]

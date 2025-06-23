@@ -171,10 +171,10 @@ computed numerically, but they can be provided explicity as keyword arguments if
     normalization.
 
  - `domain`: The domain of the pdf. `domain` may be any collection of numbers, but only its
-    extrema will be used as the boundaries of the domain. The values will be passed into
-    `float()` and promoted to a common type. This common type will be the the type produced
-    by sampling from the resulting ziggurat. The domain may be unbounded, for example,
-    `(0, Inf)`.
+    extrema will be used as the boundaries of the domain. The values will be promoted to the
+    highest float type present, or to Float64 if there are no floats. The type that they are
+    promoted to will be the type produced by sampling from the resulting ziggurat. The domain
+    may be unbounded, for example, `(0, Inf)`.
 
  - `N`: (Optional) The number of layers in the ziggurat. If `N` is a power of two and the
     domain is Float64 with N <= 4096, Float32 with N <= 512, or Float16 with N <= 64, then
