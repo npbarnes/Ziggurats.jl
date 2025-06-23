@@ -54,7 +54,7 @@ function CompositeZiggurat(
         throw(ArgumentError("N must be either an Integer or an iterable with length equal to the number of subdomains."))
     end
     if ipdfs === nothing
-        ipdfs = [inversepdf(pdf, d) for d in subdomains]
+        ipdfs = [nothing for d in subdomains]
     end
     if cdf === nothing
         val = pdf(Roots.__middle(a, b))
