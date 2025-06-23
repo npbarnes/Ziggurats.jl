@@ -32,4 +32,43 @@
         end
     end
 
+    @testset "ziggurat result depends on domain" begin
+        f = x->exp(-x^2/2)
+
+        @test ziggurat(f, (0, Inf), 2) isa UnboundedZiggurat{M,S,Float64} where {M,S}
+        @test ziggurat(f, (0, Inf32), 2) isa UnboundedZiggurat{M,S,Float32} where {M,S}
+
+        @test ziggurat(f, (0, 1), 2) isa BoundedZiggurat{M,S,Float64} where {M,S}
+        @test ziggurat(f, (0, 1.0f0), 2) isa BoundedZiggurat{M,S,Float32} where {M,S}
+
+        # Non-monotonic distributions should be detected.
+        @test_throws "pdf is not monotonic" ziggurat(f, (-2, 1), 256)
+
+        @test_broken try
+            ziggurat(f, (-1, 1))
+        catch e
+            if startswith(e.msg, "pdf is not monotonic")
+                true # test passes
+            else
+                rethrow()
+            end
+        else
+            false # test fails
+        end
+
+        @test ziggurat(f, (-2, 0, 1), 2) isa CompositeZiggurat{Float64}
+        @test_throws "pdf is not monotonic" ziggurat(f, (-2, 1, 1), 256)
+
+        @test_broken try
+            ziggurat(f, (-2, -1, 1), 2)
+        catch e
+            if startswith(e.msg, "pdf is not monotonic")
+                true # test passes
+            else
+                rethrow()
+            end
+        else
+            false # test fails
+        end
+    end
 end
