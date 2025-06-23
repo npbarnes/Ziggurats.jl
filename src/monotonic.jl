@@ -130,12 +130,12 @@ end
 """
 Force the ipdf to respect the domain and codomain.
 """
-mutable struct IPDFWrap{F,X,Y}
-    const ipdf::F
-    const mb::X
-    const am::X
-    const fmb::Y
-    const fam::Y
+struct IPDFWrap{F,X,Y}
+    ipdf::F
+    mb::X
+    am::X
+    fmb::Y
+    fam::Y
 end
 
 # TODO: make inverse and IPDFWrap give the same error messages.
