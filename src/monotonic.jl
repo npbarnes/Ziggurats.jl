@@ -102,7 +102,8 @@ end
 
 function (pdf::PDFWrap)(x)
     if !between(pdf.mb, pdf.am, x)
-        error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain.")
+        error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain.
+        Please report this error.")
     end
 
     result = pdf.f(x)
