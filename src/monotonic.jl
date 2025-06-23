@@ -66,12 +66,38 @@ function mask_shift(X::Type{<:FloatXX}, N)
 end
 
 """
-Provide error messages for unexpected or invalid results.
+Provide error messages for unexpected or invalid results including non-montonicity.
 """
-struct PDFWrap{F,X}
+struct PDFWrap{F,X,Y}
     f::F
     mb::X
     am::X
+    fmb::Y
+    fam::Y
+    function PDFWrap(f, mb, am)
+        mb, am = promote(mb, am)
+        fmb = f(mb)
+        fam = f(am)
+        fmb, fam = promote(fmb, fam)
+        if isnan(fmb) || isnan(fam)
+            error("pdf is NaN on the boundary. Check the definition of your pdf. It must \
+            return non-negative numbers everywhere on its domain, including the end points \
+            of the domain.")
+        end
+        if fmb < fam
+            error("modalboundary and argminboundary are misidentified.")
+        end
+        if fam < 0
+            error("pdf($am) is negative. Check the definition of your pdf. It must return \
+            non-negative numbers everywhere on its domain, including the end points of \
+            the domain.")
+        end
+        if fam == fmb == 0
+            error("pdf is zero on both endpoints of the domain, $(mimax(am,mb)). Ensure \
+            that the pdf is monotonic.")
+        end
+        new{typeof(f),typeof(mb),typeof(fmb)}(f, mb, am, fmb, fam)
+    end
 end
 
 function (pdf::PDFWrap)(x)
@@ -81,17 +107,20 @@ function (pdf::PDFWrap)(x)
 
     result = pdf.f(x)
 
-    if result < 0
-        error("pdf($x) is negative. Check the definition of your pdf. It must \
-        return positive numbers everywhere on its domain, including the end points of \
-        the domain.")
-    elseif isnan(result)
+    if isnan(result)
         error("pdf($x) is NaN. Check the definition of your pdf. It must \
         return positive numbers everywhere on its domain, including the end points of \
         the domain.")
-    elseif isinf(result)
+    end
+
+    if isinf(result)
         error("pdf($x) is infinite. The Marsaglia & Tsang Ziggurat \
         algorithm requires a finite pdf.")
+    end
+
+    if !between(pdf.fmb, pdf.fam, result)
+        d = minmax(pdf.mb, pdf.am)
+        error("pdf is not monotonic on the domain = $d.")
     end
 
     return result
