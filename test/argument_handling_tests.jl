@@ -285,4 +285,29 @@ issamevector(a::Vector, b::Vector) = false
             notnothing3
         ) === notnothing1
     end
+
+    @testset "_identify_mode" begin
+        import ZigguratTools: _identify_mode
+        f = x->x
+        @test _identify_mode(f, (0, 1)) == (1, 0)
+
+        f = x->5-x
+        @test _identify_mode(f, (0, 1)) == (0, 1)
+
+        @testset "the finite side of an unbounded domain is the mode" begin
+            f = x->error("This function shouldn't be evaluated")
+            @test _identify_mode(f, (0, Inf)) == (0, Inf)
+            @test _identify_mode(f, (-Inf, 0)) == (0, -Inf)
+        end
+
+        @testset "Check for invalid values on the boundaries" begin
+            f = x -> x==1 ? NaN : x
+            @test_throws "pdf(x) is NaN on the boundary." _identify_mode(f, (0, 1))
+            @test_throws "pdf(x) is NaN on the boundary." _identify_mode(f, (1, 2))
+
+            f = x -> x==1 ? Inf : x
+            @test_throws "pdf(x) is infinite on the boundary." _identify_mode(f, (0, 1))
+            @test_throws "pdf(x) is infinite on the boundary." _identify_mode(f, (1, 2))
+        end
+    end
 end
