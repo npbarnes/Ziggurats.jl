@@ -58,19 +58,12 @@ function CompositeZiggurat(
     end
     if cdf === nothing
         val = pdf(Roots.__middle(a, b))
-        domain_type = typeof(domain[1])
+        domain_type = eltype(domain)
         range_type = typeof(val)
         error_type = typeof(norm(val))
         segbuf = alloc_segbuf(domain_type, range_type, error_type)
 
-        cdf = let pdf=pdf, a=a, segbuf=segbuf
-            # Handle the lower boundary explicitly since quadgk will produce NaN.
-            x -> if x == a
-                zero(domain_type)
-            else
-                abs(quadgk(pdf, a, max(a, x); segbuf)[1])
-            end
-        end
+        cdf = TailArea(pdf, a, segbuf)
     end
     if ccdf === nothing
         val = pdf(Roots.__middle(a, b))
@@ -79,10 +72,7 @@ function CompositeZiggurat(
         error_type = typeof(norm(val))
         segbuf = alloc_segbuf(domain_type, range_type, error_type)
 
-        ccdf = let pdf=pdf, b=b, segbuf=segbuf
-            # Handle upper boundary explicitly since quadgk will produce NaN.
-            x -> x == b ? zero(domain_type) : abs(quadgk(pdf, min(b, x), b; segbuf)[1])
-        end
+        ccdf = TailArea(pdf, b, segbuf)
     end
     if p === nothing
         _p = [cdf(b) - cdf(a) for (a, b) in subdomains]

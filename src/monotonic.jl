@@ -387,6 +387,24 @@ function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
     BareZiggurat(w, k, y, modalboundary)
 end
 
+struct TailArea{F,X,S}
+    f::F
+    r::X
+    segbuf::S
+end
+
+# TODO: a way to pass through arguments to quadgk.
+function (ta::TailArea)(x)
+    if x == ta.r
+        # quadgk returns nan when the domain is empty like that
+        # this is a workaround
+        zero(ta.r)
+    else
+        # TODO: Add error tolerance and check the returned error estimate.
+        abs(quadgk(ta.f, x, ta.r; ta.segbuf)[1])
+    end
+end
+
 function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothing)
     domain = extrema(regularize(domain))
 
@@ -416,18 +434,13 @@ function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothi
     end
 
     if tailarea === nothing
-        # TODO: the tailarea function should come from a 'tool' that has this as default
-        # and allows customization e.g. quadgk arguments or other integrators.
         modepdf = wpdf(modalboundary)
         domain_type = typeof(modalboundary)
         range_type = typeof(modepdf)
         error_type = typeof(norm(modepdf))
         segbuf = alloc_segbuf(domain_type, range_type, error_type)
 
-        # TODO: Add error tolerance and check the returned error estimate.
-        tailarea = let wpdf=wpdf, segbuf=segbuf, argminboundary=argminboundary
-            x -> abs(quadgk(wpdf, x, argminboundary; segbuf)[1])
-        end
+        tailarea = TailArea(wpdf, argminboundary, segbuf)
     end
 
     # Build ziggurats using wrapped functions
@@ -623,7 +636,7 @@ end
 layerarea(y2, modalboundary, argminboundary) = abs(argminboundary - modalboundary) * y2
 
 # Unbounded support
-function layerarea(y2, x2, modalboundary, tailarea::Function)
+function layerarea(y2, x2, modalboundary, tailarea)
     if y2 == zero(y2)
         return zero(x2 * y2)
     end
