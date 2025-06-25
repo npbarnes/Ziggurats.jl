@@ -87,12 +87,12 @@ struct PDFWrap{F,X,Y}
         if fmb < fam
             error("modalboundary and argminboundary are misidentified.")
         end
-        if fam < 0
+        if fam < zero(fam)
             error("pdf($am) is negative. Check the definition of your pdf. It must return \
             non-negative numbers everywhere on its domain, including the end points of \
             the domain.")
         end
-        if fam == fmb == 0
+        if fam == fmb == zero(fam)
             error("pdf is zero on both endpoints of the domain, $(mimax(am,mb)). Ensure \
             that the pdf is monotonic.")
         end
@@ -124,7 +124,7 @@ function (pdf::PDFWrap)(x)
         error("pdf is not monotonic on the domain = $d.")
     end
 
-    return result
+    return float(result)
 end
 
 """
