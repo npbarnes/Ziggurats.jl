@@ -1,90 +1,246 @@
 # ZigguratTools
 [![CI](https://github.com/npbarnes/ZigguratTools/actions/workflows/CI.yml/badge.svg)](https://github.com/npbarnes/ZigguratTools/actions/workflows/CI.yml)
 
-This package will be a collection of tools for generating fast ziggurat-type random samplers for a large class of probability distributions. **Currently in development.**
+This package contains routines for automatically constructing high-performance non-uniform
+random number generators for a wide variety of univariate probability distributions using a
+variation on the Marsaglia & Tsang Ziggurat Algorithm[^1].
 
-## Goals
-
-This package aims to make using the Ziggurat Method[^1] for random variate generation as simple as possible. Julia provides implementations of the ziggurat algorithm for normal and exponential distributions, but the algorithm can be adapted to a large class of distributions. The primary goal of this package is to provide tools to generate high-performance ziggurat-type samplers for a wide variety of distributions. There are no available implementations of this functionality in Julia that I am aware of. 
-
-Implementations in other languages normally require the user to manually provide inputs like an inverse pdf function, a cdf function, etc.. A lot of that auxiliary information can be computed with e.g. rootfinding algorithms, and numerical integration. Therefore, a secondary goal of this package is to make the generation of ziggurat-type samplers as easy as possible. Ideally, it should be possible to produce a sampler using only a pdf function.
-
-## Status
-The project is incomplete, but it is under active development. Only a few preliminary features are implemented. Ziggurat samplers for monotonic distributions are working. However, the sampling algorithm is a naive implementation that is about 10 times slower than Julia's randn and randexp. There are well-known optimizations that will help close the gap.
-
-## Installation
-This package isn't ready for widespread use yet. I intend to register v0.1 once I have most of the basic features working. Until then you can install it by tracking the main branch of this repo. Open a Julia REPL and type `]` to enter package mode. Then run
-```julia
-pkg> add https://github.com/npbarnes/ZigguratTools#main
-```
-
-## Examples
-#### Distributions with Bounded Support
-First, define a pdf. The pdf does not need to be normalized.
+The `ziggurat` function provides the primary interface. In most cases you can pass in the
+`pdf` and a list of points that divides the domain into monotonic segments.
 ```julia-repl
-julia> f(x) = exp(-x^2)
+julia> using ZigguratTools, Plots
+julia> z = ziggurat(x -> exp(-x^2/2), (-Inf, 0, Inf));
+julia> histogram(rand(z, 10^5); normalize=:pdf);
+julia> plot!(x->1/√(2π) * exp(-x^2/2); linewidth=2, color=:black)
 ```
-Then build the ziggurat.
 ```julia-repl
-julia> using ZigguratTools
-julia> z = BoundedZiggurat(f, (0, 1), 256) # f will not be evaluated outside of the domain
+julia> z = ziggurat(x -> abs(cos(x)), (-π, -π/2, 0, π/2, π));
+julia> histogram(rand(z, 10^6); normalize=:pdf)
+julia> plot!(x -> 1/4 * abs(cos(x)); linewidth=2, color=:black)
 ```
-By default, the inverse of f is computed using a bisection algorithm. Overriding it with a manual implementation may improve the performance of the ziggurat construction, but does not affect sampling performance.
-
-`z` can be used like any other sampler.
+<img src="/assets/normal.svg" width=350/> <img src="/assets/cos.svg" width=350/> <br/>
+In some cases, the monotonic segments can be found automatically using autodifferentiation
+and root finding. The public non-exported function `monotonic_segments` does exactly that.
 ```julia-repl
-julia> rand(z)
-0.2977446038532221
+julia> import ZigguratTools: monotonic_segments
+julia> f(x) = exp(-x^2/2) * (1+sin(3x)^2) * (1+cos(5x)^2);
+julia> d = monotonic_segments(f, (-3,3));
+julia> z = ziggurat(f, d);
+julia> histogram(rand(z, 10^6); normalize=:pdf, fillrange=0);
+julia> plot!(x->f(x)/5.62607; linewidth=2, color=:black)
+```
+<img src="/assets/multimodal.svg" width=350/><br/>
+Discontinuous functions are also okay. They do not need to be divided into subdomains at the
+discontinuity as long as it's monotonic.
+```julia-repl
+julia> z = ziggurat(x -> x>=1 ? 2-x : 10-x, (0,2));
+julia> histogram(rand(z, 10^5), normalize=:pdf);
+julia> plot!(x -> (x>=1 ? 2-x : 10-x)/10; linewidth=2, color=:black)
+```
+<img src="/assets/discontinuity.svg" width=350/><br/>
 
-julia> rand(z, 3)
-3-element Vector{Float64}:
- 0.07855690949819316      
- 0.6499899606875755       
- 0.7515162419547353       
+# How it Works
+For monotonic distributions, the algorithm is essentially the same as Marsaglia & Tsang 2000[^1]
+with a few minor technical differences. The most important difference from the classic
+algorithm is that the inverse pdf function, tail area function, and fallback algorithm don't
+need to be explicitly provided by the programmer. This makes the ziggurat method much more
+ergonomic. By default, the `ipdf` is computed using a root finding algorithm (via `Roots.jl`),
+and the `tailarea` function is computed using Gauss-Kronrod quadrature (via `QuadGK.jl`).
+The fallback algorithm is inverse transform sampling over the renormalized `tailarea` function,
+where the inverse is computed similarly to the `ipdf`.
 
+For piecewise monotonic functions the same process is used to make a ziggurat for each
+monotonic segment. Then the relative area under the curve of each segment is computed by
+quadrature. To sample a point, a ziggurat is selected using an Alias Table of the relative
+areas (`AliasTables.jl`) and then that ziggurat is sampled just as in the monotonic case. The
+classic Marsaglia & Tsang algorithm is highly optimized for the symmetric unimodal case, but
+those optimizations are not yet available in ZigguratTools.jl. This algorithm is more flexible
+at the expense of some performance.
+
+# Performance Tips
+Generally, you can expect high performance, but there are a couple of things you should be
+aware of to get the best possible performance. 
+
+First of all, the most optimized samplers are available when the number of layers is a power
+of two with `N <= 4096` for `Float64`, `N <= 512` for `Float32`, and `N <= 64` for `Float16`.
+This applies to ziggurats on both bounded and unbounded domains.
+
+Secondly, on unbounded domains, the default fallback algorithm is usually by far the slowest
+part. Conventional wisdom with the ziggurat algorithm is that the performance of the fallback
+algorithm is not particularly important because it is called very rarely. However, in this
+case, the fallback can be exceptionally slow. It often *does* have a meaningful impact on the
+average time to generate a sample. Fortunately, there are several ways to mitigate the problem:
+
+1. **Use more layers**. The more layers there are, the more rarely the fallback is required,
+the smaller its impact on overall performance. This is probably a good choice in most
+situations unless your application is memory constrained or sensitive to the maximum possible
+latency.
+
+2. **Use a bounded domain**. Ziggurats on bounded domains don't use a fallback at all, so
+you can just pick an outer limit that's beyond the majority of the probability mass. This
+could cut off a portion of the tail, but you can probably always find a cutoff point that is
+far enough down the tail that it makes no material difference. For example, with the
+exponential distribution, `exp(-1000) == 0` in floating point, so chances are using a domain
+of `(0,1000)` would incur no loss of precision.
+
+3. **Provide a function for the tail area**. The default fallback is so slow because it's a
+numerical inverse of a numerical integral. Replacing the tail area function with a direct
+implementation will greatly improve the performance of the fallback as well.
+
+4. **Override the fallback directly**. If you happen to know a modestly performant way to
+sample points in the tail, you can use it. You're on your own for an algorithm, though.
+
+The next section demonstrates each of these approaches.
+
+# Benchmarks
+As an initial example here is the exponential distribution
+```julia-repl
+julia> using BenchmarkTools
+julia> z = ziggurat(x->exp(-x), (0, Inf));
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
+ Range (min … max):   3.930 ns … 693.475 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):      4.660 ns               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   68.164 ns ±  94.573 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+ █                  ▂▇▁                 ▁▄                    ▁
+ █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▇███▇▆▄▁▃▃▃▁▁▃▁▁▁▄▃▅▆███▇▅▄▃▁▁▁▃▁▁▁▁▁▁▁▁▅▆ █
+ 3.93 ns       Histogram: log(frequency) by time       415 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+```
+If you are familiar with `BenchmarkTools.jl` you may have been conditioned to focus your
+attention on the minimum time (at least, I was). In that case, `ZigguratTools` compares well
+against `Random.jl`'s hand optimized `randexp`
+```julia-repl
 julia> using Random
+julia> @benchmark randexp()
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
+ Range (min … max):  4.851 ns … 13.852 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     5.311 ns              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   5.341 ns ±  0.333 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-julia> a = Vector{Float64}(undef, 3)
-...
+            ▁▃▁▅▂█▅▆█▃▆▁▄▂                                    
+  ▂▂▂▃▃▃▄▄▆▆██████████████▇█▆▆▅▄▄▃▃▃▂▂▂▂▂▂▂▂▂▁▁▂▂▂▁▂▂▂▁▁▂▂▂▂ ▄
+  4.85 ns        Histogram: frequency by time        6.35 ns <
 
-julia> rand!(z, a)
-3-element Vector{Float64}:
- 0.18796323126287684
- 0.21786647926588895
- 0.0636838420645357
-
-julia> rng = MersenneTwister(1234)
-...
-
-julia> rand(rng, z, 3)
-3-element Vector{Float64}:
- 0.6271541821806008
- 0.6265042348161904
- 0.005040015479099047
+ Memory estimate: 0 bytes, allocs estimate: 0.
 ```
-
-We can qualitatively validate the distribution with a histogram.
+However, the mean and maximum times reveal a discrepancy. In this case, the minimum and
+median times are representative of the fast path which executes the vast majority of the time,
+but the maximum and mean times reveal that the slower fallback method for generating samples
+in the tail is much slower than the specialized method `randexp()`. This can be mitigated
+using the methods described in the previous section.
 ```julia-repl
-julia> using Plots
-julia> histogram(rand(z, 10^6), norm=:pdf)
-julia> plot!(x -> f(x)/0.746824, color=:black, lw=3) # make sure f is normalized correctly
-```
-<img src="/assets/BoundedMonotonicZiggurat_Histogram.svg" width=350/>
+julia> z = ziggurat(x->exp(-x), (0, Inf), 4096);
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
+ Range (min … max):  3.739 ns … 276.213 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     3.829 ns               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   6.708 ns ±  19.660 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-#### Distributions with Unbounded Support
-This time, let's get our pdf from Distributions.jl
+ █                                                         ▁ ▁
+ █▄▄▄▁▁▁▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▄▄█ █
+ 3.74 ns      Histogram: log(frequency) by time       140 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+
+julia> z = ziggurat(x->exp(-x), (0, 1000));
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
+ Range (min … max):  4.100 ns … 23.897 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     4.639 ns              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   4.658 ns ±  0.355 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+            ▁▃▁▅▂█▅▆█▃▆▁▄▂                                    
+  ▂▂▂▃▃▃▄▄▆▆██████████████▇█▆▆▅▄▄▃▃▃▂▂▂▂▂▂▂▂▂▁▁▂▂▂▁▂▂▂▁▁▂▂▂▂ ▄
+  4.85 ns        Histogram: frequency by time        6.35 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+
+julia> z = ziggurat(x->exp(-x), (0, Inf); tailarea=x->exp(-x));
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
+ Range (min … max):  4.049 ns … 37.065 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     4.640 ns              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   5.524 ns ±  1.553 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+    ▄█▇▁                                                      
+  ▃▆████▄▃▂▂▂▂▂▂▁▂▂▂▂▃▅██▆▄▃▂▂▂▂▂▁▂▁▂▁▂▂▂▃▃▃▂▂▂▂▂▂▂▁▁▁▁▂▁▂▂▂ ▃
+  4.05 ns        Histogram: frequency by time        11.1 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+
+julia> z = ziggurat(x->exp(-x), (0, Inf); fallback = (rng, a) -> a - log1p(-rand(rng)));
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
+ Range (min … max):  3.970 ns … 22.527 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     4.509 ns              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   4.526 ns ±  0.356 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+                    ▁ ▅▃▆▆█▅▃▇▇▇█▄▃▆▅▅▃▁                      
+  ▁▁▁▁▁▁▁▁▂▂▃▃▃▃▅▆▆██▅██████████████████▅█▇▆▆▅▃▃▃▃▃▂▂▁▂▂▁▁▁▁ ▄
+  3.97 ns        Histogram: frequency by time        5.04 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+```
+Now we have attained a similar performance as `randexp()`. This is to be expected since
+`randexp` uses a very similar ziggurat method internally.
+
+Piecewise-monotonic distributions are implemented as a collection of monotonic ziggurats.
+Each of the unbounded segments can be optimized in any of the same ways. However, the gains
+are not as substantial since selecting a ziggurat adds constant overhead.
 ```julia-repl
-julia> using Distributions
-julia> dist = truncated(Normal(), lower=0.0)
-julia> g = Base.Fix1(pdf, dist)
-julia> z = UnboundedZiggurat(g, extrema(dist), 256)
-```
-By default, ZigguratTools uses bisection for the inverse pdf, makes use of QuadGK.jl to compute the tail area, and uses bisection to invert the tail area to get the fallback algorithm. Any combination of these steps can be overridden. The performance of the fallback algorithm has a small effect on sampling performance.
+julia> z = ziggurat(x -> exp(-x^2/2), (-40, 0, 40));
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 997 evaluations per sample.
+ Range (min … max):  18.987 ns … 106.098 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     19.819 ns               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   19.921 ns ±   1.267 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
+         ▁▄███▇▆▁                                               
+  ▂▂▂▂▃▄▇████████▇▆▄▃▃▃▃▂▂▂▂▂▂▂▂▂▁▁▂▁▁▂▂▁▂▂▁▂▂▁▁▁▁▁▁▁▁▁▁▂▁▂▂▂▂ ▃
+  19 ns           Histogram: frequency by time         23.4 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+```
+Generally speaking, these results are pretty fast, but it's not as impressive compared to a
+specialized algorithm like Julia's `randn()`.
+
+That's because the classic Marsaglia & Tsang algorithm is highly optimized for the symmetric
+unimodal case. `ZigguratTools` doesn't currently implement those optimizations. However, in
+exchange, we have much greater flexibility to sample from a wide variety of distributions.
+Adding more segments comes with no additional overhead. Here's a benchmark of one of the
+examples above with 18 segments:
 ```julia-repl
-julia> histogram(rand(z, 10^6), norm=:pdf)
-julia> plot!(g, color=:black, lw=3)
-```
-<img src="/assets/UnboundedMonotonicZiggurat_Histogram.svg" width=350/>
+julia> f(x) = exp(-x^2/2) * (1+sin(3x)^2) * (1+cos(5x)^2);
+julia> d = monotonic_segments(f, (-3,3));
+julia> z = ziggurat(f, d);
+julia> @benchmark rand($z)
+BenchmarkTools.Trial: 10000 samples with 998 evaluations per sample.
+ Range (min … max):  18.357 ns … 55.000 ns  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     19.499 ns              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   19.694 ns ±  1.499 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-[^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables. Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
+      ▃▇█▆▂                                                    
+  ▂▂▃▆█████▆▄▃▂▂▂▂▂▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ ▃
+  18.4 ns         Histogram: frequency by time        28.7 ns <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+```
+It has essentially identical performance as the normal distribution example.
+
+# Contributing
+ - **Star this repo!** This is a hobby project. If you star the repo it lets me know that
+ people are interested and that I should keep working on it.
+
+ - **Raise an issue.** Any input helps. If you think something could be better, let me know!
+ If you have a feature request, let me know! If you find a bug then please post it in the
+ issue tracker!
+
+ - **Send a pull request.** If you can contribute code or documentation (even small edits)
+ then please do so. I want this project to be as good as it can be, so I'm happy to take
+ outside contributions.
+
+[^1]: Marsaglia, G., & Tsang, W. W. (2000). The Ziggurat Method for Generating Random Variables.
+Journal of Statistical Software, 5(8), 1–7. https://doi.org/10.18637/jss.v005.i08
