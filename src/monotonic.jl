@@ -136,6 +136,11 @@ struct IPDFWrap{F,X,Y}
     am::X
     fmb::Y
     fam::Y
+    function IPDFWrap(ipdf, mb, am, fmb, fam)
+        mb, am = promote(mb, am)
+        fmb, fam = promote(fmb, fam)
+        new{typeof(ipdf),typeof(mb),typeof(fmb)}(ipdf, mb, am, fmb, fam)
+    end
 end
 
 # TODO: make inverse and IPDFWrap give the same error messages.
@@ -179,8 +184,8 @@ struct NoWrap{F}
     f::F
 end
 
-PDFWrap(f::NoWrap, args...) = f.f
-IPDFWrap(f::NoWrap, args...) = f.f
+PDFWrap(f::NoWrap, mb, am, fmb, fam) = f.f
+IPDFWrap(f::NoWrap, mb, am, fmb, fam) = f.f
 
 # TODO: Need tests for unwrapped functions.
 """
