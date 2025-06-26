@@ -1,5 +1,5 @@
-# ZigguratTools
-[![CI](https://github.com/npbarnes/ZigguratTools/actions/workflows/CI.yml/badge.svg)](https://github.com/npbarnes/ZigguratTools/actions/workflows/CI.yml)
+# Ziggurats.jl
+[![CI](https://github.com/npbarnes/Ziggurats.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/npbarnes/Ziggurats.jl/actions/workflows/CI.yml)
 
 This package contains routines for automatically constructing high-performance non-uniform
 random number generators for a wide variety of univariate probability distributions using a
@@ -8,7 +8,7 @@ variation on the Marsaglia & Tsang Ziggurat Algorithm[^1].
 The `ziggurat` function provides the primary interface. In most cases you can pass in the
 `pdf` and a list of points that divides the domain into monotonic segments.
 ```julia-repl
-julia> using ZigguratTools, Plots
+julia> using Ziggurats, Plots
 julia> z = ziggurat(x -> exp(-x^2/2), (-Inf, 0, Inf));
 julia> histogram(rand(z, 10^5); normalize=:pdf);
 julia> plot!(x->1/√(2π) * exp(-x^2/2); linewidth=2, color=:black)
@@ -22,7 +22,7 @@ julia> plot!(x -> 1/4 * abs(cos(x)); linewidth=2, color=:black)
 In some cases, the monotonic segments can be found automatically using autodifferentiation
 and root finding. The public non-exported function `monotonic_segments` does exactly that.
 ```julia-repl
-julia> import ZigguratTools: monotonic_segments
+julia> import Ziggurats: monotonic_segments
 julia> f(x) = exp(-x^2/2) * (1+sin(3x)^2) * (1+cos(5x)^2);
 julia> d = monotonic_segments(f, (-3,3));
 julia> z = ziggurat(f, d);
@@ -54,7 +54,7 @@ monotonic segment. Then the relative area under the curve of each segment is com
 quadrature. To sample a point, a ziggurat is selected using an Alias Table of the relative
 areas (`AliasTables.jl`) and then that ziggurat is sampled just as in the monotonic case. The
 classic Marsaglia & Tsang algorithm is highly optimized for the symmetric unimodal case, but
-those optimizations are not yet available in ZigguratTools.jl. This algorithm is more flexible
+those optimizations are not yet available in `Ziggurats.jl`. This algorithm is more flexible
 at the expense of some performance.
 
 # Performance Tips
@@ -110,7 +110,7 @@ BenchmarkTools.Trial: 10000 samples with 1000 evaluations per sample.
  Memory estimate: 0 bytes, allocs estimate: 0.
 ```
 If you are familiar with `BenchmarkTools.jl` you may have been conditioned to focus your
-attention on the minimum time (at least, I was). In that case, `ZigguratTools` compares well
+attention on the minimum time (at least, I was). In that case, `Ziggurats.jl` compares well
 against `Random.jl`'s hand optimized `randexp`
 ```julia-repl
 julia> using Random
@@ -208,7 +208,7 @@ Generally speaking, these results are pretty fast, but it's not as impressive co
 specialized algorithm like Julia's `randn()`.
 
 That's because the classic Marsaglia & Tsang algorithm is highly optimized for the symmetric
-unimodal case. `ZigguratTools` doesn't currently implement those optimizations. However, in
+unimodal case. `Ziggurats.jl` doesn't currently implement those optimizations. However, in
 exchange, we have much greater flexibility to sample from a wide variety of distributions.
 Adding more segments comes with no additional overhead. Here's a benchmark of one of the
 examples above with 18 segments:

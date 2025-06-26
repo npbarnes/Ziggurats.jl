@@ -79,16 +79,16 @@ end
             modalboundary = T(0.0)
             argminboundary = T(Inf)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -102,7 +102,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -133,7 +133,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -175,16 +175,16 @@ end
             modalboundary = T(0.0)
             argminboundary = T(-Inf)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -198,7 +198,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -229,7 +229,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -273,16 +273,16 @@ end
             modalboundary = T(1.0)
             argminboundary = T(-Inf)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -296,7 +296,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -325,7 +325,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -379,8 +379,8 @@ end
             modalboundary = T(0.0)
             argminboundary = T(2.0)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
@@ -390,7 +390,7 @@ end
 
             slopesign = -1
 
-            x, y = ZigguratTools.search(N, modalboundary, argminboundary, wf, winvf)
+            x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
             test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -414,16 +414,16 @@ end
             modalboundary = T(0.0)
             argminboundary = T(Inf)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -437,7 +437,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -466,7 +466,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -504,16 +504,16 @@ end
             modalboundary = T(0.5)
             argminboundary = T(1.0)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -527,7 +527,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(
                         x,
@@ -549,8 +549,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y =
-                        ZigguratTools.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(
                         x,
@@ -581,16 +580,16 @@ end
             modalboundary = T(0.5)
             argminboundary = T(10.0)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -604,7 +603,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(
                         x,
@@ -626,8 +625,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y =
-                        ZigguratTools.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(
                         x,
@@ -658,16 +656,16 @@ end
             modalboundary = T(-0.5)
             argminboundary = T(-1.0)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -681,7 +679,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(
                         x,
@@ -703,8 +701,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y =
-                        ZigguratTools.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(
                         x,
@@ -735,16 +732,16 @@ end
             modalboundary = T(-0.5)
             argminboundary = T(-10.0)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -758,7 +755,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(
                         x,
@@ -780,8 +777,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y =
-                        ZigguratTools.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(
                         x,
@@ -814,16 +810,16 @@ end
             modalboundary = T(0.0)
             argminboundary = T(Inf)
 
-            wf = ZigguratTools.PDFWrap(f, modalboundary, argminboundary)
-            winvf = ZigguratTools.IPDFWrap(
+            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap(
                 invf,
                 modalboundary,
                 argminboundary,
                 wf(modalboundary),
                 wf(argminboundary)
             )
-            wuf = ZigguratTools.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = ZigguratTools.IPDFWrap(
+            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
+            wuinvf = Ziggurats.IPDFWrap(
                 uinvf,
                 modalboundary,
                 argminboundary,
@@ -837,7 +833,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,
@@ -866,7 +862,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = ZigguratTools.search(
+                    x, y = Ziggurats.search(
                         N,
                         modalboundary,
                         argminboundary,

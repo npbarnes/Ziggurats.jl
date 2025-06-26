@@ -1,4 +1,4 @@
-using Test, ZigguratTools
+using Test, Ziggurats
 using Random
 using StatsBase
 using Distributions
@@ -10,7 +10,7 @@ include("testutils.jl")
 include("SteppedExponential.jl")
 include("Doorstop.jl")
 
-@testset "ZigguratTools" begin
+@testset "Ziggurats" begin
     # Test the test-distributions
     @testset "Stepped Exponential Distributions" begin
         test_distr(SteppedExponential(), 10^6)
@@ -24,7 +24,7 @@ include("Doorstop.jl")
         test_distr(Doorstop(-1, 1, 1), 10^6)
     end
 
-    # Test ZigguratTools
+    # Test Ziggurats
     include("test_inverses.jl")
     include("argument_handling_tests.jl")
     include("interface_tests.jl")

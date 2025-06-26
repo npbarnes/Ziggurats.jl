@@ -148,22 +148,22 @@ Attempts to detect discontinuities in f, and account for them.
 # Examples
 
 ```julia-repl
-julia> ZigguratTools.get_subdomains(cos, [-1, 0, 1])
+julia> Ziggurats.get_subdomains(cos, [-1, 0, 1])
 2-element Vector{Vector{Float64}}:
  [-1.0, 0.0]
  [0.0, 1.0]
 
-julia> ZigguratTools.get_subdomains(x -> x>0 ? 1.0 : 0.0, [-1, 0, 1])
+julia> Ziggurats.get_subdomains(x -> x>0 ? 1.0 : 0.0, [-1, 0, 1])
 2-element Vector{Vector{Float64}}:
  [-1.0, 0.0]
  [5.0e-324, 1.0]
 
-julia> ZigguratTools.get_subdomains(x -> x>=0 ? 1.0 : 0.0, [-1, 0, 1])
+julia> Ziggurats.get_subdomains(x -> x>=0 ? 1.0 : 0.0, [-1, 0, 1])
 2-element Vector{Vector{Float64}}:
  [-1.0, -5.0e-324]
  [0.0, 1.0]
 
-julia> ZigguratTools.get_subdomains(sign, [-1, 0, 1])
+julia> Ziggurats.get_subdomains(sign, [-1, 0, 1])
 2-element Vector{Vector{Float64}}:
  [-1.0, -5.0e-324]
  [5.0e-324, 1.0]

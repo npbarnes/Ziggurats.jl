@@ -1,6 +1,6 @@
 @testset "Generalized Inverses" begin
     @testset "inversepdf()" begin
-        import ZigguratTools: inversepdf
+        import Ziggurats: inversepdf
         # 0 -> 1
         heaviside1(x) = x >= 0 ? 1.0 : 0.0
 

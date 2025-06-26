@@ -1,4 +1,4 @@
-module ZigguratTools
+module Ziggurats
 
 using Roots
 using Random

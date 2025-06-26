@@ -3,7 +3,7 @@ issamevector(a::Vector, b::Vector) = false
 
 @testset "Argument handling" begin
     @testset "regularize domains" begin
-        import ZigguratTools: regularize
+        import Ziggurats: regularize
         @testset "regularize errors if it doesn't contain 2 or more distinct elements" begin
             @test_throws "empty domain" regularize(0)
             @test_throws "empty domain" regularize([0])
@@ -95,131 +95,131 @@ issamevector(a::Vector, b::Vector) = false
     @testset "_check_arguments" begin
         @testset "Using a non-positive N throws an error" begin
             @testset "When domain is valid" begin
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (0, Inf))
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (0, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (-Inf, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (-Inf, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (0, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (0, 1))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, 1))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, Inf))
 
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [0, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [0, Inf])
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [-Inf, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [-Inf, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [0, 1])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [0, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, 1])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, Inf])
 
-                @test_throws "N must" ZigguratTools._check_arguments(0, (0, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(0, (0, Inf))
-                @test_throws "N must" ZigguratTools._check_arguments(0, (-Inf, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(0, (-Inf, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(0, (0, 1))
+                @test_throws "N must" Ziggurats._check_arguments(0, (0, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, 1))
+                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, Inf))
 
-                @test_throws "N must" ZigguratTools._check_arguments(0, [0, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(0, [0, Inf])
-                @test_throws "N must" ZigguratTools._check_arguments(0, [-Inf, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(0, [-Inf, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(0, [0, 1])
+                @test_throws "N must" Ziggurats._check_arguments(0, [0, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, 1])
+                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, Inf])
 
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (0, 0.5, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (0, 0.5, Inf))
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (-Inf, 0.5, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(-1, (-Inf, 0.5, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (0, 0.5, 1))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (0, 0.5, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, 0.5, 1))
+                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, 0.5, Inf))
 
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [0, 0.5, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [0, 0.5, Inf])
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [-Inf, 0.5, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(-1, [-Inf, 0.5, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [0, 0.5, 1])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [0, 0.5, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, 0.5, 1])
+                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, 0.5, Inf])
 
-                @test_throws "N must" ZigguratTools._check_arguments(0, (0, 0.5, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(0, (0, 0.5, Inf))
-                @test_throws "N must" ZigguratTools._check_arguments(0, (-Inf, 0.5, 1))
-                @test_throws "N must" ZigguratTools._check_arguments(0, (-Inf, 0.5, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(0, (0, 0.5, 1))
+                @test_throws "N must" Ziggurats._check_arguments(0, (0, 0.5, Inf))
+                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, 0.5, 1))
+                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, 0.5, Inf))
 
-                @test_throws "N must" ZigguratTools._check_arguments(0, [0, 0.5, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(0, [0, 0.5, Inf])
-                @test_throws "N must" ZigguratTools._check_arguments(0, [-Inf, 0.5, 1])
-                @test_throws "N must" ZigguratTools._check_arguments(0, [-Inf, 0.5, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(0, [0, 0.5, 1])
+                @test_throws "N must" Ziggurats._check_arguments(0, [0, 0.5, Inf])
+                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, 0.5, 1])
+                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, 0.5, Inf])
             end
 
             @testset "When the domain is invalid" begin
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, ())
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, (0,))
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, (Inf,))
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, (0, 0))
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, (Inf, Inf))
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, (-Inf, -Inf))
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, (-Inf, Inf))
+                @test_throws "N must be" Ziggurats._check_arguments(-1, ())
+                @test_throws "N must be" Ziggurats._check_arguments(-1, (0,))
+                @test_throws "N must be" Ziggurats._check_arguments(-1, (Inf,))
+                @test_throws "N must be" Ziggurats._check_arguments(-1, (0, 0))
+                @test_throws "N must be" Ziggurats._check_arguments(-1, (Inf, Inf))
+                @test_throws "N must be" Ziggurats._check_arguments(-1, (-Inf, -Inf))
+                @test_throws "N must be" Ziggurats._check_arguments(-1, (-Inf, Inf))
 
-                @test_throws "N must be" ZigguratTools._check_arguments(0, (0, 0))
-                @test_throws "N must be" ZigguratTools._check_arguments(0, (Inf, Inf))
-                @test_throws "N must be" ZigguratTools._check_arguments(0, (-Inf, -Inf))
-                @test_throws "N must be" ZigguratTools._check_arguments(0, (-Inf, Inf))
+                @test_throws "N must be" Ziggurats._check_arguments(0, (0, 0))
+                @test_throws "N must be" Ziggurats._check_arguments(0, (Inf, Inf))
+                @test_throws "N must be" Ziggurats._check_arguments(0, (-Inf, -Inf))
+                @test_throws "N must be" Ziggurats._check_arguments(0, (-Inf, Inf))
 
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [])
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [0])
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [Inf])
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [0, 0])
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [Inf, Inf])
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [-Inf, -Inf])
-                @test_throws "N must be" ZigguratTools._check_arguments(-1, [-Inf, Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [0])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [0, 0])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [Inf, Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [-Inf, -Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(-1, [-Inf, Inf])
 
-                @test_throws "N must be" ZigguratTools._check_arguments(0, [0, 0])
-                @test_throws "N must be" ZigguratTools._check_arguments(0, [Inf, Inf])
-                @test_throws "N must be" ZigguratTools._check_arguments(0, [-Inf, -Inf])
-                @test_throws "N must be" ZigguratTools._check_arguments(0, [-Inf, Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(0, [0, 0])
+                @test_throws "N must be" Ziggurats._check_arguments(0, [Inf, Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(0, [-Inf, -Inf])
+                @test_throws "N must be" Ziggurats._check_arguments(0, [-Inf, Inf])
             end
         end
 
         # Empty domian
         @testset "Empty domains throw an empty domain error" begin
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, ())
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, (0,))
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, (Inf,))
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, (0, 0))
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, (Inf, Inf))
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, (-Inf, -Inf))
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, (0, 0, 0))
+            @test_throws "empty domains" Ziggurats._check_arguments(256, ())
+            @test_throws "empty domains" Ziggurats._check_arguments(256, (0,))
+            @test_throws "empty domains" Ziggurats._check_arguments(256, (Inf,))
+            @test_throws "empty domains" Ziggurats._check_arguments(256, (0, 0))
+            @test_throws "empty domains" Ziggurats._check_arguments(256, (Inf, Inf))
+            @test_throws "empty domains" Ziggurats._check_arguments(256, (-Inf, -Inf))
+            @test_throws "empty domains" Ziggurats._check_arguments(256, (0, 0, 0))
 
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [])
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [0])
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [Inf])
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [0, 0])
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [Inf, Inf])
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [-Inf, -Inf])
-            @test_throws "empty domains" ZigguratTools._check_arguments(256, [0, 0, 0])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [0])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [Inf])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [0, 0])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [Inf, Inf])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [-Inf, -Inf])
+            @test_throws "empty domains" Ziggurats._check_arguments(256, [0, 0, 0])
         end
 
         @testset "Infinite domains throw an infinite domain error" begin
-            @test_throws "a domain" ZigguratTools._check_arguments(256, (-Inf, Inf))
-            @test_throws "a domain" ZigguratTools._check_arguments(256, (Inf, -Inf))
-            @test_throws "a domain" ZigguratTools._check_arguments(256, (Inf, 1, -Inf))
-            @test_throws "a domain" ZigguratTools._check_arguments(256, (1, Inf, -Inf, 0))
-            @test_throws "a domain" ZigguratTools._check_arguments(256, (-Inf, 1, Inf))
+            @test_throws "a domain" Ziggurats._check_arguments(256, (-Inf, Inf))
+            @test_throws "a domain" Ziggurats._check_arguments(256, (Inf, -Inf))
+            @test_throws "a domain" Ziggurats._check_arguments(256, (Inf, 1, -Inf))
+            @test_throws "a domain" Ziggurats._check_arguments(256, (1, Inf, -Inf, 0))
+            @test_throws "a domain" Ziggurats._check_arguments(256, (-Inf, 1, Inf))
 
-            @test_throws "a domain" ZigguratTools._check_arguments(256, [-Inf, Inf])
-            @test_throws "a domain" ZigguratTools._check_arguments(256, [Inf, -Inf])
-            @test_throws "a domain" ZigguratTools._check_arguments(256, [Inf, 1, -Inf])
-            @test_throws "a domain" ZigguratTools._check_arguments(256, [1, Inf, -Inf, 0])
-            @test_throws "a domain" ZigguratTools._check_arguments(256, [-Inf, 1, Inf])
+            @test_throws "a domain" Ziggurats._check_arguments(256, [-Inf, Inf])
+            @test_throws "a domain" Ziggurats._check_arguments(256, [Inf, -Inf])
+            @test_throws "a domain" Ziggurats._check_arguments(256, [Inf, 1, -Inf])
+            @test_throws "a domain" Ziggurats._check_arguments(256, [1, Inf, -Inf, 0])
+            @test_throws "a domain" Ziggurats._check_arguments(256, [-Inf, 1, Inf])
         end
 
         @testset "Return nothing when everything checks out" begin
-            @test ZigguratTools._check_arguments(256, (0, 1)) === nothing
-            @test ZigguratTools._check_arguments(256, (0, 0.5, 1)) === nothing
-            @test ZigguratTools._check_arguments(256, (1, 0, 0.5)) === nothing
-            @test ZigguratTools._check_arguments(256, (1, 0)) === nothing
-            @test ZigguratTools._check_arguments(256, (0, Inf)) === nothing
-            @test ZigguratTools._check_arguments(256, (Inf, 0)) === nothing
-            @test ZigguratTools._check_arguments(256, (0, 1, Inf)) === nothing
-            @test ZigguratTools._check_arguments(256, (Inf, 1, 0)) === nothing
-            @test ZigguratTools._check_arguments(256, (Inf, 0, 1)) === nothing
-            @test ZigguratTools._check_arguments(256, (0, 0, 1)) === nothing
-            @test ZigguratTools._check_arguments(256, (1, 0, 1)) === nothing
-            @test ZigguratTools._check_arguments(256, (Inf, 0, Inf)) === nothing
-            @test ZigguratTools._check_arguments(256, (0, Inf, 0)) === nothing
-            @test ZigguratTools._check_arguments(256, (0, 1, Inf, Inf)) === nothing
-            @test ZigguratTools._check_arguments(256, (Inf, 1, 0, 1)) === nothing
-            @test ZigguratTools._check_arguments(256, (Inf, 0, 1, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (0, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (0, 0.5, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (1, 0, 0.5)) === nothing
+            @test Ziggurats._check_arguments(256, (1, 0)) === nothing
+            @test Ziggurats._check_arguments(256, (0, Inf)) === nothing
+            @test Ziggurats._check_arguments(256, (Inf, 0)) === nothing
+            @test Ziggurats._check_arguments(256, (0, 1, Inf)) === nothing
+            @test Ziggurats._check_arguments(256, (Inf, 1, 0)) === nothing
+            @test Ziggurats._check_arguments(256, (Inf, 0, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (0, 0, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (1, 0, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (Inf, 0, Inf)) === nothing
+            @test Ziggurats._check_arguments(256, (0, Inf, 0)) === nothing
+            @test Ziggurats._check_arguments(256, (0, 1, Inf, Inf)) === nothing
+            @test Ziggurats._check_arguments(256, (Inf, 1, 0, 1)) === nothing
+            @test Ziggurats._check_arguments(256, (Inf, 0, 1, 1)) === nothing
         end
     end
 
     @testset "_choose_tailarea_func" begin
-        import ZigguratTools: _choose_tailarea_func
+        import Ziggurats: _choose_tailarea_func
         inc_func(x) = x
         dec_func(x) = -x
 
@@ -287,7 +287,7 @@ issamevector(a::Vector, b::Vector) = false
     end
 
     @testset "_identify_mode" begin
-        import ZigguratTools: _identify_mode
+        import Ziggurats: _identify_mode
         f = x->x
         @test _identify_mode(f, (0, 1)) == (1, 0)
 

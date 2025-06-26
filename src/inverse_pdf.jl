@@ -16,7 +16,7 @@ may be provided as a pair, (a,b), but it may also include intermediate points, l
 
 # Example
 ```julia-repl
-julia> import ZigguratTools.inversepdf
+julia> import Ziggurats.inversepdf
 
 julia> inversepdf(x->cos(x) + 2x, (0,3))(3)
 1.4296716508827783
