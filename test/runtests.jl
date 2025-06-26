@@ -3,6 +3,11 @@ using Random
 using StatsBase
 using Distributions
 using SpecialFunctions
+using Aqua
+
+@testset "Aqua.jl Tests" begin
+    Aqua.test_all(Ziggurats)
+end
 
 include("testutils.jl")
 
