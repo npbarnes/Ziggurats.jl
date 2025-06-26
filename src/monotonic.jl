@@ -121,7 +121,7 @@ function (pdf::PDFWrap)(x)
 
     if !between(pdf.fmb, pdf.fam, result)
         d = minmax(pdf.mb, pdf.am)
-        error("pdf is not monotonic on the domain = $d.")
+        error("pdf is not monotonic on the domain = ($(d[1]), $(d[2])).")
     end
 
     return float(result)

@@ -4,6 +4,7 @@ using StatsBase
 using Distributions
 using SpecialFunctions
 using Aqua
+using JET
 
 @testset "Aqua.jl Tests" begin
     Aqua.test_all(Ziggurats)
@@ -34,6 +35,7 @@ include("Doorstop.jl")
     include("argument_handling_tests.jl")
     include("interface_tests.jl")
     include("ziggurat_tests.jl")
+    include("JET_tests.jl")
 end
 
 nothing
