@@ -33,44 +33,44 @@ override the left and right tail areas respectively. Similarly, use `left_fallba
 `right_fallback` if necessary.
 
 # Arguments
- - `pdf`: The probability density function of the desired distribution. It must not diverge
- to infinity anywhere on the `domain`, including the endpoints. It does not need to be
+ - `pdf`: The probability density function of the desired distribution. It must not diverge \
+ to infinity anywhere on the `domain`, including the endpoints. It does not need to be \
  normalized, but `ipdf`, `cdf`, and `ccdf` need to have the same normalization as `pdf`.
 
- - `domain`: a list of numbers that divides the `pdf` into monotonic segments. `domain` may
- The values will be promoted to the highest float type present, or Float64 if there
- are no floats. The type that they are promoted to will be the type produced by sampling
- from the resulting ziggurat. The domain may be unbounded in either or both directions,
+ - `domain`: a list of numbers that divides the `pdf` into monotonic segments. `domain` may \
+ The values will be promoted to the highest float type present, or Float64 if there \
+ are no floats. The type that they are promoted to will be the type produced by sampling \
+ from the resulting ziggurat. The domain may be unbounded in either or both directions, \
  for example, `(-Inf, 0, Inf)`.
 
- - `N`: (Optional) The number of layers in each ziggurat. `N` may be a single number that
- applies to all ziggurats, or a list of numbers one for each subdomain. If `N` is a power
- of two and the domain is Float64 with N <= 4096, Float32 with N <= 512, or Float16 with
- N <= 64, then an optimized sampling algorithm is used. Normally, `N` defaults to 256, 
+ - `N`: (Optional) The number of layers in each ziggurat. `N` may be a single number that \
+ applies to all ziggurats, or a list of numbers one for each subdomain. If `N` is a power \
+ of two and the domain is Float64 with N <= 4096, Float32 with N <= 512, or Float16 with \
+ N <= 64, then an optimized sampling algorithm is used. Normally, `N` defaults to 256, \
  but for Float16 domains it defaults to 64.
 
- - `ipdf`: (Optional) A list of functions that invert the pdf on each monotonic subdomain.
- They are used in the ziggurat construction algorithm, but not during sampling, so they 
- may affect the performance of the initial call to `z = CompositeZiggurat(...)`, but not
- subsequent calls to `rand(z)`. If `ipdf` is `nothing` or not provided, then all of the
- ipdfs will be calculated numerically using a root finding algorithm. If any of the entries
- in the list are `nothing` then those ipdfs will be calculated numerically. See also
+ - `ipdf`: (Optional) A list of functions that invert the pdf on each monotonic subdomain. \
+ They are used in the ziggurat construction algorithm, but not during sampling, so they \
+ may affect the performance of the initial call to `z = CompositeZiggurat(...)`, but not \
+ subsequent calls to `rand(z)`. If `ipdf` is `nothing` or not provided, then all of the \
+ ipdfs will be calculated numerically using a root finding algorithm. If any of the entries \
+ in the list are `nothing` then those ipdfs will be calculated numerically. See also \
  [`inversepdf`](@ref).
 
- - `cdf`: (Optional) The cumulative distribution function. It should be normalized the same
+ - `cdf`: (Optional) The cumulative distribution function. It should be normalized the same \
  way the pdf is normalized. Only used if the leftmost subdomain is unbounded below.
 
- - `ccdf`: (Optional) The complementary cumulative distribution function. It should be
- normalized the same way the pdf is normalized. Only used if the rightmost subdomain is
+ - `ccdf`: (Optional) The complementary cumulative distribution function. It should be \
+ normalized the same way the pdf is normalized. Only used if the rightmost subdomain is \
  unbounded above.
 
- - `left_fallback` and `right_fallback: (Optional) functions that take arguments (rng, a)
- and produce a random variate in the tail beyond `a` (below `a` for `left_fallback`, and
- above `a` for `right_fallback`). These are only used on unbounded domains, one or both
- may be ignored if the domain is bounded on one or both sides. If no fallback is provided,
- then inverse transform sampling will be used by numerically inverting the `cdf` and/or
- the `ccdf` (which may themselves be numerical estimates). Overriding the fallbacks can
- improve the worst-case performance of the sampling algorithm, but since the fallback is
+ - `left_fallback` and `right_fallback: (Optional) functions that take arguments (rng, a) \
+ and produce a random variate in the tail beyond `a` (below `a` for `left_fallback`, and \
+ above `a` for `right_fallback`). These are only used on unbounded domains, one or both \
+ may be ignored if the domain is bounded on one or both sides. If no fallback is provided, \
+ then inverse transform sampling will be used by numerically inverting the `cdf` and/or \
+ the `ccdf` (which may themselves be numerical estimates). Overriding the fallbacks can \
+ improve the worst-case performance of the sampling algorithm, but since the fallback is \
  only called rarely, it will have a smaller influence on the average performance.
 
 # Examples
