@@ -39,6 +39,10 @@ julia> plot!(x -> (x>=1 ? 2-x : 10-x)/10; linewidth=2, color=:black)
 ```
 <img src="/assets/discontinuity.svg" width=350/><br/>
 
+The available constructors for ziggurats are: `ziggurat`, `monotonic_ziggurat`, `CompositeZiggurat`,
+`BoundedZiggurat`, and `UnboundedZiggurat`. Each of them has a detailed docstring where you can find
+information about usage and limitations.
+
 # How it Works
 For monotonic distributions, the algorithm is essentially the same as Marsaglia & Tsang 2000[^1]
 with a few minor technical differences. The most important difference from the classic
