@@ -42,11 +42,11 @@ documentation of those functions for more details on the interactions between ar
 # Examples
 ```julia-repl
 julia> using Ziggurats
-
 julia> z = ziggurat(x -> exp(-x^2/2), (-Inf, 0, Inf));
 ```
 `Ziggurats.jl` hooks into Julia's `Random` API, so the various incarnations of `rand` and
 `rand!` will work as expected.
+
 ```julia-repl
 julia> rand(z)
 0.6223352924397899
@@ -66,6 +66,7 @@ julia> rand!(a, z)
   1.861164263929902
   0.19287723622925435
  -0.21573227151484722
+```
 """
 function ziggurat(
     pdf,
