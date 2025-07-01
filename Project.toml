@@ -1,7 +1,7 @@
 name = "Ziggurats"
 uuid = "974aae91-9ec7-499e-b331-29e7a3e13038"
 authors = ["Nathan Barnes <nathanpaulbarnes@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 AliasTables = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
