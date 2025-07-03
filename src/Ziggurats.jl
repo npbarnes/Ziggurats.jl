@@ -8,13 +8,14 @@ using AliasTables
 using IntervalRootFinding
 using ForwardDiff
 using FixedPointNumbers
+using Compat
 
 export Ziggurat, MonotonicZiggurat
 export BoundedZiggurat, UnboundedZiggurat, CompositeZiggurat
 export ziggurat, monotonic_ziggurat
 export inversepdf
 
-public monotonic_segments, NoWrap
+@compat public monotonic_segments, NoWrap
 
 abstract type Ziggurat{X} end
 

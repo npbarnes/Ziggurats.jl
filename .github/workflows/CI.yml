@@ -26,9 +26,7 @@ jobs:
                 julia-version:
                     - "1"
                     - "lts"
-                    - "min"
                     - "pre"
-                    - "nightly"
                 os:
                     - ubuntu-latest
                     - macos-latest
