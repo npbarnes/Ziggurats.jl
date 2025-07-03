@@ -1,11 +1,13 @@
 @testset "JET.jl Tests" begin
+    # Only run jet tests on released versions of Julia.
+    skipJET = VERSION.prerelease != ()
     @testset for T in (Float64, Float32, Float16)
         @testset for N in [1, 2, 3, 4]
             @testset "BoundedZiggurats" begin
                 @testset "Default args" begin
                     z = BoundedZiggurat(x->exp(-x), (T(0), T(1)), N)
-                    @test_opt rand(z)
-                    @test_call rand(z)
+                    @test_opt skip=skipJET rand(z)
+                    @test_call skip=skipJET rand(z)
                 end
             end
             @testset "UnboundedZiggurats" begin
@@ -18,8 +20,8 @@
                 # know how to get JET to do that.
                 @testset "Default args" begin
                     z = UnboundedZiggurat(x->exp(-x), (T(0), typemax(T)), N)
-                    @test_opt target_modules=(Ziggurats,) rand(z)
-                    @test_call rand(z)
+                    @test_opt target_modules=(Ziggurats,) skip=skipJET rand(z)
+                    @test_call skip=skipJET rand(z)
                 end
                 @testset "Overriding tailarea" begin
                     z = UnboundedZiggurat(
@@ -28,8 +30,8 @@
                         N;
                         tailarea = x->exp(-x)
                     )
-                    @test_opt target_modules=(Ziggurats,) rand(z)
-                    @test_call rand(z)
+                    @test_opt target_modules=(Ziggurats,) skip=skipJET rand(z)
+                    @test_call skip=skipJET rand(z)
                 end
                 @testset "Overriding fallback" begin
                     z = UnboundedZiggurat(
@@ -38,8 +40,8 @@
                         N;
                         fallback = (rng, a) -> a-log1p(-rand(rng, typeof(a)))
                     )
-                    @test_opt target_modules=(Ziggurats,) rand(z)
-                    @test_call rand(z)
+                    @test_opt target_modules=(Ziggurats,) skip=skipJET rand(z)
+                    @test_call skip=skipJET rand(z)
                 end
             end
         end
