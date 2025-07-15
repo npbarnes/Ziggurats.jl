@@ -32,6 +32,10 @@ function inversepdf(f, domain, args...; kwargs...)
     end
     smallx, smallf, bigf = fa < fb ? (a, fa, fb) : (b, fb, fa)
 
+    # TODO: Remove closures
+    # TODO: check convergence flag.
+    # TODO: Specialize functions: generic_inverse, inverse_monotonic, inverse_nonneg_monotonic,
+    # inversepdf, inversecdf
     let bigf=bigf, smallf=smallf, smallx=smallx, f=f, args=args, kwargs=kwargs
         y -> begin
             if y > bigf || y < zero(y)
@@ -45,4 +49,59 @@ function inversepdf(f, domain, args...; kwargs...)
             find_zero(g, (a, b), args...; kwargs...)
         end
     end
+end
+
+abstract type AbstractInverse end
+
+"""
+    Inverse(f, d)
+
+Invert monotonic function `f` on domain `d`.
+"""
+struct Inverse{F,X,Y,A,KW} <: AbstractInverse
+    f::F
+    low::X
+    high::X
+    f_low::Y
+    f_high::Y
+    default_args::A
+    default_kwargs::KW
+end
+
+callfunc(i::AbstractInverse, x) = i.f(x)
+argmin(i::AbstractInverse) = i.low
+min(i::AbstractInverse) = i.f_low
+argmax(i::AbstractInverse) = i.high
+max(i::AbstractInverse) = i.f_high
+default_args(i::AbstractInverse) = i.default_args
+default_kwargs(i::AbstractInverse) = i.default_kwargs
+xdomain(i::AbstractInverse) = minmax(argmin(i), argmax(i))
+ydomain(i::AbstractInverse) = argmin(i) < argmax(i) ? (min(i), max(i)) : (max(i), min(i))
+
+function inverse_monotonic(f, domain, args...; kwargs...)
+    a, b = extrema(regularize(domain))
+    fa, fb = f(a), f(b)
+
+    if isnan(fa) || isnan(fb)
+        error("f returns NaN on at least one end point of the domain. The function f must \
+        return a number for all values in its domain to make a sensible inverse function.")
+    end
+
+    # Constant functions are considered decreasing
+    low, high, f_low, f_high = fa < fb ? (a, b, fa, fb) : (b, a, fb, fa)
+
+    Inverse(f, low, high, f_low, f_high, args, kwargs)
+end
+
+function (inv::Inverse)(y, args...; kwargs...)
+    if !between(y, inv.f_low, inv.f_high)
+        error("No inverse exists. y must be between f(a) and f(b) for domain (a,b).")
+    end
+    if isempty(args)
+        args = inv.default_args
+    end
+    if isempty(kwargs)
+        kwargs = inv.default_kwargs
+    end
+    find_zero(x -> inv.f(x) - y, (a, b), args...; kwargs...)
 end
