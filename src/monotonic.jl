@@ -705,8 +705,13 @@ end
     pdf::F,
     fb::FB
 ) where {F,FB}
+    r = rand(rng, corresponding_uint(eltype(bz)))
+    _zigsample_floats(rng, r, mask, shift, bz, pdf, fb)
+end
+
+# Type parameters F and FB are required to force Julia to specialize this function
+function _zigsample_floats(rng, r, mask, shift, bz::BareZiggurat{X}, pdf::F, fb::FB) where {X<:FloatXX, F, FB}
     @inbounds begin
-        r = rand(rng, corresponding_uint(eltype(bz)))
         l = random_layer(r, mask, shift, rng, numlayers(bz))
         u = r & significand_bitmask(eltype(bz))
         x = u * widths(bz)[l] + highside(bz)
