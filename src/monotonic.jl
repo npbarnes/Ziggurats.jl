@@ -696,6 +696,54 @@ function Base.rand(
     zigsample(rng, M, S, bareziggurat(z), density(z), fallback(z))
 end
 
+# Optimization for Xoshiro and MersenneTwister, which randomize natively to Arrays of BitIntegers
+function Random.rand!(
+    rng::Union{TaskLocalRNG, Xoshiro, MersenneTwister},
+    A::Array{X},
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{M,S,X}}
+) where {M<:Number,S<:Number,X<:FloatXX}
+    z = s[]
+    if length(A) < 7 # TODO: This number can be tuned
+        for i in eachindex(A)
+            @inbounds A[i] = rand(rng, s)
+        end
+    else
+        T = corresponding_uint(eltype(z))
+        # UnsafeView is an internal implementation detail of Random.jl
+        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
+        for i in eachindex(A)
+            @inbounds r = reinterpret(T, A[i])
+            @inbounds A[i] = _zigsample_floats(rng, r, M, S, bareziggurat(z), density(z), fallback(z))
+        end
+    end
+    A
+end
+
+# Optimization for MersenneTwister, which randomizes natively to Array{Float64}, when the number of layers is not
+# a power of two.
+function Random.rand!(
+    rng::MersenneTwister,
+    A::Array{X},
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{nothing,nothing,X}}
+) where {X<:FloatXX}
+    z = s[]
+    if length(A) < 13 # TODO: this number can be tuned
+        for i in eachindex(A)
+            @inbounds A[i] = rand(rng, s)
+        end
+    else
+        T = corresponding_uint(eltype(z))
+        # CloseOpen12() may be a private implementation detail of Random.jl
+        rand!(rng, A, Random.CloseOpen12(eltype(A)))
+        for i in eachindex(A)
+            @inbounds r = reinterpret(T, A[i])
+            @inbounds A[i] = _zigsample_floats(rng, r, nothing, nothing, bareziggurat(z), density(z), fallback(z))
+        end
+    end
+    A
+end
+
 # Type parameters F and FB are required to force Julia to specialize this function
 @inline function zigsample(
     rng,
