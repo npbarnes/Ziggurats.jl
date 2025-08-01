@@ -173,8 +173,10 @@ function test_samples(
     @test all(clb[i] <= cnts[i] <= cub[i] for i in eachindex(cnts))
     if verbose
         for i in 1:nbins
+            result = clb[i] <= cnts[i] <= cub[i] ? "✅" : "❌"
             @printf(
-                "[%.4f, %.4f) ==> (%d, %d): %d\n",
+                "%s [%.4f, %.4f) ==> (%d, %d): %d\n",
+                result,
                 edges[i],
                 edges[i + 1],
                 clb[i],
