@@ -340,17 +340,13 @@ function UnboundedZiggurat(
     fallback = nothing
 )
     x2, bz, tailarea = BareZiggurat_unbounded(pdf, domain, N; ipdf, tailarea)
-    modalboundary = bz.modalboundary
+    modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     if fallback === nothing
         # TODO: fallback should come from a 'tool' with this as default but also allows customization.
         # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
         ta = tailarea(x2)
-        td = if modalboundary > x2
-            (nextfloat(typemin(x2)), x2)
-        else
-            (x2, prevfloat(typemax(x2)))
-        end
+        td = minmax(argminboundary, x2)
         inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
             inversepdf(x -> tailarea(x) / ta, td)
         end
