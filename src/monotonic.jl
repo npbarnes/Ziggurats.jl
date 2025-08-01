@@ -46,6 +46,9 @@ density(z::MonotonicZiggurat) = z.pdf
 fallback(::BoundedZiggurat) = nothing
 fallback(z::UnboundedZiggurat) = z.fallback
 
+xarray(z::BareZiggurat) = significand_bitmask(eltype(z)) .* widths(z) .+ highside(z)
+xarray(z::MonotonicZiggurat) = xarray(bareziggurat(z))
+
 corresponding_uint(::Type{Float64}) = UInt64
 corresponding_uint(::Type{Float32}) = UInt32
 corresponding_uint(::Type{Float16}) = UInt16
