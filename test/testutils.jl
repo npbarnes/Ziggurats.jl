@@ -68,7 +68,8 @@ function test_samples(
     nbins::Int = 50,                            # divide the main interval into nbins
     q::Float64 = 1.0e-6,                        # confidence interval, 1 - q as confidence
     verbose::Bool = false,                      # show intermediate info (for debugging)
-    rng::Union{AbstractRNG,Missing} = missing
+    rng::Union{AbstractRNG,Missing} = missing,
+    array_generation = true                     # use array_generation or repeated scalar generation
 ) # add an rng?
 
     # The basic idea
@@ -131,15 +132,28 @@ function test_samples(
 
     # generate samples using RNG passed or default RNG
     # we also check reproducibility
-    if rng === missing
-        Random.seed!(1234)
-        samples = rand(s, n)
-        Random.seed!(1234)
-        samples2 = rand(s, n)
+    if array_generation
+        if rng === missing
+            Random.seed!(1234)
+            samples = rand(s, n)
+            Random.seed!(1234)
+            samples2 = rand(s, n)
+        else
+            rng2 = deepcopy(rng)
+            samples = rand(rng, s, n)
+            samples2 = rand(rng2, s, n)
+        end
     else
-        rng2 = deepcopy(rng)
-        samples = rand(rng, s, n)
-        samples2 = rand(rng2, s, n)
+        if rng === missing
+            Random.seed!(1234)
+            samples = [rand(s) for i in 1:n]
+            Random.seed!(1234)
+            samples2 = [rand(s) for i in 1:n]
+        else
+            rng2 = deepcopy(rng)
+            samples = [rand(rng, s) for i in 1:n]
+            samples2 = [rand(rng2, s) for i in 1:n]
+        end
     end
     @test length(samples) == n
     @test samples2 == samples
