@@ -163,20 +163,16 @@ function test_samples(
     end
 
     # check whether all samples are in the valid range
-    for i in 1:n
-        @inbounds si = samples[i]
-        if !(vmin <= si <= vmax)
-            error("Sample value out of valid range.")
-        end
-    end
+    @test all(vmin <= s <= vmax for s in samples)
 
     # get counts
     cnts = fit(Histogram, samples, edges; closed = :right).weights
     @assert length(cnts) == nbins
 
     # check the counts
-    for i in 1:nbins
-        if verbose
+    @test all(clb[i] <= cnts[i] <= cub[i] for i in eachindex(cnts))
+    if verbose
+        for i in 1:nbins
             @printf(
                 "[%.4f, %.4f) ==> (%d, %d): %d\n",
                 edges[i],
@@ -185,9 +181,6 @@ function test_samples(
                 cub[i],
                 cnts[i]
             )
-        end
-        if !(clb[i] <= cnts[i] <= cub[i])
-            error("The counts are out of the confidence interval.")
         end
     end
 
