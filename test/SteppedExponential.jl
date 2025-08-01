@@ -71,3 +71,10 @@ function StatsBase.mode(::Union{
 end
 
 Distributions.params(d::SteppedExponential) = (d.θ,)
+
+function ipdf_SteppedExponential(d::SteppedExponential)
+    k = rate(d)
+    let k=k
+        y -> floor(-1/k*log(y/(1-exp(-k)))) + 1
+    end
+end
