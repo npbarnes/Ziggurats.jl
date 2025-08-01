@@ -78,3 +78,41 @@ function ipdf_SteppedExponential(d::SteppedExponential)
         y -> floor(-1/k*log(y/(1-exp(-k)))) + 1
     end
 end
+
+mutable struct SteppedExpFallback{X,AT}
+    const d::SteppedExponential{X}
+    currx::X
+    at::AT
+    function SteppedExpFallback(d)
+        x = zero(eltype(d))
+        at = _newaliastable(d, x)
+        new{eltype(d), typeof(at)}(d, x, at)
+    end
+end
+
+function (fb::SteppedExpFallback)(rng, x)
+    if x != fb.currx
+        fb.currx = x
+        fb.at = _newaliastable(fb.d, x)
+    end
+
+    bin = rand(rng, fb.at)
+    if bin == 1
+        if fb.currx == ceil(fb.currx)
+            Δ = one(fb.currx)
+        else
+            Δ = (ceil(fb.currx) - fb.currx)
+        end
+        return Δ*rand(rng, eltype(fb.d)) + fb.currx
+    else
+        return floor(fb.currx) + bin - rand(rng, eltype(fb.d))
+    end
+end
+
+function _newaliastable(d,x)
+    start_bin = floor(x)
+    start_p = pdf(d, x) * (1 - (x - floor(x)))
+    final_bin = ceil(Int, quantile(d, 0.999_999_999))
+    probabilities = [start_p; pdf.(d, start_bin+1:final_bin)]
+    AliasTable(probabilities)
+end

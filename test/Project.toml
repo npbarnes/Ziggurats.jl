@@ -1,4 +1,5 @@
 [deps]
+AliasTables = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"

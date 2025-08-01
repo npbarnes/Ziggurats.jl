@@ -3,6 +3,7 @@ using Random
 using StatsBase
 using Distributions
 using SpecialFunctions
+using AliasTables
 using Aqua
 using JET
 
