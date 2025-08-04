@@ -174,15 +174,7 @@ function test_samples(
     if verbose
         for i in 1:nbins
             result = clb[i] <= cnts[i] <= cub[i] ? "✅" : "❌"
-            @printf(
-                "%s [%.4f, %.4f) ==> (%d, %d): %d\n",
-                result,
-                edges[i],
-                edges[i + 1],
-                clb[i],
-                cub[i],
-                cnts[i]
-            )
+            @printf("%s [%.4f, %.4f) ==> (%d, %d): %d\n", result, edges[i], edges[i + 1], clb[i], cub[i], cnts[i])
         end
     end
 
@@ -268,11 +260,7 @@ end
 
 #### Testing evaluation methods
 
-function test_evaluation(
-    d::ContinuousUnivariateDistribution,
-    vs::AbstractVector,
-    testquan::Bool = true
-)
+function test_evaluation(d::ContinuousUnivariateDistribution, vs::AbstractVector, testquan::Bool = true)
     nv = length(vs)
     p = Vector{Float64}(undef, nv)
     c = Vector{Float64}(undef, nv)

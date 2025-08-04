@@ -230,60 +230,26 @@ issamevector(a::Vector, b::Vector) = false
         @test _choose_tailarea_func(inc_func, [0, 1], nothing, nothing, nothing) === nothing
         @test _choose_tailarea_func(dec_func, [0, 1], nothing, nothing, nothing) === nothing
 
-        @test_throws "a ccdf is provided" _choose_tailarea_func(
-            inc_func,
-            [0, 1],
-            nothing,
-            nothing,
-            notnothing1
-        )
-        @test _choose_tailarea_func(dec_func, [0, 1], nothing, nothing, notnothing1) ===
-              notnothing1
+        @test_throws "a ccdf is provided" _choose_tailarea_func(inc_func, [0, 1], nothing, nothing, notnothing1)
+        @test _choose_tailarea_func(dec_func, [0, 1], nothing, nothing, notnothing1) === notnothing1
 
-        @test _choose_tailarea_func(inc_func, [0, 1], nothing, notnothing1, nothing) ===
-              notnothing1
-        @test_throws "a cdf is provided" _choose_tailarea_func(
-            dec_func,
-            [0, 1],
-            nothing,
-            notnothing1,
-            nothing
-        )
+        @test _choose_tailarea_func(inc_func, [0, 1], nothing, notnothing1, nothing) === notnothing1
+        @test_throws "a cdf is provided" _choose_tailarea_func(dec_func, [0, 1], nothing, notnothing1, nothing)
 
-        @test _choose_tailarea_func(inc_func, [0, 1], nothing, notnothing1, notnothing2) ===
-              notnothing1
-        @test _choose_tailarea_func(dec_func, [0, 1], nothing, notnothing1, notnothing2) ===
-              notnothing2
+        @test _choose_tailarea_func(inc_func, [0, 1], nothing, notnothing1, notnothing2) === notnothing1
+        @test _choose_tailarea_func(dec_func, [0, 1], nothing, notnothing1, notnothing2) === notnothing2
 
-        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, nothing, nothing) ===
-              notnothing1
-        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, nothing, nothing) ===
-              notnothing1
+        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, nothing, nothing) === notnothing1
+        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, nothing, nothing) === notnothing1
 
-        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, nothing, notnothing2) ===
-              notnothing1
-        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, nothing, notnothing2) ===
-              notnothing1
+        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, nothing, notnothing2) === notnothing1
+        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, nothing, notnothing2) === notnothing1
 
-        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, notnothing2, nothing) ===
-              notnothing1
-        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, notnothing2, nothing) ===
-              notnothing1
+        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, notnothing2, nothing) === notnothing1
+        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, notnothing2, nothing) === notnothing1
 
-        @test _choose_tailarea_func(
-            inc_func,
-            [0, 1],
-            notnothing1,
-            notnothing2,
-            notnothing3
-        ) === notnothing1
-        @test _choose_tailarea_func(
-            dec_func,
-            [0, 1],
-            notnothing1,
-            notnothing2,
-            notnothing3
-        ) === notnothing1
+        @test _choose_tailarea_func(inc_func, [0, 1], notnothing1, notnothing2, notnothing3) === notnothing1
+        @test _choose_tailarea_func(dec_func, [0, 1], notnothing1, notnothing2, notnothing3) === notnothing1
     end
 
     @testset "_identify_mode" begin

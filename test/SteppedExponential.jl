@@ -41,10 +41,7 @@ end
 
 function Distributions.quantile(d::SteppedExponential, q::Real)
     if !(zero(q) <= q <= oneunit(q))
-        throw(DomainError(
-            q,
-            "the argument to quantile must be between zero and one inclusive."
-        ))
+        throw(DomainError(q, "the argument to quantile must be between zero and one inclusive."))
     end
 
     if q == oneunit(q)
@@ -63,10 +60,7 @@ end
 
 Distributions.insupport(::SteppedExponential, x::Real) = x >= 0
 
-function StatsBase.mode(::Union{
-    SteppedExponential{T},
-    Type{SteppedExponential{T}}
-}) where {T}
+function StatsBase.mode(::Union{SteppedExponential{T},Type{SteppedExponential{T}}}) where {T}
     zero(T)
 end
 
@@ -86,7 +80,7 @@ mutable struct SteppedExpFallback{X,AT}
     function SteppedExpFallback(d)
         x = zero(eltype(d))
         at = _newaliastable(d, x)
-        new{eltype(d), typeof(at)}(d, x, at)
+        new{eltype(d),typeof(at)}(d, x, at)
     end
 end
 
@@ -109,10 +103,10 @@ function (fb::SteppedExpFallback)(rng, x)
     end
 end
 
-function _newaliastable(d,x)
+function _newaliastable(d, x)
     start_bin = floor(x)
     start_p = pdf(d, x) * (1 - (x - floor(x)))
     final_bin = ceil(Int, quantile(d, 0.999_999_999))
-    probabilities = [start_p; pdf.(d, start_bin+1:final_bin)]
+    probabilities = [start_p; pdf.(d, (start_bin + 1):final_bin)]
     AliasTable(probabilities)
 end

@@ -92,17 +92,7 @@ function ziggurat(
     if length(domain) == 2
         monotonic_ziggurat(pdf, domain, N; ipdf, tailarea, cdf, ccdf, fallback)
     else
-        CompositeZiggurat(
-            pdf,
-            domain,
-            N;
-            ipdfs = ipdf,
-            cdf,
-            ccdf,
-            left_fallback,
-            right_fallback,
-            p
-        )
+        CompositeZiggurat(pdf, domain, N; ipdfs = ipdf, cdf, ccdf, left_fallback, right_fallback, p)
     end
 end
 

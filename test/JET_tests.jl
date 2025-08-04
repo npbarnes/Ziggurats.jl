@@ -22,12 +22,7 @@
                     @test_call rand(z)
                 end
                 @testset "Overriding tailarea" begin
-                    z = UnboundedZiggurat(
-                        x->exp(-x),
-                        (T(0), typemax(T)),
-                        N;
-                        tailarea = x->exp(-x)
-                    )
+                    z = UnboundedZiggurat(x->exp(-x), (T(0), typemax(T)), N; tailarea = x->exp(-x))
                     @test_opt target_modules=(Ziggurats,) rand(z)
                     @test_call rand(z)
                 end

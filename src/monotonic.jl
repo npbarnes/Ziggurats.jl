@@ -331,14 +331,7 @@ tailarea function are used in the construction of the ziggurat, and a `fallback`
 during sampling. Normally these additional functions are computed numerically, but they can
 be provided explicity as keyword arguments if necessary.
 """
-function UnboundedZiggurat(
-    pdf,
-    domain,
-    N;
-    ipdf = nothing,
-    tailarea = nothing,
-    fallback = nothing
-)
+function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, fallback = nothing)
     x2, bz, tailarea = BareZiggurat_unbounded(pdf, domain, N; ipdf, tailarea)
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
@@ -371,13 +364,7 @@ function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
         ipdf = inversepdf(wpdf, domain)
     end
 
-    wipdf = IPDFWrap(
-        ipdf,
-        modalboundary,
-        argminboundary,
-        wpdf(modalboundary),
-        wpdf(argminboundary)
-    )
+    wipdf = IPDFWrap(ipdf, modalboundary, argminboundary, wpdf(modalboundary), wpdf(argminboundary))
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
@@ -391,10 +378,7 @@ function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf)
 
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
-    k = [
-        fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for
-        i in 1:(length(x) - 1)
-    ]
+    k = [fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)]
 
     BareZiggurat(w, k, y, modalboundary)
 end
@@ -429,13 +413,7 @@ function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothi
         ipdf = inversepdf(wpdf, domain)
     end
 
-    wipdf = IPDFWrap(
-        ipdf,
-        modalboundary,
-        argminboundary,
-        pdf(modalboundary),
-        pdf(argminboundary)
-    )
+    wipdf = IPDFWrap(ipdf, modalboundary, argminboundary, pdf(modalboundary), pdf(argminboundary))
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
@@ -459,10 +437,7 @@ function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothi
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
 
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
-    k = [
-        fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for
-        i in 1:(length(x) - 1)
-    ]
+    k = [fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)]
 
     x[2], BareZiggurat(w, k, y, modalboundary), tailarea
 end
@@ -686,10 +661,7 @@ Ytype(::BareZiggurat{X,Y}) where {X,Y} = Y
 Ytype(::Type{<:MonotonicZiggurat{M,S,X,Y}}) where {M,S,X,Y} = Y
 Ytype(::MonotonicZiggurat{M,S,X,Y}) where {M,S,X,Y} = Y
 
-function Base.rand(
-    rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{M,S}}
-) where {M,S}
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{M,S}}) where {M,S}
     z = zig_sampler[]
 
     zigsample(rng, M, S, bareziggurat(z), density(z), fallback(z))
@@ -697,7 +669,7 @@ end
 
 # Optimization for Xoshiro and MersenneTwister, which randomize natively to Arrays of BitIntegers
 function Random.rand!(
-    rng::Union{TaskLocalRNG, Xoshiro, MersenneTwister},
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
     s::Random.SamplerTrivial{<:MonotonicZiggurat{M,S,X}}
 ) where {M<:Number,S<:Number,X<:FloatXX}
@@ -744,20 +716,13 @@ function Random.rand!(
 end
 
 # Type parameters F and FB are required to force Julia to specialize this function
-@inline function zigsample(
-    rng,
-    mask,
-    shift,
-    bz::BareZiggurat{<:FloatXX},
-    pdf::F,
-    fb::FB
-) where {F,FB}
+@inline function zigsample(rng, mask, shift, bz::BareZiggurat{<:FloatXX}, pdf::F, fb::FB) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(bz)))
     _zigsample_floats(rng, r, mask, shift, bz, pdf, fb)
 end
 
 # Type parameters F and FB are required to force Julia to specialize this function
-function _zigsample_floats(rng, r, mask, shift, bz::BareZiggurat{X}, pdf::F, fb::FB) where {X<:FloatXX, F, FB}
+function _zigsample_floats(rng, r, mask, shift, bz::BareZiggurat{X}, pdf::F, fb::FB) where {X<:FloatXX,F,FB}
     @inbounds begin
         l = random_layer(r, mask, shift, rng, numlayers(bz))
         u = r & significand_bitmask(eltype(bz))

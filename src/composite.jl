@@ -143,25 +143,16 @@ function CompositeZiggurat(
         throw(ArgumentError("Ns, ipdfs, and p must all have a length one less than the length of domain."))
     end
 
-    zig_gen =
-        i -> begin
-            if i == 1
-                fallback = left_fallback
-            elseif i == length(subdomains)
-                fallback = right_fallback
-            else
-                fallback = nothing
-            end
-            monotonic_ziggurat(
-                pdf,
-                subdomains[i],
-                Ns[i];
-                ipdf = ipdfs[i],
-                cdf,
-                ccdf,
-                fallback
-            )
+    zig_gen = i -> begin
+        if i == 1
+            fallback = left_fallback
+        elseif i == length(subdomains)
+            fallback = right_fallback
+        else
+            fallback = nothing
         end
+        monotonic_ziggurat(pdf, subdomains[i], Ns[i]; ipdf = ipdfs[i], cdf, ccdf, fallback)
+    end
 
     zigs = [zig_gen(i) for i in 1:length(subdomains)]
 
@@ -251,10 +242,7 @@ Random.eltype(::Type{<:CompositeZiggurat{X}}) where {X} = X
 Ytype(::Type{<:CompositeZiggurat{X,Y}}) where {X,Y} = Y
 Ytype(::CompositeZiggurat{X,Y}) where {X,Y} = Y
 
-function Base.rand(
-    rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:CompositeZiggurat}
-)
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:CompositeZiggurat})
     @inbounds begin
         zigs = zig_sampler[].zigs
         masks = zig_sampler[].masks

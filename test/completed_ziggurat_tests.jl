@@ -22,11 +22,7 @@ function test_common_layer_properties(x, y, N, modalboundary, slopesign, f, invf
     # Layer area is positive
     @test A > 0
     # Layer areas are all equal
-    @test all(isapprox(
-        abs(x[i] - modalboundary) * (y[i + 1] - y[i]),
-        A;
-        atol = √eps(eltype(x))
-    ) for i in 2:N)
+    @test all(isapprox(abs(x[i] - modalboundary) * (y[i + 1] - y[i]), A; atol = √eps(eltype(x))) for i in 2:N)
 
     # A valid ziggurat will have its upper boundary greater than or equal to the pdf.
     @test y[end] >= f(modalboundary)
@@ -61,8 +57,7 @@ end
 function test_continuous_pdf(x, y, f, N, argminboundary)
     # Expect f(x) = y, but not on a discontinuity. The argminboundary is a discontinuity for
     # bounded ziggurats, so it is excluded from this test.
-    @test all(isapprox(y[i], f(x[i]); atol = √eps(eltype(x))) for
-              i in 2:(N + 1) if x[i] != argminboundary)
+    @test all(isapprox(y[i], f(x[i]); atol = √eps(eltype(x))) for i in 2:(N + 1) if x[i] != argminboundary)
 end
 
 @testset "Completed Ziggurat" begin
@@ -80,21 +75,9 @@ end
             argminboundary = T(Inf)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -102,26 +85,11 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wf,
-                        winvf,
-                        tailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     @test eltype(x) == eltype(y) == T
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     test_unbounded_domain(x, y, modalboundary, tailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -133,26 +101,11 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wuf,
-                        wuinvf,
-                        utailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     @test eltype(x) == eltype(y) == T
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     test_unbounded_domain(x, y, modalboundary, utailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -176,21 +129,9 @@ end
             argminboundary = T(-Inf)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -198,26 +139,11 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wf,
-                        winvf,
-                        tailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     @test eltype(x) == eltype(y) == T
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     test_unbounded_domain(x, y, modalboundary, tailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -229,26 +155,11 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wuf,
-                        wuinvf,
-                        utailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     @test eltype(x) == eltype(y) == T
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     test_unbounded_domain(x, y, modalboundary, utailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -274,21 +185,9 @@ end
             argminboundary = T(-Inf)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -296,24 +195,9 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wf,
-                        winvf,
-                        tailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     test_unbounded_domain(x, y, modalboundary, tailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -325,24 +209,9 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wuf,
-                        wuinvf,
-                        utailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     test_unbounded_domain(x, y, modalboundary, utailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -380,13 +249,7 @@ end
             argminboundary = T(2.0)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
 
             slopesign = -1
 
@@ -415,21 +278,9 @@ end
             argminboundary = T(Inf)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -437,24 +288,9 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wf,
-                        winvf,
-                        tailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     test_unbounded_domain(x, y, modalboundary, tailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -466,24 +302,9 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wuf,
-                        wuinvf,
-                        utailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     test_unbounded_domain(x, y, modalboundary, utailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -505,21 +326,9 @@ end
             argminboundary = T(1.0)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -529,15 +338,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     #test_unbounded_domain(x, y, modalboundary, tailarea)
                     test_bounded_domain(x, argminboundary)
@@ -551,15 +352,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     #test_unbounded_domain(x, y, modalboundary, utailarea)
                     test_bounded_domain(x, argminboundary)
@@ -581,21 +374,9 @@ end
             argminboundary = T(10.0)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -605,15 +386,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     #test_unbounded_domain(x, y, modalboundary, tailarea)
                     test_bounded_domain(x, argminboundary)
@@ -627,15 +400,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     #test_unbounded_domain(x, y, modalboundary, utailarea)
                     test_bounded_domain(x, argminboundary)
@@ -657,21 +422,9 @@ end
             argminboundary = T(-1.0)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -681,15 +434,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     #test_unbounded_domain(x, y, modalboundary, tailarea)
                     test_bounded_domain(x, argminboundary)
@@ -703,15 +448,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     #test_unbounded_domain(x, y, modalboundary, utailarea)
                     test_bounded_domain(x, argminboundary)
@@ -733,21 +470,9 @@ end
             argminboundary = T(-10.0)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -757,15 +482,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     #test_unbounded_domain(x, y, modalboundary, tailarea)
                     test_bounded_domain(x, argminboundary)
@@ -779,15 +496,7 @@ end
                 @testset for N in Ns
                     x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     #test_unbounded_domain(x, y, modalboundary, utailarea)
                     test_bounded_domain(x, argminboundary)
@@ -811,21 +520,9 @@ end
             argminboundary = T(Inf)
 
             wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(
-                invf,
-                modalboundary,
-                argminboundary,
-                wf(modalboundary),
-                wf(argminboundary)
-            )
+            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
             wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(
-                uinvf,
-                modalboundary,
-                argminboundary,
-                wuf(modalboundary),
-                wuf(argminboundary)
-            )
+            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -833,24 +530,9 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wf,
-                        winvf,
-                        tailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wf,
-                        winvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
                     test_unbounded_domain(x, y, modalboundary, tailarea)
                     #test_bounded_domain(x, argminboundary)
@@ -862,24 +544,9 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(
-                        N,
-                        modalboundary,
-                        argminboundary,
-                        wuf,
-                        wuinvf,
-                        utailarea
-                    )
+                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
-                    test_common_layer_properties(
-                        x,
-                        y,
-                        N,
-                        modalboundary,
-                        slopesign,
-                        wuf,
-                        wuinvf
-                    )
+                    test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
                     test_unbounded_domain(x, y, modalboundary, utailarea)
                     #test_bounded_domain(x, argminboundary)
