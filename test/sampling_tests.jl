@@ -182,7 +182,7 @@ function monotonic_sampling_tests(td::MonotonicTestData)
     @testset for N in [1, 2, 3, 4]
         @testset "rng isa $(typeof(_rng))" for _rng in [missing, Xoshiro(1234), MersenneTwister(1234)]
             @testset for array_generation in [true, false]
-                test_fallbacks = td.fallback === nothing ? [nothing] : [nothing, td.fallback]
+                test_fallbacks = unique([nothing, td.fallback])
                 @testset "fallback provided: $(fallback !== nothing)" for fallback in test_fallbacks
                     z = monotonic_ziggurat(td.f, td.domain, N; td.ipdf, td.tailarea, fallback)
 
@@ -201,8 +201,8 @@ function composite_sampling_tests(td::CompositeTestData)
     @testset for N in [1, 2, 3, 4]
         @testset "rng isa $(typeof(_rng))" for _rng in [missing, Xoshiro(1234), MersenneTwister(1234)]
             @testset for array_generation in [true, false]
-                test_leftfallbacks = td.left_fallback === nothing ? [nothing] : [nothing, td.left_fallback]
-                test_rightfallbacks = td.right_fallback === nothing ? [nothing] : [nothing, td.right_fallback]
+                test_leftfallbacks = unique([nothing, td.left_fallback])
+                test_rightfallbacks = unique([nothing, td.right_fallback])
                 @testset for left_fallback in test_leftfallbacks, right_fallback in test_rightfallbacks
                     z = CompositeZiggurat(td.f, td.domain, N; td.ipdfs, td.cdf, td.ccdf, left_fallback, right_fallback)
 
