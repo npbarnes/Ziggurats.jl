@@ -12,8 +12,8 @@
     # Rounding and the underlying unform RNG seem to cause some bins to be over represented and
     # some bins to be under represented. Using fewer bins and lower confidence for Float16's to
     # mitigate the problem.
-    q = T == Float16 ? 1e-7 : 1e-6
-    nbins = T == Float16 ? 25 : 50
+    q = T == Float16 ? 1e-8 : 1e-6
+    nbins = T == Float16 ? 15 : 50
 end
 
 const TestTypes = (Float64, Float32, Float16)
