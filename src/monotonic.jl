@@ -96,7 +96,7 @@ struct PDFWrap{F,X,Y}
             the domain.")
         end
         if fam == fmb == zero(fam)
-            error("pdf is zero on both endpoints of the domain, $(mimax(am,mb)). Ensure \
+            error("pdf is zero on both endpoints of the domain, $(minmax(am,mb)). Ensure \
             that the pdf is monotonic.")
         end
         new{typeof(f),typeof(mb),typeof(fmb)}(f, mb, am, fmb, fam)
