@@ -672,7 +672,7 @@ function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
     s::Random.SamplerTrivial{<:MonotonicZiggurat{M,S,X}}
-) where {M<:Number,S<:Number,X<:FloatXX}
+) where {M,S,X<:FloatXX}
     z = s[]
     if length(A) < 7 # TODO: This number can be tuned
         for i in eachindex(A)
