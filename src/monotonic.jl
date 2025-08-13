@@ -1,4 +1,4 @@
-abstract type MonotonicZiggurat{Mask,Shift,X,Y} <: Ziggurat{X} end
+abstract type MonotonicZiggurat{S,X,Y} <: Ziggurat{X} end
 
 struct BareZiggurat{X,Y,K}
     w::Vector{X}
@@ -7,20 +7,20 @@ struct BareZiggurat{X,Y,K}
     modalboundary::X
 end
 
-struct BoundedZiggurat{Mask,Shift,X,Y,K,F} <: MonotonicZiggurat{Mask,Shift,X,Y}
+struct BoundedZiggurat{S,X,Y,K,F} <: MonotonicZiggurat{S,X,Y}
     zig::BareZiggurat{X,Y,K}
     pdf::F
-    function BoundedZiggurat{M,S}(bz::BareZiggurat{X,Y,K}, f) where {M,S,X,Y,K}
-        new{M,S,X,Y,K,typeof(f)}(bz, f)
+    function BoundedZiggurat{S}(bz::BareZiggurat{X,Y,K}, f) where {S,X,Y,K}
+        new{S,X,Y,K,typeof(f)}(bz, f)
     end
 end
 
-struct UnboundedZiggurat{Mask,Shift,X,Y,K,F,FB} <: MonotonicZiggurat{Mask,Shift,X,Y}
+struct UnboundedZiggurat{S,X,Y,K,F,FB} <: MonotonicZiggurat{S,X,Y}
     zig::BareZiggurat{X,Y,K}
     pdf::F
     fallback::FB
-    function UnboundedZiggurat{M,S}(bz::BareZiggurat{X,Y,K}, f, fb) where {M,S,X,Y,K}
-        new{M,S,X,Y,K,typeof(f),typeof(fb)}(bz, f, fb)
+    function UnboundedZiggurat{S}(bz::BareZiggurat{X,Y,K}, f, fb) where {S,X,Y,K}
+        new{S,X,Y,K,typeof(f),typeof(fb)}(bz, f, fb)
     end
 end
 
@@ -55,16 +55,15 @@ corresponding_uint(::Type{Float16}) = UInt16
 
 const FloatXX = Union{Float64,Float32,Float16}
 
-mask_shift(::Type, N) = nothing, nothing
-function mask_shift(X::Type{<:FloatXX}, N)
+numshiftbits(::Type, N) = nothing
+function numshiftbits(X::Type{<:FloatXX}, N)
     maxpower = 8sizeof(X) - Base.significand_bits(X)
     if N ∈ (2^m for m in 0:maxpower)
         power = Int64(log2(N))
         shift = 8sizeof(X) - power
-        mask = corresponding_uint(X)(2^power - 1) << shift
-        return mask, shift
+        return shift
     else
-        return nothing, nothing
+        return nothing
     end
 end
 
@@ -317,7 +316,7 @@ function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
 
     # final ziggurat uses the unwrapped function so that there is no effect on
     # sampling performance
-    BoundedZiggurat{mask_shift(eltype(bz.w), length(bz.w)-1)...}(bz, pdf)
+    BoundedZiggurat{numshiftbits(eltype(bz.w), length(bz.w)-1)}(bz, pdf)
 end
 
 """
@@ -349,7 +348,7 @@ function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, f
 
     # final ziggurat uses the unwrapped function so that there is no effect on
     # sampling performance
-    UnboundedZiggurat{mask_shift(eltype(bz.w), length(bz.w)-1)...}(bz, pdf, fallback)
+    UnboundedZiggurat{numshiftbits(eltype(bz.w), length(bz.w)-1)}(bz, pdf, fallback)
 end
 
 function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
@@ -653,26 +652,26 @@ function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
 
 ## Sampling
-Random.eltype(::Type{<:MonotonicZiggurat{M,S,X}}) where {M,S,X} = X
+Random.eltype(::Type{<:MonotonicZiggurat{S,X}}) where {S,X} = X
 Random.eltype(::Type{<:BareZiggurat{X}}) where {X} = X
 
 Ytype(::Type{<:BareZiggurat{X,Y}}) where {X,Y} = Y
 Ytype(::BareZiggurat{X,Y}) where {X,Y} = Y
-Ytype(::Type{<:MonotonicZiggurat{M,S,X,Y}}) where {M,S,X,Y} = Y
-Ytype(::MonotonicZiggurat{M,S,X,Y}) where {M,S,X,Y} = Y
+Ytype(::Type{<:MonotonicZiggurat{S,X,Y}}) where {S,X,Y} = Y
+Ytype(::MonotonicZiggurat{S,X,Y}) where {S,X,Y} = Y
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{M,S}}) where {M,S}
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{S}}) where {S}
     z = zig_sampler[]
 
-    zigsample(rng, M, S, bareziggurat(z), density(z), fallback(z))
+    zigsample(rng, S, bareziggurat(z), density(z), fallback(z))
 end
 
 # Optimization for Xoshiro and MersenneTwister, which randomize natively to Arrays of BitIntegers
 function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{M,S,X}}
-) where {M,S,X<:FloatXX}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{S,X}}
+) where {S,X<:FloatXX}
     z = s[]
     if length(A) < 7 # TODO: This number can be tuned
         for i in eachindex(A)
@@ -685,7 +684,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats(rng, r, M, S, bareziggurat(z), density(z), fallback(z))
+            @inbounds A[i] = _zigsample_floats(rng, r, S, bareziggurat(z), density(z), fallback(z))
         end
     end
     A
@@ -696,7 +695,7 @@ end
 function Random.rand!(
     rng::MersenneTwister,
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{nothing,nothing,X}}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{nothing,X}}
 ) where {X<:FloatXX}
     z = s[]
     if length(A) < 13 # TODO: this number can be tuned
@@ -709,33 +708,33 @@ function Random.rand!(
         rand!(rng, A, Random.CloseOpen12(eltype(A)))
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats(rng, r, nothing, nothing, bareziggurat(z), density(z), fallback(z))
+            @inbounds A[i] = _zigsample_floats(rng, r, nothing, bareziggurat(z), density(z), fallback(z))
         end
     end
     A
 end
 
 # Type parameters F and FB are required to force Julia to specialize this function
-@inline function zigsample(rng, mask, shift, bz::BareZiggurat{<:FloatXX}, pdf::F, fb::FB) where {F,FB}
+@inline function zigsample(rng, shift, bz::BareZiggurat{<:FloatXX}, pdf::F, fb::FB) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(bz)))
-    _zigsample_floats(rng, r, mask, shift, bz, pdf, fb)
+    _zigsample_floats(rng, r, shift, bz, pdf, fb)
 end
 
 # Type parameters F and FB are required to force Julia to specialize this function
-function _zigsample_floats(rng, r, mask, shift, bz::BareZiggurat{X}, pdf::F, fb::FB) where {X<:FloatXX,F,FB}
+function _zigsample_floats(rng, r, shift, bz::BareZiggurat{X}, pdf::F, fb::FB) where {X<:FloatXX,F,FB}
     @inbounds begin
-        l = random_layer(r, mask, shift, rng, numlayers(bz))
+        l = random_layer(r, shift, rng, numlayers(bz))
         u = r & significand_bitmask(eltype(bz))
         x = u * widths(bz)[l] + highside(bz)
         if u <= layerratios(bz)[l]
             return x
         end
-        slowpath(rng, mask, shift, bz, pdf, fb, l, x)
+        slowpath(rng, shift, bz, pdf, fb, l, x)
     end
 end
 
 # Type parameters F and FB are required to force Julia to specialize this function
-@inline function zigsample(rng, mask, shift, bz::BareZiggurat, pdf::F, fb::FB) where {F,FB}
+@inline function zigsample(rng, shift, bz::BareZiggurat, pdf::F, fb::FB) where {F,FB}
     @inbounds begin
         l = rand(rng, 1:numlayers(bz))
         u = rand(rng, eltype(bz))
@@ -743,32 +742,32 @@ end
         if u <= layerratios(bz)[l]
             return x
         end
-        slowpath(rng, mask, shift, bz, pdf, fb, l, x)
+        slowpath(rng, shift, bz, pdf, fb, l, x)
     end
 end
 
-function random_layer(r, mask, shift, rng, N)
-    ((r & mask) >> shift) + 1
+function random_layer(r, shift, rng, N)
+    (r >>> shift) + 1
 end
 
-function random_layer(r, ::Nothing, ::Nothing, rng, N)
+function random_layer(r, ::Nothing, rng, N)
     rand(rng, 1:N)
 end
 
 # Type parameter F is required to force Julia to specialize this function
-@noinline function slowpath(rng, mask, shift, bz, pdf::F, ::Nothing, l, x) where {F}
+@noinline function slowpath(rng, shift, bz, pdf::F, ::Nothing, l, x) where {F}
     @inbounds begin
         y = (heights(bz)[l + 1] - heights(bz)[l]) * rand(rng, Ytype(bz)) + heights(bz)[l]
         if y < pdf(x)
             return x
         end
 
-        zigsample(rng, mask, shift, bz, pdf, nothing)
+        zigsample(rng, shift, bz, pdf, nothing)
     end
 end
 
 # Type parameters F and FB are required to force Julia to specialize this function
-@noinline function slowpath(rng, mask, shift, bz, pdf::F, fb::FB, l, x) where {F,FB}
+@noinline function slowpath(rng, shift, bz, pdf::F, fb::FB, l, x) where {F,FB}
     @inbounds begin
         if l == 1
             r = widths(bz)[2] * significand_bitmask(eltype(bz)) + highside(bz)
@@ -780,7 +779,7 @@ end
             return x
         end
 
-        zigsample(rng, mask, shift, bz, pdf, fb)
+        zigsample(rng, shift, bz, pdf, fb)
     end
 end
 
