@@ -159,20 +159,56 @@ const MonotonicTestCases = [
 const SymmetricTestCases = reduce(
     vcat,
     [
-        [let cdf = x -> (1 + erf(x/T(√2)))/2, ccdf = x -> erfc(x/T(√2))/2
-            CompositeTestData(;
-                name = "Normal $T",
-                dist = Normal(),
-                f = x -> 1/√T(2π) * exp(-x^2/2),
-                ipdfs = [(y -> -√(-2log(√T(2π)*y))), (y -> √(-2log(√T(2π)*y)))],
-                cdf = cdf,
-                ccdf = ccdf,
-                left_fallback = (rng, x) -> T(√2 * erfinv(2cdf(x)*(1-rand(rng,)) - 1)),
-                right_fallback = (rng, x) -> T(√2 * erfcinv(2ccdf(x)*(1-rand(rng)))),
-                domain = (T(-Inf), T(0.0), T(Inf)),
-                T = T
-            )
-        end] for T in TestTypes
+        [
+            let cdf = x -> (1 + erf(x/T(√2)))/2, ccdf = x -> erfc(x/T(√2))/2
+                CompositeTestData(;
+                    name = "Normal $T",
+                    dist = Normal(),
+                    f = x -> 1/√T(2π) * exp(-x^2/2),
+                    ipdfs = [(y -> -√(-2log(√T(2π)*y))), (y -> √(-2log(√T(2π)*y)))],
+                    cdf = cdf,
+                    ccdf = ccdf,
+                    left_fallback = (rng, x) -> T(√2 * erfinv(2cdf(x)*(1-rand(rng)) - 1)),
+                    right_fallback = (rng, x) -> T(√2 * erfcinv(2ccdf(x)*(1-rand(rng)))),
+                    domain = (T(-Inf), T(0.0), T(Inf)),
+                    T = T
+                )
+            end,
+            let cdf = x -> (1 + erf(x/T(√2)))/2, ccdf = x -> erfc(x/T(√2))/2
+                CompositeTestData(;
+                    name = "Binormal $T",
+                    dist = MixtureModel(Normal, [(-2, 1), (2, 1)]),
+                    f = x -> 1/√T(2π) * (exp(-(x-2)^2/2) + exp(-(x+2)^2/2)),
+                    ipdfs = nothing,
+                    cdf = x -> cdf(x-2) + cdf(x+2),
+                    ccdf = x -> ccdf(x-2) + ccdf(x+2),
+                    left_fallback = (rng, x) -> begin
+                        lprob = cdf(x + 2)
+                        rprob = cdf(x - 2)
+                        p = lprob / (lprob + rprob)
+                        if rand(rng, Bernoulli(p))
+                            μ = -2
+                        else
+                            μ = 2
+                        end
+                        T(√2 * erfinv(2cdf(x - μ)*(1-rand(rng)) - 1)) + μ
+                    end,
+                    right_fallback = (rng, x) -> begin
+                        lprob = ccdf(x + 2)
+                        rprob = ccdf(x - 2)
+                        p = rprob / (lprob + rprob)
+                        if rand(rng, Bernoulli(p))
+                            μ = 2
+                        else
+                            μ = -2
+                        end
+                        T(√2 * erfcinv(2ccdf(x - μ)*(1-rand(rng)))) + μ
+                    end,
+                    domain = (T(-Inf), T(-1.9986513460302164), T(0.0), T(1.9986513460302164), T(Inf)),
+                    T = T
+                )
+            end
+        ] for T in TestTypes
     ]
 )
 
