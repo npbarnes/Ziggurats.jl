@@ -101,7 +101,7 @@ function CompositeZiggurat(
     subdomains = get_subdomains(pdf, domain)
 
     if length(subdomains) != length(Ns)
-        throw(ArgumentError("N must be either an Integer or an iterable with length equal to the number of subdomains."))
+        throw(ArgumentError("Ns must be either an Integer or an iterable with length equal to the number of subdomains."))
     end
     if ipdfs === nothing
         ipdfs = [nothing for d in subdomains]
