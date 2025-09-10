@@ -100,11 +100,11 @@ function CompositeZiggurat(
     a, b = extrema(domain)
     subdomains = get_subdomains(pdf, domain)
 
-    if length(subdomains) != length(Ns)
+    if size(subdomains, 1) != length(Ns)
         throw(ArgumentError("Ns must be either an Integer or an iterable with length equal to the number of subdomains."))
     end
     if ipdfs === nothing
-        ipdfs = [nothing for d in subdomains]
+        ipdfs = [nothing for d in eachrow(subdomains)]
     end
     if cdf === nothing
         val = pdf(Roots.__middle(a, b))
@@ -124,13 +124,14 @@ function CompositeZiggurat(
 
         ccdf = TailArea(pdf, b, segbuf)
     end
+
     if p === nothing
-        _p = [cdf(b) - cdf(a) for (a, b) in subdomains]
+        _p = [cdf(b) - cdf(a) for (a, b) in eachrow(subdomains)]
     else
-        _p = similar(p, Float64)
+        _p = similar(p, eltype(subdomains))
         for i in eachindex(p)
             if p[i] === nothing
-                a, b = subdomains[i]
+                a, b = @view(subdomains[i, :])
                 _p[i] = cdf(b) - cdf(a)
             else
                 _p[i] = p[i]
@@ -145,15 +146,15 @@ function CompositeZiggurat(
     zig_gen = i -> begin
         if i == 1
             fallback = left_fallback
-        elseif i == length(subdomains)
+        elseif i == size(subdomains, 1)
             fallback = right_fallback
         else
             fallback = nothing
         end
-        monotonic_ziggurat(pdf, subdomains[i], Ns[i]; ipdf = ipdfs[i], cdf, ccdf, fallback)
+        monotonic_ziggurat(pdf, @view(subdomains[i, :]), Ns[i]; ipdf = ipdfs[i], cdf, ccdf, fallback)
     end
 
-    zigs = [zig_gen(i) for i in 1:length(subdomains)]
+    zigs = [zig_gen(i) for i in 1:size(subdomains, 1)]
 
     barezigs = bareziggurat.(zigs)
     shifts = numshiftbits.(eltype.(barezigs), Ns)
@@ -212,26 +213,23 @@ get_subdomains(f, domain) = _get_subdomains(f, promote(float.(domain)...))
 get_subdomains(f, domain::NTuple{N,<:AbstractFloat}) where {N} = _get_subdomains(f, domain)
 get_subdomains(f, domain::AbstractArray{<:AbstractFloat}) = _get_subdomains(f, domain)
 function _get_subdomains(f, domain)
-    sd = Vector{Vector{eltype(domain)}}(undef, length(domain)-1)
-    for i in eachindex(sd)
-        sd[i] = Vector{eltype(domain)}(undef, 2)
-    end
+    sd = Array{eltype(domain)}(undef, length(domain)-1, 2)
 
-    sd[1][1] = domain[1]
+    sd[1, 1] = domain[1]
     for (i, x) in enumerate(domain[2:(end - 1)])
         if isapprox(f(prevfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i][2] = x
+            sd[i, 2] = x
         else
-            sd[i][2] = prevfloat(x)
+            sd[i, 2] = prevfloat(x)
         end
 
         if isapprox(f(nextfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i + 1][1] = x
+            sd[i + 1, 1] = x
         else
-            sd[i + 1][1] = nextfloat(x)
+            sd[i + 1, 1] = nextfloat(x)
         end
     end
-    sd[end][2] = domain[end]
+    sd[end, 2] = domain[end]
     sd
 end
 
