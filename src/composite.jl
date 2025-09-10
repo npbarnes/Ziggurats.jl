@@ -125,19 +125,7 @@ function CompositeZiggurat(
         ccdf = TailArea(pdf, b, segbuf)
     end
 
-    if p === nothing
-        _p = [cdf(b) - cdf(a) for (a, b) in eachrow(subdomains)]
-    else
-        _p = similar(p, eltype(subdomains))
-        for i in eachindex(p)
-            if p[i] === nothing
-                a, b = @view(subdomains[i, :])
-                _p[i] = cdf(b) - cdf(a)
-            else
-                _p[i] = p[i]
-            end
-        end
-    end
+    _p = zigprobs(cdf, subdomains, p)
 
     if !(length(domain) - 1 == length(Ns) == length(ipdfs) == length(_p))
         throw(ArgumentError("Ns, ipdfs, and p must all have a length one less than the length of domain."))
@@ -231,6 +219,24 @@ function _get_subdomains(f, domain)
     end
     sd[end, 2] = domain[end]
     sd
+end
+
+zigprobs(cdf, subdomains, ::Nothing) = [cdf(b) - cdf(a) for (a, b) in eachrow(subdomains)]
+function zigprobs(cdf, subdomains, p::AbstractArray)
+    if length(p) != size(subdomains, 1)
+        error("the length of p is not equal to the number of subdomains.")
+    end
+
+    _p = similar(p, eltype(subdomains))
+    for i in eachindex(p)
+        if p[i] === nothing
+            a, b = @view(subdomains[i, :])
+            _p[i] = cdf(b) - cdf(a)
+        else
+            _p[i] = p[i]
+        end
+    end
+    _p
 end
 
 Random.eltype(::Type{<:CompositeZiggurat{X}}) where {X} = X
