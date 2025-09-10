@@ -29,7 +29,7 @@ function composite_sampling_tests(td::CompositeTestData)
                     @test typeof(rand(z)) == eltype(z) == Ziggurats.Ytype(z) == td.T
                     @test eltype(rand(z, 3)) == td.T
 
-                    test_samples(z, td.dist; td.q, rng = deepcopy(_rng), array_generation)
+                    test_samples(z, td.dist; td.nbins, td.q, rng = deepcopy(_rng), array_generation)
                 end
             end
         end

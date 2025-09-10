@@ -27,7 +27,8 @@ end
     right_fallback::Any
     domain::Any
     T::Any
-    q = 1e-6
+    q = T == Float16 ? 1e-8 : 1e-6
+    nbins = T == Float16 ? 15 : 50
 end
 
 const TestTypes = (Float64, Float32, Float16)
