@@ -121,9 +121,10 @@ function (pdf::PDFWrap)(x)
         algorithm requires a finite pdf.")
     end
 
-    if !between(pdf.fmb, pdf.fam, result)
+    δ = √eps(pdf.fmb)
+    if !between(pdf.fmb + δ, pdf.fam - δ, result)
         d = minmax(pdf.mb, pdf.am)
-        error("pdf is not monotonic on the domain = ($(d[1]), $(d[2])).")
+        error("pdf is not monotonic on the domain = ($(d[1]), $(d[2])), pdf($x) = $result.")
     end
 
     return float(result)
