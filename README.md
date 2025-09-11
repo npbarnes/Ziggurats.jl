@@ -5,6 +5,14 @@ This package contains routines for automatically constructing high-performance n
 random number generators for a wide variety of univariate probability distributions using a
 variation on the Marsaglia & Tsang Ziggurat Algorithm[^1].
 
+# Installation
+Ziggurats.jl is a registered Julia package that can be installed using the Julia package manager.
+E.g., in the REPL type
+```julia-repl
+julia> using Pkg; Pkg.add("Ziggurats")
+```
+
+# Basic Usage
 The `ziggurat` function provides the primary interface. In most cases you can pass in the
 `pdf` and a list of points that divides the domain into monotonic segments.
 ```julia-repl
@@ -45,20 +53,22 @@ information about usage and limitations.
 
 # How it Works
 For monotonic distributions, the algorithm is essentially the same as Marsaglia & Tsang 2000[^1]
-with a few minor technical differences. The most important difference from the classic
+with a few technical differences. The most important difference from the classic
 algorithm is that the inverse pdf function, tail area function, and fallback algorithm don't
 need to be explicitly provided by the programmer. This makes the ziggurat method much more
 ergonomic. By default, the `ipdf` is computed using a root finding algorithm (via `Roots.jl`),
 and the `tailarea` function is computed using Gauss-Kronrod quadrature (via `QuadGK.jl`).
 The fallback algorithm is inverse transform sampling over the renormalized `tailarea` function,
-where the inverse is computed similarly to the `ipdf`.
+where the inverse is computed similarly to the `ipdf`. Additionally, The ziggurat construction
+algorithm has been made more robust so that it can work with discontinuous and/or bounded pdfs.
 
-For piecewise monotonic functions the same process is used to make a ziggurat for each
-monotonic segment. Then the relative area under the curve of each segment is computed by
-quadrature. To sample a point, a ziggurat is selected using an Alias Table of the relative
-areas (`AliasTables.jl`) and then that ziggurat is sampled just as in the monotonic case. The
+Ziggurats.jl also implements a novel algorithm for sampling points from distributions with
+peicewise monotonic pdfs. First a ziggurat is constructed for each monotonic sub-domain. Then
+the relative area under the curve of each segment is computed by quadrature and stored. To
+sample a point, a ziggurat is selected using an Alias Table of the relative areas
+(`AliasTables.jl`) and then that ziggurat is sampled just as in the monotonic case. The
 classic Marsaglia & Tsang algorithm is highly optimized for the symmetric unimodal case, but
-those optimizations are not yet available in `Ziggurats.jl`. This algorithm is more flexible
+those optimizations are not yet available in `Ziggurats.jl`. This new algorithm is more flexible
 at the expense of some performance.
 
 # Performance Tips
