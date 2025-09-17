@@ -396,24 +396,6 @@ function _bounded_zig_data(pdf, domain, N, ipdf)
     (; x, y, modalboundary)
 end
 
-struct TailArea{F,X,S}
-    f::F
-    r::X
-    segbuf::S
-end
-
-# TODO: a way to pass through arguments to quadgk.
-function (ta::TailArea)(x)
-    if x == ta.r
-        # quadgk returns nan when the domain is empty like that
-        # this is a workaround
-        zero(ta.r)
-    else
-        # TODO: Add error tolerance and check the returned error estimate.
-        abs(quadgk(ta.f, x, ta.r; ta.segbuf)[1])
-    end
-end
-
 function _unbounded_zig_data(pdf, domain, N, ipdf, tailarea)
     domain = extrema(regularize(domain))
 
@@ -457,6 +439,24 @@ function _optimized_tables(x, modalboundary)
     k = [fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)]
 
     w, k
+end
+
+struct TailArea{F,X,S}
+    f::F
+    r::X
+    segbuf::S
+end
+
+# TODO: a way to pass through arguments to quadgk.
+function (ta::TailArea)(x)
+    if x == ta.r
+        # quadgk returns nan when the domain is empty like that
+        # this is a workaround
+        zero(ta.r)
+    else
+        # TODO: Add error tolerance and check the returned error estimate.
+        abs(quadgk(ta.f, x, ta.r; ta.segbuf)[1])
+    end
 end
 
 function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
