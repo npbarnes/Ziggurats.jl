@@ -353,6 +353,22 @@ function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, f
 end
 
 function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
+    (; x, y, modalboundary) = _bounded_zig_data(pdf, domain, N, ipdf)
+
+    w, k = _optimized_tables(x, modalboundary)
+
+    BareZiggurat(w, k, y, modalboundary)
+end
+
+function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothing)
+    (; x, y, modalboundary, tailarea) = _unbounded_zig_data(pdf, domain, N, ipdf, tailarea)
+
+    w, k = _optimized_tables(x, modalboundary)
+
+    x[2], BareZiggurat(w, k, y, modalboundary), tailarea
+end
+
+function _bounded_zig_data(pdf, domain, N, ipdf)
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
@@ -377,10 +393,7 @@ function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
     # Build ziggurats using wrapped functions
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf)
 
-    w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
-    k = [fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)]
-
-    BareZiggurat(w, k, y, modalboundary)
+    (; x, y, modalboundary)
 end
 
 struct TailArea{F,X,S}
@@ -401,7 +414,7 @@ function (ta::TailArea)(x)
     end
 end
 
-function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothing)
+function _unbounded_zig_data(pdf, domain, N, ipdf, tailarea)
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
@@ -436,10 +449,14 @@ function BareZiggurat_unbounded(pdf, domain, N; ipdf = nothing, tailarea = nothi
     # Build ziggurats using wrapped functions
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
 
+    (; x, y, modalboundary, tailarea)
+end
+
+function _optimized_tables(x, modalboundary)
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
     k = [fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)]
 
-    x[2], BareZiggurat(w, k, y, modalboundary), tailarea
+    w, k
 end
 
 function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
