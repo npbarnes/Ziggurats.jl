@@ -570,19 +570,38 @@ function _search_setup(N, modalboundary, pdf)
 end
 
 function _search(y_domain, p)
-    # TODO: Roots.Tracks may change between versions, so we should use an alternative (SciML, or in-house?)
-    tracker = Roots.Tracks(eltype(p.x), eltype(p.y))
-    ystar = find_zero(ziggurat_residual, y_domain, Roots.Bisection(), p; tracks = tracker)
+    ystar = find_zero(ziggurat_residual, y_domain, Roots.Bisection(), p)
 
-    # y[N] needs to be either exact or a slightly over
-    if tracker.convergence_flag !== :exact_zero
-        ystar = tracker.abₛ[end][2]
+    x, y = build!(p.x, p.y, ystar, p.buildargs...)
+
+    if isinf(y[end])
+        error("ziggurat failed to converge.")
     end
-    # TODO handle non-convergence. Bisection is guarenteed to converge, but not all
-    # algorithms are.
 
-    # TODO: Check if the final build fails
-    build!(p.x, p.y, ystar, p.buildargs...)
+    if y[end] < p.modalpdf
+        # Assuming the final interval is [ystar, nextfloat(ystar)], which is true for the Bisection method over
+        # Float64, Float32, or Float16's.
+        x = copy(x)
+        y = copy(y)
+        xx, yy = build!(p.x, p.y, nextfloat(ystar), p.buildargs...)
+
+        if isinf(yy[end])
+            @warn "the ziggurat doesn't fully cover the pdf, but a larger ziggurat can't be constructed. \
+            This is sometimes caused by using too many layers for the level of floating point precision. \
+            The ziggurat may be accurate enough to be usable if the height of the ziggurat, \
+            `Ziggurats.heights(zig)[end])`, is close to the height of the pdf, `Ziggurats.density(zig, Ziggurats.highside(zig))`."
+
+            return x, y
+        end
+
+        if yy[end] < p.modalpdf
+            error("the ziggurat search didn't converge as expected.")
+        end
+
+        return xx, yy
+    end
+
+    return x, y
 end
 
 function ziggurat_residual(y2, p)

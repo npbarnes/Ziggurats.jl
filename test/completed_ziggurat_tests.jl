@@ -61,10 +61,14 @@ function test_continuous_pdf(x, y, f, N, argminboundary)
 end
 
 @testset "Completed Ziggurat" begin
-    @testset "Rounding error" begin
+    @testset "No covering ziggurat possible" begin
         T = Float16
         f = x -> 1/√T(2π) * (exp(-(x-2)^2/2) + exp(-(x+2)^2/2))
-        @test monotonic_ziggurat(f, (Float16(-1000), Float16(-1.999)), 256) isa Ziggurat broken=true
+        @test_logs (:warn, r"^the ziggurat doesn't fully cover the pdf*") monotonic_ziggurat(
+            f,
+            (Float16(-1000), Float16(-1.999)),
+            256
+        )
     end
 
     @testset "Domain type=$T" for T in (Float16, Float32, Float64)
