@@ -1,4 +1,4 @@
-struct CompositeZiggurat{X, Z<:Ziggurat{X}, AT} <: Ziggurat{X}
+struct CompositeZiggurat{X,Z<:Ziggurat{X},AT} <: Ziggurat{X}
     zigs::Vector{Z}
     at::AT
 end

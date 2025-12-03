@@ -11,7 +11,7 @@ end
 struct BoundedZiggurat{X,Y,K,F,LM,R} <: MonotonicZiggurat{X,Y,F,nothing,LM,R}
     zig::BareZiggurat{X,Y,K}
     pdf::F
-    function BoundedZiggurat(bz::BareZiggurat{X,Y,K}, f) where {X,Y,K} 
+    function BoundedZiggurat(bz::BareZiggurat{X,Y,K}, f) where {X,Y,K}
         BoundedZiggurat(bz, f, nothing, false)
     end
     function BoundedZiggurat(bz::BareZiggurat{X,Y,K}, f, LM, R::Bool) where {X,Y,K}
@@ -774,7 +774,7 @@ Ytype(::Type{<:MonotonicZiggurat{X,Y}}) where {X,Y} = Y
 Ytype(::MonotonicZiggurat{X,Y}) where {X,Y} = Y
 
 # The where clause is required to force method specialization
-@noinline function zigsample_unlikely(parent::P,rng,w,k,y,mb,pdf::F,fb::Nothing,LM,l,x) where {P,F}
+@noinline function zigsample_unlikely(parent::P, rng, w, k, y, mb, pdf::F, fb::Nothing, LM, l, x) where {P,F}
     @inbounds begin
         # check density
         yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
@@ -788,7 +788,7 @@ Ytype(::MonotonicZiggurat{X,Y}) where {X,Y} = Y
 end
 
 # The where clause is required to force method specialization
-@noinline function zigsample_unlikely(parent::P,rng,w,k,y,mb,pdf::F,fb::FB,LM,l,x) where {P,F,FB}
+@noinline function zigsample_unlikely(parent::P, rng, w, k, y, mb, pdf::F, fb::FB, LM, l, x) where {P,F,FB}
     @inbounds begin
         if l == 1
             # unbounded tail fallback
@@ -807,13 +807,13 @@ end
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+@inline function zigsample_floats_masked_rearranged(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf,fb,LM,r)
+    _zigsample_floats_masked_rearranged(rng, w, k, y, mb, pdf, fb, LM, r)
 end
 
 # The where clause is required to force method specialization
-@inline function _zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf::F,fb::FB,LM,r) where {F,FB}
+@inline function _zigsample_floats_masked_rearranged(rng, w, k, y, mb, pdf::F, fb::FB, LM, r) where {F,FB}
     l = overlapped_layer(eltype(w), LM, r) + 1
     u = r >>> shiftbits(eltype(w))
     @inbounds begin
@@ -826,13 +826,13 @@ end
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample_floats_masked(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+@inline function zigsample_floats_masked(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _zigsample_floats_masked(rng,w,k,y,mb,pdf,fb,LM,r)
+    _zigsample_floats_masked(rng, w, k, y, mb, pdf, fb, LM, r)
 end
 
 # The where clause is required to force method specialization
-@inline function _zigsample_floats_masked(rng,w,k,y,mb,pdf::F,fb::FB,LM,r) where {F,FB}
+@inline function _zigsample_floats_masked(rng, w, k, y, mb, pdf::F, fb::FB, LM, r) where {F,FB}
     l = (r & LM) + 1
     u = r >>> shiftbits(eltype(w))
     @inbounds begin
@@ -845,14 +845,14 @@ end
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample_floats(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+@inline function zigsample_floats(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _zigsample_floats(rng,w,k,y,mb,pdf,fb,LM,r)
+    _zigsample_floats(rng, w, k, y, mb, pdf, fb, LM, r)
 end
 
 # The where clause is required to force method specialization
-@inline function _zigsample_floats(rng,w,k,y,mb,pdf::F,fb::FB,LM,r) where {F,FB}
-    l = rand(rng, 1:(length(w)-1))
+@inline function _zigsample_floats(rng, w, k, y, mb, pdf::F, fb::FB, LM, r) where {F,FB}
+    l = rand(rng, 1:(length(w) - 1))
     u = r >>> shiftbits(eltype(w))
     @inbounds begin
         x = u * w[l] + mb
@@ -864,8 +864,8 @@ end
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample_general(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
-    l = rand(rng, 1:(length(w)-1))
+@inline function zigsample_general(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
+    l = rand(rng, 1:(length(w) - 1))
     u = rand(rng, eltype(w))
     @inbounds begin
         x = u * w[l] + mb
@@ -876,7 +876,10 @@ end
     end
 end
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,true}}) where {X<:FloatXX,Y,F,FB,LM}
+function Base.rand(
+    rng::AbstractRNG,
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,true}}
+) where {X<:FloatXX,Y,F,FB,LM}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -884,10 +887,13 @@ function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:Monoto
     mb = highside(z)
     pdf = density(z)
     fb = fallback(z)
-    zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf,fb,LM)
+    zigsample_floats_masked_rearranged(rng, w, k, y, mb, pdf, fb, LM)
 end
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,false}}) where {X<:FloatXX,Y,F,FB,LM}
+function Base.rand(
+    rng::AbstractRNG,
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,false}}
+) where {X<:FloatXX,Y,F,FB,LM}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -895,10 +901,13 @@ function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:Monoto
     mb = highside(z)
     pdf = density(z)
     fb = fallback(z)
-    zigsample_floats_masked(rng,w,k,y,mb,pdf,fb,LM)
+    zigsample_floats_masked(rng, w, k, y, mb, pdf, fb, LM)
 end
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}) where {X<:FloatXX,Y,F,FB}
+function Base.rand(
+    rng::AbstractRNG,
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}
+) where {X<:FloatXX,Y,F,FB}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -906,10 +915,13 @@ function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:Monoto
     mb = highside(z)
     pdf = density(z)
     fb = fallback(z)
-    zigsample_floats(rng,w,k,y,mb,pdf,fb,nothing)
+    zigsample_floats(rng, w, k, y, mb, pdf, fb, nothing)
 end
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}) where {X,Y,F,FB}
+function Base.rand(
+    rng::AbstractRNG,
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}
+) where {X,Y,F,FB}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -917,7 +929,7 @@ function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:Monoto
     mb = highside(z)
     pdf = density(z)
     fb = fallback(z)
-    zigsample_general(rng,w,k,y,mb,pdf,fb,nothing)
+    zigsample_general(rng, w, k, y, mb, pdf, fb, nothing)
 end
 
 function Random.rand!(
@@ -943,7 +955,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf,fb,LM,r)
+            @inbounds A[i] = _zigsample_floats_masked_rearranged(rng, w, k, y, mb, pdf, fb, LM, r)
         end
     end
     A
@@ -972,7 +984,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats_masked(rng,w,k,y,mb,pdf,fb,LM,r)
+            @inbounds A[i] = _zigsample_floats_masked(rng, w, k, y, mb, pdf, fb, LM, r)
         end
     end
     A
@@ -1001,7 +1013,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats(rng,w,k,y,mb,pdf,fb,nothing,r)
+            @inbounds A[i] = _zigsample_floats(rng, w, k, y, mb, pdf, fb, nothing, r)
         end
     end
     A

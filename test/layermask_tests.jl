@@ -166,7 +166,7 @@
             @test layermask_signed(Foo, 256) === (nothing, false)
             @test layermask_signed(Foo, big"2"^65) === (nothing, false)
             @test layermask_signed(Foo, big"2"^65 + 1) === (nothing, false)
-            
+
             @test layermask_signed(Bar, 1) === (nothing, false)
             @test layermask_signed(Bar, 10) === (nothing, false)
             @test layermask_signed(Bar, 256) === (nothing, false)
