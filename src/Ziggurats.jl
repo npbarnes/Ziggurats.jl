@@ -8,6 +8,7 @@ using AliasTables
 using IntervalRootFinding
 using ForwardDiff
 using FixedPointNumbers
+using ILog2
 using Logging
 using Compat
 

@@ -19,6 +19,8 @@ include("JET_tests.jl")
 
 # Ziggurat tests
 include("test_inverses.jl")
+include("layermask_tests.jl")
+include("overlapping_bits_tests.jl")
 include("argument_handling_tests.jl")
 include("interface_tests.jl")
 include("completed_ziggurat_tests.jl")

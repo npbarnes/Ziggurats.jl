@@ -6,6 +6,7 @@ using SpecialFunctions
 using AliasTables
 using Aqua
 using JET
+using Supposition
 
 include("stat_testutils.jl")
 

@@ -1,13 +1,14 @@
 name = "Ziggurats"
 uuid = "974aae91-9ec7-499e-b331-29e7a3e13038"
-authors = ["Nathan Barnes <nathanpaulbarnes@gmail.com>"]
 version = "0.1.1"
+authors = ["Nathan Barnes <nathanpaulbarnes@gmail.com>"]
 
 [deps]
 AliasTables = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+ILog2 = "2cd5bd5f-40a1-5050-9e10-fc8cdb6109f5"
 IntervalRootFinding = "d2bf35a9-74e0-55ec-b149-d360ff49b807"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -20,6 +21,7 @@ AliasTables = "1.1"
 Compat = "3.47, 4.10"
 FixedPointNumbers = "0.8"
 ForwardDiff = "0.10"
+ILog2 = "2.0.0"
 IntervalRootFinding = "0.6"
 LinearAlgebra = "1"
 Logging = "1.10"

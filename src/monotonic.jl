@@ -1,4 +1,5 @@
-abstract type MonotonicZiggurat{S,X,Y} <: Ziggurat{X} end
+# Type parameters: domain type, range type, Layer Mask (unsigned integer), Rearrange layer bits (Bool).
+abstract type MonotonicZiggurat{X,Y,F,FB,LM,R} <: Ziggurat{X} end
 
 struct BareZiggurat{X,Y,K}
     w::Vector{X}
@@ -7,20 +8,32 @@ struct BareZiggurat{X,Y,K}
     modalboundary::X
 end
 
-struct BoundedZiggurat{S,X,Y,K,F} <: MonotonicZiggurat{S,X,Y}
+struct BoundedZiggurat{X,Y,K,F,LM,R} <: MonotonicZiggurat{X,Y,F,nothing,LM,R}
     zig::BareZiggurat{X,Y,K}
     pdf::F
-    function BoundedZiggurat{S}(bz::BareZiggurat{X,Y,K}, f) where {S,X,Y,K}
-        new{S,X,Y,K,typeof(f)}(bz, f)
+    function BoundedZiggurat(bz::BareZiggurat{X,Y,K}, f) where {X,Y,K} 
+        BoundedZiggurat(bz, f, nothing, false)
+    end
+    function BoundedZiggurat(bz::BareZiggurat{X,Y,K}, f, LM, R::Bool) where {X,Y,K}
+        if LM === nothing && R
+            throw(ArgumentError("when the layer mask (LM) is `nothing`, then R must be `false`."))
+        end
+        new{X,Y,K,typeof(f),LM,R}(bz, f)
     end
 end
 
-struct UnboundedZiggurat{S,X,Y,K,F,FB} <: MonotonicZiggurat{S,X,Y}
+struct UnboundedZiggurat{X,Y,K,F,FB,LM,R} <: MonotonicZiggurat{X,Y,F,FB,LM,R}
     zig::BareZiggurat{X,Y,K}
     pdf::F
     fallback::FB
-    function UnboundedZiggurat{S}(bz::BareZiggurat{X,Y,K}, f, fb) where {S,X,Y,K}
-        new{S,X,Y,K,typeof(f),typeof(fb)}(bz, f, fb)
+    function UnboundedZiggurat(bz::BareZiggurat{X,Y,K}, f, fb) where {X,Y,K}
+        UnboundedZiggurat(bz, f, fb, nothing, false)
+    end
+    function UnboundedZiggurat(bz::BareZiggurat{X,Y,K}, f, fb, LM, R::Bool) where {X,Y,K}
+        if LM === nothing && R
+            throw(ArgumentError("when the layer mask (LM) is `nothing`, then R must be `false`."))
+        end
+        new{X,Y,K,typeof(f),typeof(fb),LM,R}(bz, f, fb)
     end
 end
 
@@ -55,16 +68,74 @@ corresponding_uint(::Type{Float16}) = UInt16
 
 const FloatXX = Union{Float64,Float32,Float16}
 
-numshiftbits(::Type, N) = nothing
-function numshiftbits(X::Type{<:FloatXX}, N)
-    maxpower = 8sizeof(X) - Base.significand_bits(X)
-    if N ∈ (2^m for m in 0:maxpower)
-        power = Int64(log2(N))
-        shift = 8sizeof(X) - power
-        return shift
-    else
-        return nothing
+significand_bits(::Type{Float64}) = 52
+significand_bits(::Type{Float32}) = 23
+significand_bits(::Type{Float16}) = 10
+
+# shiftbits is the number of bits besides the significand (i.e. exponent bits plus one)
+shiftbits(T::Type{<:FloatXX}) = 8sizeof(T) - significand_bits(T)
+
+function overlapped_layer(T, LM, r)
+    UT = corresponding_uint(T)
+    u_mask = significand_bitmask(T) << shiftbits(T)
+    overlap_mask = LM & u_mask
+    if overlap_mask == 0
+        return r & LM
     end
+    other_mask = UT(2)^shiftbits(T) - UT(1) # first `shiftbits(T)` bits set
+    rearrange_shift = ilog2(overlap_mask >>> shiftbits(T)) + 1
+
+    overlap_bits = (r & overlap_mask) >>> shiftbits(T)
+    other_bits = (r & other_mask) << rearrange_shift
+    overlap_bits | other_bits
+end
+
+function overlapped_layer_signed(T, LM, r)
+    UT = corresponding_uint(T)
+    u_mask = significand_bitmask(T) << shiftbits(T)
+    overlap_mask = LM & u_mask
+    if overlap_mask == 0
+        return (r & LM) >>> 1
+    end
+    other_mask = (UT(2)^shiftbits(T) - UT(1)) - UT(1) # first `shiftbits(T)` bits set except the first one
+    rearrange_shift = ilog2(overlap_mask >>> shiftbits(T))
+
+    overlap_bits = (r & overlap_mask) >>> shiftbits(T)
+    other_bits = (r & other_mask) << rearrange_shift
+    overlap_bits | other_bits
+end
+
+function layermask(T, N)
+    if !isinteger(N) || N < 1
+        throw(ArgumentError("N must be an integer greater than zero."))
+    end
+    _layermask(T, N)
+end
+_layermask(::Type, N) = nothing, false
+function _layermask(T::Type{<:FloatXX}, N)
+    UT = corresponding_uint(T)
+    if !ispow2(N) || N > big(typemax(UT)) + 1
+        return nothing, false
+    end
+    UT(N - 1), (N > 2^(8sizeof(T) - significand_bits(T)))
+end
+
+"""
+    layermask with one bit reserved for the sign
+"""
+function layermask_signed(T, N)
+    if !isinteger(N) || N < 1
+        throw(ArgumentError("N must be an integer greater than zero."))
+    end
+    _layermask_signed(T, N)
+end
+_layermask_signed(::Type, N) = nothing, false
+function _layermask_signed(T::Type{<:FloatXX}, N)
+    UT = corresponding_uint(T)
+    if !ispow2(N) || N > UInt64(2)^(8sizeof(T) - 1)
+        return nothing, false
+    end
+    (UT(N - 1) << 1), (N > 2^(8sizeof(T) - significand_bits(T) - 1))
 end
 
 """
@@ -317,7 +388,7 @@ function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
 
     # final ziggurat uses the unwrapped function so that there is no effect on
     # sampling performance
-    BoundedZiggurat{numshiftbits(eltype(bz.w), length(bz.w)-1)}(bz, pdf)
+    BoundedZiggurat(bz, pdf, layermask(eltype(bz), numlayers(bz))...)
 end
 
 """
@@ -349,7 +420,7 @@ function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, f
 
     # final ziggurat uses the unwrapped function so that there is no effect on
     # sampling performance
-    UnboundedZiggurat{numshiftbits(eltype(bz.w), length(bz.w)-1)}(bz, pdf, fallback)
+    UnboundedZiggurat(bz, pdf, fallback, layermask(eltype(bz), numlayers(bz))...)
 end
 
 function BareZiggurat_bounded(pdf, domain, N; ipdf = nothing)
@@ -689,135 +760,251 @@ function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
 
 ## Sampling
-Random.eltype(::Type{<:MonotonicZiggurat{S,X}}) where {S,X} = X
+# There's a lot of code duplication in this section, but it's difficult to do anything different
+# without compromising performance. Be careful when making any changes. Even innocuous looking
+# refactors can affect performance. For example, unpacking the Ziggurat and passing it's
+# components into another function is faster than passing the Ziggurat object directly. I have
+# no idea why.
+Random.eltype(::Type{<:MonotonicZiggurat{X}}) where {X} = X
 Random.eltype(::Type{<:BareZiggurat{X}}) where {X} = X
 
 Ytype(::Type{<:BareZiggurat{X,Y}}) where {X,Y} = Y
 Ytype(::BareZiggurat{X,Y}) where {X,Y} = Y
-Ytype(::Type{<:MonotonicZiggurat{S,X,Y}}) where {S,X,Y} = Y
-Ytype(::MonotonicZiggurat{S,X,Y}) where {S,X,Y} = Y
+Ytype(::Type{<:MonotonicZiggurat{X,Y}}) where {X,Y} = Y
+Ytype(::MonotonicZiggurat{X,Y}) where {X,Y} = Y
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{S}}) where {S}
-    z = zig_sampler[]
+# The where clause is required to force method specialization
+@noinline function zigsample_unlikely(parent::P,rng,w,k,y,mb,pdf::F,fb::Nothing,LM,l,x) where {P,F}
+    @inbounds begin
+        # check density
+        yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
+        if yy < pdf(x)
+            return x
+        end
 
-    zigsample(rng, S, bareziggurat(z), density(z), fallback(z))
+        # reject sample and retry
+        parent(rng, w, k, y, mb, pdf, fb, LM)
+    end
 end
 
-# Optimization for Xoshiro and MersenneTwister, which randomize natively to Arrays of BitIntegers
+# The where clause is required to force method specialization
+@noinline function zigsample_unlikely(parent::P,rng,w,k,y,mb,pdf::F,fb::FB,LM,l,x) where {P,F,FB}
+    @inbounds begin
+        if l == 1
+            # unbounded tail fallback
+            x2 = w[2] * significand_bitmask(eltype(w)) + mb
+            return fb(rng, x2)
+        end
+        # check density
+        yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
+        if yy < pdf(x)
+            return x
+        end
+
+        # reject sample and retry
+        parent(rng, w, k, y, mb, pdf, fb, LM)
+    end
+end
+
+# The where clause is required to force method specialization
+@inline function zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+    r = rand(rng, corresponding_uint(eltype(w)))
+    _zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf,fb,LM,r)
+end
+
+# The where clause is required to force method specialization
+@inline function _zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf::F,fb::FB,LM,r) where {F,FB}
+    l = overlapped_layer(eltype(w), LM, r) + 1
+    u = r >>> shiftbits(eltype(w))
+    @inbounds begin
+        x = u * w[l] + mb
+        if u <= k[l]
+            return x
+        end
+        zigsample_unlikely(zigsample_floats_masked_rearranged, rng, w, k, y, mb, pdf, fb, LM, l, x)
+    end
+end
+
+# The where clause is required to force method specialization
+@inline function zigsample_floats_masked(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+    r = rand(rng, corresponding_uint(eltype(w)))
+    _zigsample_floats_masked(rng,w,k,y,mb,pdf,fb,LM,r)
+end
+
+# The where clause is required to force method specialization
+@inline function _zigsample_floats_masked(rng,w,k,y,mb,pdf::F,fb::FB,LM,r) where {F,FB}
+    l = (r & LM) + 1
+    u = r >>> shiftbits(eltype(w))
+    @inbounds begin
+        x = u * w[l] + mb
+        if u <= k[l]
+            return x
+        end
+        zigsample_unlikely(zigsample_floats_masked, rng, w, k, y, mb, pdf, fb, LM, l, x)
+    end
+end
+
+# The where clause is required to force method specialization
+@inline function zigsample_floats(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+    r = rand(rng, corresponding_uint(eltype(w)))
+    _zigsample_floats(rng,w,k,y,mb,pdf,fb,LM,r)
+end
+
+# The where clause is required to force method specialization
+@inline function _zigsample_floats(rng,w,k,y,mb,pdf::F,fb::FB,LM,r) where {F,FB}
+    l = rand(rng, 1:(length(w)-1))
+    u = r >>> shiftbits(eltype(w))
+    @inbounds begin
+        x = u * w[l] + mb
+        if u <= k[l]
+            return x
+        end
+        zigsample_unlikely(zigsample_floats, rng, w, k, y, mb, pdf, fb, LM, l, x)
+    end
+end
+
+# The where clause is required to force method specialization
+@inline function zigsample_general(rng,w,k,y,mb,pdf::F,fb::FB,LM) where {F,FB}
+    l = rand(rng, 1:(length(w)-1))
+    u = rand(rng, eltype(w))
+    @inbounds begin
+        x = u * w[l] + mb
+        if u <= k[l]
+            return x
+        end
+        zigsample_unlikely(zigsample_general, rng, w, k, y, mb, pdf, fb, LM, l, x)
+    end
+end
+
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,true}}) where {X<:FloatXX,Y,F,FB,LM}
+    z = zig_sampler[]
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf,fb,LM)
+end
+
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,false}}) where {X<:FloatXX,Y,F,FB,LM}
+    z = zig_sampler[]
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    zigsample_floats_masked(rng,w,k,y,mb,pdf,fb,LM)
+end
+
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}) where {X<:FloatXX,Y,F,FB}
+    z = zig_sampler[]
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    zigsample_floats(rng,w,k,y,mb,pdf,fb,nothing)
+end
+
+function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}) where {X,Y,F,FB}
+    z = zig_sampler[]
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    zigsample_general(rng,w,k,y,mb,pdf,fb,nothing)
+end
+
 function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{S,X}}
-) where {S,X<:FloatXX}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,true}}
+) where {X<:FloatXX,Y,F,FB,LM}
     z = s[]
-    if length(A) < 7 # TODO: This number can be tuned
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    if length(A) < 7 # TODO: Tune this number
         for i in eachindex(A)
             @inbounds A[i] = rand(rng, s)
         end
     else
-        T = corresponding_uint(eltype(z))
+        T = corresponding_uint(X)
         # UnsafeView is an internal implementation detail of Random.jl
         GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats(rng, r, S, bareziggurat(z), density(z), fallback(z))
+            @inbounds A[i] = _zigsample_floats_masked_rearranged(rng,w,k,y,mb,pdf,fb,LM,r)
         end
     end
     A
 end
 
-# Optimization for MersenneTwister, which randomizes natively to Array{Float64}, when the number of layers is not
-# a power of two.
 function Random.rand!(
-    rng::MersenneTwister,
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{nothing,X}}
-) where {X<:FloatXX}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,false}}
+) where {X<:FloatXX,Y,F,FB,LM}
     z = s[]
-    if length(A) < 13 # TODO: this number can be tuned
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    if length(A) < 7 # TODO: Tune this number
         for i in eachindex(A)
             @inbounds A[i] = rand(rng, s)
         end
     else
-        T = corresponding_uint(eltype(z))
-        # CloseOpen12() may be a private implementation detail of Random.jl
-        rand!(rng, A, Random.CloseOpen12(eltype(A)))
+        T = corresponding_uint(X)
+        # UnsafeView is an internal implementation detail of Random.jl
+        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats(rng, r, nothing, bareziggurat(z), density(z), fallback(z))
+            @inbounds A[i] = _zigsample_floats_masked(rng,w,k,y,mb,pdf,fb,LM,r)
         end
     end
     A
 end
 
-# Type parameters F and FB are required to force Julia to specialize this function
-@inline function zigsample(rng, shift, bz::BareZiggurat{<:FloatXX}, pdf::F, fb::FB) where {F,FB}
-    r = rand(rng, corresponding_uint(eltype(bz)))
-    _zigsample_floats(rng, r, shift, bz, pdf, fb)
-end
-
-# Type parameters F and FB are required to force Julia to specialize this function
-function _zigsample_floats(rng, r, shift, bz::BareZiggurat{X}, pdf::F, fb::FB) where {X<:FloatXX,F,FB}
-    @inbounds begin
-        l = random_layer(r, shift, rng, numlayers(bz))
-        u = r & significand_bitmask(eltype(bz))
-        x = u * widths(bz)[l] + highside(bz)
-        if u <= layerratios(bz)[l]
-            return x
+function Random.rand!(
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
+    A::Array{X},
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}
+) where {X<:FloatXX,Y,F,FB}
+    z = s[]
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    if length(A) < 7 # TODO: Tune this number
+        for i in eachindex(A)
+            @inbounds A[i] = rand(rng, s)
         end
-        slowpath(rng, shift, bz, pdf, fb, l, x)
+    else
+        T = corresponding_uint(X)
+        # UnsafeView is an internal implementation detail of Random.jl
+        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
+        for i in eachindex(A)
+            @inbounds r = reinterpret(T, A[i])
+            @inbounds A[i] = _zigsample_floats(rng,w,k,y,mb,pdf,fb,nothing,r)
+        end
     end
-end
-
-# Type parameters F and FB are required to force Julia to specialize this function
-@inline function zigsample(rng, shift, bz::BareZiggurat, pdf::F, fb::FB) where {F,FB}
-    @inbounds begin
-        l = rand(rng, 1:numlayers(bz))
-        u = rand(rng, eltype(bz))
-        x = u * widths(bz)[l] + highside(bz)
-        if u <= layerratios(bz)[l]
-            return x
-        end
-        slowpath(rng, shift, bz, pdf, fb, l, x)
-    end
-end
-
-function random_layer(r, shift, rng, N)
-    (r >>> shift) + 1
-end
-
-function random_layer(r, ::Nothing, rng, N)
-    rand(rng, 1:N)
-end
-
-# Type parameter F is required to force Julia to specialize this function
-@noinline function slowpath(rng, shift, bz, pdf::F, ::Nothing, l, x) where {F}
-    @inbounds begin
-        y = (heights(bz)[l + 1] - heights(bz)[l]) * rand(rng, Ytype(bz)) + heights(bz)[l]
-        if y < pdf(x)
-            return x
-        end
-
-        zigsample(rng, shift, bz, pdf, nothing)
-    end
-end
-
-# Type parameters F and FB are required to force Julia to specialize this function
-@noinline function slowpath(rng, shift, bz, pdf::F, fb::FB, l, x) where {F,FB}
-    @inbounds begin
-        if l == 1
-            r = widths(bz)[2] * significand_bitmask(eltype(bz)) + highside(bz)
-            return fb(rng, r)
-        end
-
-        y = (heights(bz)[l + 1] - heights(bz)[l]) * rand(rng, Ytype(bz)) + heights(bz)[l]
-        if y < pdf(x)
-            return x
-        end
-
-        zigsample(rng, shift, bz, pdf, fb)
-    end
+    A
 end
 
 # Fallback for non-FloatXX types is to do nothing (not really a bitmask in that case)
