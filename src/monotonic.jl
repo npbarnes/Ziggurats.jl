@@ -1,5 +1,5 @@
 # Type parameters: domain type, range type, Layer Mask (unsigned integer), Rearrange layer bits (Bool).
-abstract type MonotonicZiggurat{X,Y,F,FB,LM,R} <: Ziggurat{X} end
+abstract type MonotonicZiggurat{X,Y,LM,R} <: Ziggurat{X} end
 
 struct BareZiggurat{X,Y,K}
     w::Vector{X}
@@ -8,7 +8,7 @@ struct BareZiggurat{X,Y,K}
     modalboundary::X
 end
 
-struct BoundedZiggurat{X,Y,K,F,LM,R} <: MonotonicZiggurat{X,Y,F,nothing,LM,R}
+struct BoundedZiggurat{X,Y,K,F,LM,R} <: MonotonicZiggurat{X,Y,LM,R}
     zig::BareZiggurat{X,Y,K}
     pdf::F
     function BoundedZiggurat(bz::BareZiggurat{X,Y,K}, f) where {X,Y,K}
@@ -22,7 +22,7 @@ struct BoundedZiggurat{X,Y,K,F,LM,R} <: MonotonicZiggurat{X,Y,F,nothing,LM,R}
     end
 end
 
-struct UnboundedZiggurat{X,Y,K,F,FB,LM,R} <: MonotonicZiggurat{X,Y,F,FB,LM,R}
+struct UnboundedZiggurat{X,Y,K,F,FB,LM,R} <: MonotonicZiggurat{X,Y,LM,R}
     zig::BareZiggurat{X,Y,K}
     pdf::F
     fallback::FB
@@ -878,8 +878,8 @@ end
 
 function Base.rand(
     rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,true}}
-) where {X<:FloatXX,Y,F,FB,LM}
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,LM,true}}
+) where {X<:FloatXX,Y,LM}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -892,8 +892,8 @@ end
 
 function Base.rand(
     rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,false}}
-) where {X<:FloatXX,Y,F,FB,LM}
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,LM,false}}
+) where {X<:FloatXX,Y,LM}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -906,8 +906,8 @@ end
 
 function Base.rand(
     rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}
-) where {X<:FloatXX,Y,F,FB}
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,nothing,false}}
+) where {X<:FloatXX,Y}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -920,8 +920,8 @@ end
 
 function Base.rand(
     rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}
-) where {X,Y,F,FB}
+    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,nothing,false}}
+) where {X,Y}
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -935,8 +935,8 @@ end
 function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,true}}
-) where {X<:FloatXX,Y,F,FB,LM}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,LM,true}}
+) where {X<:FloatXX,Y,LM}
     z = s[]
     w = widths(z)
     k = layerratios(z)
@@ -964,8 +964,8 @@ end
 function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,LM,false}}
-) where {X<:FloatXX,Y,F,FB,LM}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,LM,false}}
+) where {X<:FloatXX,Y,LM}
     z = s[]
     w = widths(z)
     k = layerratios(z)
@@ -993,8 +993,8 @@ end
 function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,F,FB,nothing,false}}
-) where {X<:FloatXX,Y,F,FB}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,nothing,false}}
+) where {X<:FloatXX,Y}
     z = s[]
     w = widths(z)
     k = layerratios(z)
