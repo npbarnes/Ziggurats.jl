@@ -1,9 +1,5 @@
-struct CompositeZiggurat{X,Y,Z<:BareZiggurat{X,Y},F,LF,RF,S,AT<:AliasTable} <: Ziggurat{X}
+struct CompositeZiggurat{X, Z<:Ziggurat{X}, AT} <: Ziggurat{X}
     zigs::Vector{Z}
-    pdf::F
-    left_fallback::LF
-    right_fallback::RF
-    shifts::Vector{S}
     at::AT
 end
 
@@ -143,14 +139,9 @@ function CompositeZiggurat(
     end
 
     zigs = [zig_gen(i) for i in 1:size(subdomains, 1)]
-
-    barezigs = bareziggurat.(zigs)
-    shifts = numshiftbits.(eltype.(barezigs), Ns)
-    left_fallback = fallback(zigs[1])
-    right_fallback = fallback(zigs[end])
     at = AliasTable(_p)
 
-    CompositeZiggurat(barezigs, pdf, left_fallback, right_fallback, shifts, at)
+    CompositeZiggurat(zigs, at)
 end
 
 """
@@ -240,25 +231,10 @@ function zigprobs(cdf, subdomains, p::AbstractArray)
 end
 
 Random.eltype(::Type{<:CompositeZiggurat{X}}) where {X} = X
-Ytype(::Type{<:CompositeZiggurat{X,Y}}) where {X,Y} = Y
-Ytype(::CompositeZiggurat{X,Y}) where {X,Y} = Y
 
 function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:CompositeZiggurat})
-    @inbounds begin
-        zigs = zig_sampler[].zigs
-        shifts = zig_sampler[].shifts
-        pdf = zig_sampler[].pdf
-        left_fallback = zig_sampler[].left_fallback
-        right_fallback = zig_sampler[].right_fallback
-        at = zig_sampler[].at
+    cz = zig_sampler[]
 
-        i = rand(rng, at)
-        if i == 1
-            zigsample(rng, shifts[i], zigs[i], pdf, left_fallback)
-        elseif i == length(zigs)
-            zigsample(rng, shifts[i], zigs[i], pdf, right_fallback)
-        else
-            zigsample(rng, shifts[i], zigs[i], pdf, nothing)
-        end
-    end
+    i = rand(rng, cz.at)
+    @inbounds rand(rng, cz.zigs[i])
 end
