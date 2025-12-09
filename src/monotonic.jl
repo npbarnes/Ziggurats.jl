@@ -87,11 +87,11 @@ function layermask(T, N)
     end
     _layermask(T, N)
 end
-_layermask(::Type, N) = nothing, false
+_layermask(::Type, N) = nothing
 function _layermask(T::Type{<:FloatXX}, N)
     UT = corresponding_uint(T)
     if !ispow2(N) || N > big(typemax(UT)) + 1
-        return nothing, false
+        return nothing
     end
     UT(N - 1)
 end
