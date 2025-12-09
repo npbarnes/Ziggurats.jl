@@ -2,6 +2,7 @@ module Ziggurats
 
 using Roots
 using Random
+using StaticArrays
 using QuadGK
 using LinearAlgebra
 using AliasTables
@@ -19,7 +20,7 @@ export inversepdf
 
 @compat public monotonic_segments, NoWrap
 
-abstract type Ziggurat{X} end
+abstract type Ziggurat{X,Y} end
 
 include("utilities.jl")
 include("inverse_pdf.jl")
