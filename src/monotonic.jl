@@ -734,11 +734,25 @@ Ytype(::Type{<:Ziggurat{X,Y}}) where {X,Y} = Y
 Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
 
 # The where clause is required to force method specialization
-@noinline function zigsample_unlikely(parent::P, rng, w, k, y, mb, pdf::F, fb::Nothing, LM, l, x) where {P,F}
+@noinline function zigsample_unlikely(
+    parent::P,
+    rng,
+    w,
+    k,
+    y,
+    mb,
+    pdf::F,
+    fb::Nothing,
+    LM,
+    l,
+    x,
+    flip = false
+) where {P,F}
     @inbounds begin
         # check density
         yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
-        if yy < pdf(x)
+        xx = ifelse(flip, 2mb-x, x) # try to evaluate the pdf in its proper half domain
+        if yy < pdf(xx)
             return x
         end
 
@@ -748,16 +762,31 @@ Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
 end
 
 # The where clause is required to force method specialization
-@noinline function zigsample_unlikely(parent::P, rng, w, k, y, mb, pdf::F, fb::FB, LM, l, x) where {P,F,FB}
+@noinline function zigsample_unlikely(
+    parent::P,
+    rng,
+    w,
+    k,
+    y,
+    mb,
+    pdf::F,
+    fb::FB,
+    LM,
+    l,
+    x,
+    flip = false
+) where {P,F,FB}
     @inbounds begin
         if l == 1
             # unbounded tail fallback
             x2 = w[2] * significand_bitmask(eltype(w)) + mb
-            return fb(rng, x2)
+            result = fb(rng, x2)
+            return ifelse(flip, 2mb-result, result)
         end
         # check density
         yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
-        if yy < pdf(x)
+        xx = ifelse(flip, 2mb-x, x) # try to evaluate the pdf in its proper half domain
+        if yy < pdf(xx)
             return x
         end
 

@@ -14,7 +14,7 @@ using Logging
 using Compat
 
 export Ziggurat, MonotonicZiggurat
-export BoundedZiggurat, UnboundedZiggurat, CompositeZiggurat
+export BoundedZiggurat, UnboundedZiggurat, UnimodalZiggurat, CompositeZiggurat
 export ziggurat, monotonic_ziggurat
 export inversepdf
 
@@ -25,6 +25,7 @@ abstract type Ziggurat{X,Y} end
 include("utilities.jl")
 include("inverse_pdf.jl")
 include("monotonic.jl")
+include("symmetric.jl")
 include("composite.jl")
 
 """
