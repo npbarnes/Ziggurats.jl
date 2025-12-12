@@ -24,7 +24,7 @@ passing the returned ziggurat object to Julia's `rand` or `rand!` functions.
 leftmost and rightmost ziggurats may be unbounded. Internal subdomains are necessarily bounded.
 The [`monotonic_ziggurat`](@ref) function is used internally. The `ipdf` argument is used to
 pass a list of inverse pdfs; one for each subdomain. Use the `cdf` and `ccdf` arguments to
-override the left and right tail areas respectively. Similarly, use `left_fallback` a and
+override the left and right tail areas respectively. Similarly, use `left_fallback` and
 `right_fallback` if necessary.
 
 # Arguments
