@@ -14,7 +14,7 @@ using Logging
 using Compat
 
 export Ziggurat, MonotonicZiggurat
-export BoundedZiggurat, UnboundedZiggurat, UnimodalZiggurat, CompositeZiggurat
+export BoundedZiggurat, UnboundedZiggurat, BellZiggurat, CompositeZiggurat
 export ziggurat, monotonic_ziggurat
 export inversepdf
 
