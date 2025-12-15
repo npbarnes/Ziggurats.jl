@@ -727,11 +727,6 @@ end
 # refactors can affect performance. For example, unpacking the Ziggurat and passing it's
 # components into another function is faster than passing the Ziggurat object directly. I have
 # no idea why.
-Base.eltype(::Ziggurat{X}) where {X} = X
-Base.eltype(::Type{<:Ziggurat{X}}) where {X} = X
-
-Ytype(::Type{<:Ziggurat{X,Y}}) where {X,Y} = Y
-Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
 
 # The where clause is required to force method specialization
 @noinline function zigsample_unlikely(

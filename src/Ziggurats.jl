@@ -22,6 +22,12 @@ export inversepdf
 
 abstract type Ziggurat{X,Y} end
 
+Base.eltype(::Ziggurat{X}) where {X} = X
+Base.eltype(::Type{<:Ziggurat{X}}) where {X} = X
+
+Ytype(::Type{<:Ziggurat{X,Y}}) where {X,Y} = Y
+Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
+
 include("utilities.jl")
 include("inverse_pdf.jl")
 include("monotonic.jl")

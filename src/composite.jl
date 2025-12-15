@@ -233,7 +233,6 @@ function zigprobs(cdf, subdomains, p::AbstractArray)
     _p
 end
 
-Random.eltype(::Type{<:CompositeZiggurat{X}}) where {X} = X
 @generated function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,N}}) where {X,Y,N}
     # The code generated here is basically manual union splitting. Except instead of splitting
     # on the returned type of zigs[i] (which is type unstable) it's splitting on the value of i.
