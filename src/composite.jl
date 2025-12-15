@@ -1,6 +1,9 @@
-struct CompositeZiggurat{X,Y,Z<:Ziggurat{X,Y},AT} <: Ziggurat{X,Y}
-    zigs::Vector{Z}
+struct CompositeZiggurat{X,Y,N,Z<:NTuple{N,Ziggurat{X,Y}},AT} <: Ziggurat{X,Y}
+    zigs::Z
     at::AT
+    function CompositeZiggurat(zigs::NTuple{N,Ziggurat{X,Y}}, at::AliasTable) where {N,X,Y}
+        new{X,Y,N,typeof(zigs),typeof(at)}(zigs, at)
+    end
 end
 
 # TODO: add option to autodetect monotonic subdomains.
@@ -138,7 +141,7 @@ function CompositeZiggurat(
         monotonic_ziggurat(pdf, @view(subdomains[i, :]), Ns[i]; ipdf = ipdfs[i], cdf, ccdf, fallback)
     end
 
-    zigs = [zig_gen(i) for i in 1:size(subdomains, 1)]
+    zigs = ntuple(zig_gen, size(subdomains, 1))
     at = AliasTable(_p)
 
     CompositeZiggurat(zigs, at)
@@ -231,10 +234,23 @@ function zigprobs(cdf, subdomains, p::AbstractArray)
 end
 
 Random.eltype(::Type{<:CompositeZiggurat{X}}) where {X} = X
+@generated function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,N}}) where {X,Y,N}
+    # The code generated here is basically manual union splitting. Except instead of splitting
+    # on the returned type of zigs[i] (which is type unstable) it's splitting on the value of i.
+    # Since zigs is a tuple, the types of zigs[1], zigs[2], etc are inferable.
+    ifchain = Expr(:elseif, :(i==$(N-1)), :(return rand(rng, zigs[$(N - 1)])), :(return rand(rng, zigs[$N])))
+    for n in (N - 2):-1:2
+        ifchain = Expr(:elseif, :(i==$n), :(return rand(rng, zigs[$n])), ifchain)
+    end
+    ifchain = Expr(:if, :(i==1), :(return rand(rng, zigs[1])), ifchain)
 
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:CompositeZiggurat})
-    cz = zig_sampler[]
-
-    i = rand(rng, cz.at)
-    @inbounds rand(rng, cz.zigs[i])
+    quote
+        @inline
+        @inbounds begin
+            cz = s[]
+            zigs = cz.zigs
+            i = rand(rng, cz.at)
+            $ifchain
+        end
+    end
 end
