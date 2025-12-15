@@ -5,13 +5,8 @@ struct BellZiggurat{X,Y,LM,Z<:MonotonicZiggurat{X,Y}} <: SymmetricZiggurat{X,Y,L
 
     BellZiggurat(z::MonotonicZiggurat{X,Y}, LM) where {X,Y} = new{X,Y,LM,typeof(z)}(z)
 
-    function BellZiggurat(z::MonotonicZiggurat{X,Y,LM_unsigned}) where {X,Y,LM_unsigned}
-        first_bit = typemin(signed(corresponding_uint(X)))
-        if LM_unsigned & first_bit == 0
-            LM = LM_unsigned << 1
-        else
-            LM = nothing
-        end
+    function BellZiggurat(z::MonotonicZiggurat{X,Y}) where {X,Y}
+        LM = layermask_signed(eltype(z), numlayers(z))
         BellZiggurat(z, LM)
     end
 end
