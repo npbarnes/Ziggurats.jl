@@ -28,6 +28,9 @@ Base.eltype(::Type{<:Ziggurat{X}}) where {X} = X
 Ytype(::Type{<:Ziggurat{X,Y}}) where {X,Y} = Y
 Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
 
+default_numlayers(N::Number, T) = N
+default_numlayers(N::Nothing, T) = T == Float16 ? 64 : 256
+
 include("utilities.jl")
 include("inverse_pdf.jl")
 include("monotonic.jl")
@@ -94,9 +97,7 @@ function ziggurat(
 )
     domain = regularize(domain)
 
-    if N === nothing
-        N = eltype(domain) == Float16 ? 64 : 256
-    end
+    N = default_numlayers(N, eltype(domain))
 
     # regularize guarentees that length(domain) >= 2
     if length(domain) == 2

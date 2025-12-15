@@ -336,9 +336,7 @@ function monotonic_ziggurat(
 )
     domain = regularize(domain)
 
-    if N === nothing
-        N = eltype(domain) == Float16 ? 64 : 256
-    end
+    N = default_numlayers(N, eltype(domain))
 
     a, b = extrema(domain)
     if isinf(a) || isinf(b)
