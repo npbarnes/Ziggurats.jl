@@ -84,15 +84,13 @@ const UnboundedTestCases = reduce(
                 )
             end,
             MonotonicTestData(;
-                name = "TDist (x>0) $T",
-                dist = truncated(TDist(1); lower = 0),
-                f = x -> (1 + x^2)^-1,
-                ipdf = y -> √(y^-1 - 1),
-                # tailarea and fallback are computed in Float64 and converted for more accuracy.
-                # Otherwise sampling tests fail in Float16.
-                tailarea = x -> T((π - 2atan(x))/2),
-                fallback = (rng, x) -> T(tan(-((π-2atan(x))*rand(rng) - π)/2)),
-                domain = (T(0), T(Inf)),
+                name = "Cauchy (x>0) $T",
+                dist = truncated(Cauchy(); lower = 0),
+                f = x -> 2 / (π * (1 + x^2)),
+                ipdf = y -> √(1/(π * y/2) - 1),
+                tailarea = x -> 1 - 2atan(x)/π,
+                fallback = (rng, x) -> tan(atan(x) + rand(rng, T)*(T(π)/2 - atan(x))),
+                domain = (T(0.0), T(Inf)),
                 constructor = UnboundedZiggurat,
                 T = T
             )
