@@ -229,7 +229,45 @@ const SymmetricTestCases = reduce(
     ]
 )
 
+const AsymmetricTestCases = reduce(
+    vcat,
+    [
+        [let k = 3, A = 1/(2^(T(k)/2) * gamma(T(k)/2))
+            CompositeTestData(;
+                name = "Chisq($k) $T",
+                dist = Chisq(k),
+                f = x -> isinf(x) ? zero(x) : A * √x * exp(-x/2),
+                ipdfs = [y -> -lambertw(-(y/A)^2, 0), y -> -lambertw(-(y/A)^2, -1)],
+                cdf = x -> gamma_inc(1.5, x/2)[1],
+                ccdf = x -> gamma_inc(1.5, x/2)[2],
+                left_fallback = nothing,
+                right_fallback = (rng, x0) -> begin
+                    if x0 < 2
+                        while true
+                            x = randn(rng, T)^2 + randn(rng, T)^2 + randn(rng, T)^2
+                            if x > x0
+                                return x
+                            end
+                        end
+                    end
+                    β = 2/(x0 - 1)
+                    while true
+                        z = β * randexp(rng, T)
+                        u = rand(rng, T)
+                        if u^2 <= (1 + z) * exp(-z)
+                            return x0 * (1 + z)
+                        end
+                    end
+                end,
+                domain = (T(0), T(1), T(Inf)),
+                T = T
+            )
+        end] for T in TestTypes
+    ]
+)
+
 const CompositeTestCases = [
     BellTestCases;
-    SymmetricTestCases
+    SymmetricTestCases;
+    AsymmetricTestCases
 ]
