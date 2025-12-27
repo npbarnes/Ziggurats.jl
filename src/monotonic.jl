@@ -201,10 +201,10 @@ function (ipdf::IPDFWrap)(y)
     elseif y <= ipdf.fam
         # handle the discontinuity at the boundary
         return ipdf.am
-    elseif y == ipdf.fmb
-        # Ideally, ipdf(f(mb)) = mb would be true by definition, but floating point
-        # inaccuracies can cause problems. Making this evaluation exact may help avoid
-        # domain errors.
+    elseif ipdf.fmb - 3eps(ipdf.fmb) <= y <= ipdf.fmb + 3eps(ipdf.fmb)
+        # floating point round off may cause values near the peak to actually go over.
+        # by sending values near the peak to the mb, we can avoid domain errors.
+        # TODO: make the threshold configurable.
         return ipdf.mb
     elseif y > ipdf.fmb
         error("ipdf evaluated at y = $y which is greater than the pdf at either boundary. \
