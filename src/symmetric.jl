@@ -20,6 +20,37 @@ density(z::SymmetricZiggurat) = density(z.mzig)
 fallback(z::SymmetricZiggurat) = fallback(z.mzig)
 xarray(z::SymmetricZiggurat) = xarray(z.mzig)
 
+"""
+    BellZiggurat(pdf, half_domain, [N]; [ipdf, tailarea, fallback, ...])
+
+Constructs a high performance sampler for a univariate, unimodal, symmetric probability
+distributions (a.k.a. bell-shaped distributions) defined by a probability density function,
+`pdf`. The pdf must be bell shaped, and must not diverge to inifinity, but may otherwise be
+arbitrary - including discontinuous functions. Generate random numbers by passing the
+returned ziggurat object to Julia's `rand` or `rand!` functions.
+
+The domain is given as a half-domain, where one endpoint is the mode. Note that the `pdf`
+function must be monotonic on the half-domain (a consequence of being unimodal). The `pdf`
+function will not be evaluated outside the given half-domain.
+
+The arguments are the same as `monotonic_ziggurat()`. Keep in mind that the
+`ipdf`, `tailarea`, and `fallback` arguments are one sided and all must agree on which side
+with each other and with the half-domain.
+"""
+function BellZiggurat(
+    pdf,
+    half_domain,
+    N = nothing;
+    ipdf = nothing,
+    tailarea = nothing,
+    cdf = nothing,
+    ccdf = nothing,
+    fallback = nothing
+)
+    z = monotonic_ziggurat(pdf, half_domain, N; ipdf, tailarea, fallback, cdf, ccdf)
+    BellZiggurat(z)
+end
+
 @inline function _bellzigsample_floats_masked(rng, w, k, y, mb, pdf::F, fb::FB, LM, r) where {F,FB}
     @inbounds begin
         l = layer_bits_signed(eltype(w), LM, r) + 1
