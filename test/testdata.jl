@@ -155,7 +155,7 @@ const MonotonicTestCases = [
     BoundedTestCases
 ]
 
-const SymmetricTestCases = reduce(
+const BellTestCases = reduce(
     vcat,
     [
         [
@@ -173,42 +173,63 @@ const SymmetricTestCases = reduce(
                     T = T
                 )
             end,
-            let cdf = x -> (1 + erf(x/T(√2)))/2, ccdf = x -> erfc(x/T(√2))/2
-                CompositeTestData(;
-                    name = "Binormal $T",
-                    dist = MixtureModel(Normal, [(-2, 1), (2, 1)]),
-                    f = x -> 1/√T(2π) * (exp(-(x-2)^2/2) + exp(-(x+2)^2/2)),
-                    ipdfs = nothing,
-                    cdf = x -> cdf(x-2) + cdf(x+2),
-                    ccdf = x -> ccdf(x-2) + ccdf(x+2),
-                    left_fallback = (rng, x) -> begin
-                        lprob = cdf(x + 2)
-                        rprob = cdf(x - 2)
-                        p = lprob / (lprob + rprob)
-                        if rand(rng, Bernoulli(p))
-                            μ = -2
-                        else
-                            μ = 2
-                        end
-                        T(√2 * erfinv(2cdf(x - μ)*(1-rand(rng)) - 1)) + μ
-                    end,
-                    right_fallback = (rng, x) -> begin
-                        lprob = ccdf(x + 2)
-                        rprob = ccdf(x - 2)
-                        p = rprob / (lprob + rprob)
-                        if rand(rng, Bernoulli(p))
-                            μ = 2
-                        else
-                            μ = -2
-                        end
-                        T(√2 * erfcinv(2ccdf(x - μ)*(1-rand(rng)))) + μ
-                    end,
-                    domain = (T(-Inf), T(-1.9986513460302164), T(0.0), T(1.9986513460302164), T(Inf)),
-                    T = T
-                )
-            end
+            CompositeTestData(;
+                name = "Cauchy $T",
+                dist = Cauchy(),
+                f = x -> 1 / (π * (1 + x^2)),
+                ipdfs = [y -> -√(1/(π * y) - 1), y -> √(1/(π * y) - 1)],
+                cdf = x -> atan(x)/π + 1/2,
+                ccdf = x -> 1/2 - atan(x)/π,
+                left_fallback = (rng, x) -> -tan(atan(-x) + rand(rng, T)*(T(π)/2 - atan(-x))),
+                right_fallback = (rng, x) -> tan(atan(x) + rand(rng, T)*(T(π)/2 - atan(x))),
+                domain = (T(-Inf), T(0.0), T(Inf)),
+                T = T
+            )
         ] for T in TestTypes
     ]
 )
 
-const CompositeTestCases = [SymmetricTestCases;]
+const SymmetricTestCases = reduce(
+    vcat,
+    [
+        [let cdf = x -> (1 + erf(x/T(√2)))/2, ccdf = x -> erfc(x/T(√2))/2
+            CompositeTestData(;
+                name = "Binormal $T",
+                dist = MixtureModel(Normal, [(-2, 1), (2, 1)]),
+                f = x -> 1/√T(2π) * (exp(-(x-2)^2/2) + exp(-(x+2)^2/2)),
+                ipdfs = nothing,
+                cdf = x -> cdf(x-2) + cdf(x+2),
+                ccdf = x -> ccdf(x-2) + ccdf(x+2),
+                left_fallback = (rng, x) -> begin
+                    lprob = cdf(x + 2)
+                    rprob = cdf(x - 2)
+                    p = lprob / (lprob + rprob)
+                    if rand(rng, Bernoulli(p))
+                        μ = -2
+                    else
+                        μ = 2
+                    end
+                    T(√2 * erfinv(2cdf(x - μ)*(1-rand(rng)) - 1)) + μ
+                end,
+                right_fallback = (rng, x) -> begin
+                    lprob = ccdf(x + 2)
+                    rprob = ccdf(x - 2)
+                    p = rprob / (lprob + rprob)
+                    if rand(rng, Bernoulli(p))
+                        μ = 2
+                    else
+                        μ = -2
+                    end
+                    T(√2 * erfcinv(2ccdf(x - μ)*(1-rand(rng)))) + μ
+                end,
+                domain = (T(-Inf), T(-1.9986513460302164), T(0.0), T(1.9986513460302164), T(Inf)),
+                T = T
+            )
+        end] for T in TestTypes
+    ]
+)
+
+const CompositeTestCases = [
+    BellTestCases;
+    SymmetricTestCases
+]
