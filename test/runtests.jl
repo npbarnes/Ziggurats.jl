@@ -1,12 +1,3 @@
-using Test, Ziggurats
-using Random
-using StatsBase
-using Distributions
-using SpecialFunctions
-using AliasTables
-using Aqua
-using JET
-
 include("init_tests.jl")
 
 include("test_testdistributions.jl")
