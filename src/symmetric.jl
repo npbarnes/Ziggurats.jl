@@ -167,3 +167,32 @@ function Random.rand!(
     end
     A
 end
+
+function Random.rand!(
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
+    A::Array{X},
+    s::Random.SamplerTrivial{<:BellZiggurat{X,Y,nothing}}
+) where {X<:FloatXX,Y}
+    z = s[]
+    w = widths(z)
+    k = layerratios(z)
+    y = heights(z)
+    mb = highside(z)
+    pdf = density(z)
+    fb = fallback(z)
+    if length(A) < 7 # TODO: Tune this number
+        for i in eachindex(A)
+            @inbounds A[i] = rand(rng, s)
+        end
+    else
+        T = corresponding_uint(X)
+        # UnsafeView is an internal implementation detail of Random.jl
+        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
+        for i in eachindex(A)
+            @inbounds r = reinterpret(T, A[i])
+            @inbounds A[i] = _bellzigsample_floats(rng, w, k, y, mb, pdf, fb, nothing, r)
+        end
+    end
+    A
+end
