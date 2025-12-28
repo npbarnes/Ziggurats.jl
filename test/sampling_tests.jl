@@ -81,14 +81,22 @@ function composite_sampling_tests(td::CompositeTestData)
 end
 
 @testset "Sampling Tests" begin
-    @testset "$(td.name)" for td in MonotonicTestCases
-        monotonic_sampling_tests(td)
+    @testset "Monotonic" begin
+        @testset "$(td.name)" for td in MonotonicTestCases
+            monotonic_sampling_tests(td)
+        end
     end
-    @testset "$(td.name)" for td in BellTestCases
-        bell_sampling_tests(td)
+
+    @testset "Bell" begin
+        @testset "$(td.name)" for td in BellTestCases
+            bell_sampling_tests(td)
+        end
     end
-    @testset "$(td.name)" for td in CompositeTestCases
-        composite_sampling_tests(td)
+
+    @testset "Composite" begin
+        @testset "$(td.name)" for td in CompositeTestCases
+            composite_sampling_tests(td)
+        end
     end
 end
 
