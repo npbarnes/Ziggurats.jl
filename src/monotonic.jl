@@ -358,53 +358,6 @@ pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is comp
 numerically, but it can also be provided explicity if necessary. 
 """
 function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
-    (; x, y, modalboundary) = _bounded_zig_data(pdf, domain, N, ipdf)
-
-    w, k = _optimized_tables(x, modalboundary)
-
-    # final ziggurat uses the unwrapped function so that there is no effect on
-    # sampling performance
-    BoundedZiggurat(w, k, y, modalboundary, pdf)
-end
-
-"""
-    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback])
-
-Constructs a high-performance sampler for a univariate probability distribution defined by a
-probability density function (`pdf`) with unbounded support. The pdf must be monotonic on the
-domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
-but may otherwise be arbitrary - including discontinuous functions. An inverse pdf and a
-tailarea function are used in the construction of the ziggurat, and a `fallback` is used
-during sampling. Normally these additional functions are computed numerically, but they can
-be provided explicity as keyword arguments if necessary.
-"""
-function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, fallback = nothing)
-    domain = extrema(regularize(domain))
-    _check_arguments(N, domain)
-    modalboundary, argminboundary = _identify_mode(pdf, domain)
-
-    (; x, y, tailarea) = _unbounded_zig_data(pdf, domain, N, ipdf, tailarea, modalboundary, argminboundary)
-
-    w, k = _optimized_tables(x, modalboundary)
-
-    if fallback === nothing
-        # TODO: fallback should come from a 'tool' with this as default but also allows customization.
-        # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
-        ta = tailarea(x[2])
-        td = minmax(argminboundary, x[2])
-        inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
-            inversepdf(xx -> tailarea(xx) / ta, td)
-        end
-
-        fallback = (rng, _) -> inverse_tailprob(rand(rng, typeof(modalboundary)))
-    end
-
-    # final ziggurat uses the unwrapped function so that there is no effect on
-    # sampling performance
-    UnboundedZiggurat(w, k, y, modalboundary, pdf, fallback)
-end
-
-function _bounded_zig_data(pdf, domain, N, ipdf)
     domain = extrema(regularize(domain))
 
     _check_arguments(N, domain)
@@ -429,10 +382,27 @@ function _bounded_zig_data(pdf, domain, N, ipdf)
     # Build ziggurats using wrapped functions
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf)
 
-    (; x, y, modalboundary)
+    w, k = _optimized_tables(x, modalboundary)
+
+    BoundedZiggurat(w, k, y, modalboundary, pdf)
 end
 
-function _unbounded_zig_data(pdf, domain, N, ipdf, tailarea, modalboundary, argminboundary)
+"""
+    UnboundedZiggurat(pdf, domain, N; [ipdf, tailarea, fallback])
+
+Constructs a high-performance sampler for a univariate probability distribution defined by a
+probability density function (`pdf`) with unbounded support. The pdf must be monotonic on the
+domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
+but may otherwise be arbitrary - including discontinuous functions. An inverse pdf and a
+tailarea function are used in the construction of the ziggurat, and a `fallback` is used
+during sampling. Normally these additional functions are computed numerically, but they can
+be provided explicity as keyword arguments if necessary.
+"""
+function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, fallback = nothing)
+    domain = extrema(regularize(domain))
+    _check_arguments(N, domain)
+    modalboundary, argminboundary = _identify_mode(pdf, domain)
+
     wpdf = PDFWrap(pdf, modalboundary, argminboundary)
 
     if ipdf === nothing
@@ -462,7 +432,21 @@ function _unbounded_zig_data(pdf, domain, N, ipdf, tailarea, modalboundary, argm
     # Build ziggurats using wrapped functions
     x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
 
-    (; x, y, tailarea)
+    w, k = _optimized_tables(x, modalboundary)
+
+    if fallback === nothing
+        # TODO: fallback should come from a 'tool' with this as default but also allows customization.
+        # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
+        ta = tailarea(x[2])
+        td = minmax(argminboundary, x[2])
+        inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
+            inversepdf(xx -> tailarea(xx) / ta, td)
+        end
+
+        fallback = (rng, _) -> inverse_tailprob(rand(rng, typeof(modalboundary)))
+    end
+
+    UnboundedZiggurat(w, k, y, modalboundary, pdf, fallback)
 end
 
 function _optimized_tables(x, modalboundary)
