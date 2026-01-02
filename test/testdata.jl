@@ -155,7 +155,23 @@ const MonotonicTestCases = [
     BoundedTestCases
 ]
 
-const BellTestCases = reduce(
+# Laplace is a bell distribution, but It's separated out for extra tests
+const LaplaceTestCases = [
+    CompositeTestData(;
+        name = "Laplace $T",
+        dist = Laplace(),
+        f = x -> exp(-abs(x))/2,
+        ipdfs = [y -> log(2y), y -> -log(2y)],
+        cdf = x -> x < 0 ? exp(x)/2 : 1 - exp(-x)/2,
+        ccdf = x -> x < 0 ? 1 - exp(x)/2 : exp(-x)/2,
+        left_fallback = (rng, x) -> x + log1p(-rand(rng, T)),
+        right_fallback = (rng, x) -> x - log1p(-rand(rng, T)),
+        domain = (T(-Inf), T(0.0), T(Inf)),
+        T = T
+    ) for T in TestTypes
+]
+
+const OtherBellTestCases = reduce(
     vcat,
     [
         [
@@ -188,6 +204,11 @@ const BellTestCases = reduce(
         ] for T in TestTypes
     ]
 )
+
+const BellTestCases = [
+    LaplaceTestCases;
+    OtherBellTestCases
+]
 
 const SymmetricTestCases = reduce(
     vcat,
