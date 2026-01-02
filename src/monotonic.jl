@@ -217,28 +217,6 @@ function (ipdf::IPDFWrap)(y)
 end
 
 """
-    NoWrap(pdf)
-    NoWrap(ipdf)
-
-Forces the ziggurat construction to use unwrapped functions internally.
-
-The ziggurat constructors wrap the pdf and ipdf functions to guarentee that they respect
-certain assumptions. E.g., the pdf is non-negative and finite, and the ipdf respects the
-domain given to the constructor. If you pass the functions with NoWrap it forces the ziggurat
-constructor to use the unwrapped function throughout.
-
-While this function is part of the public interface, it does interact with non-public internals.
-It is provided for the unlikely event that the wrapper is making an error.
-"""
-struct NoWrap{F}
-    f::F
-end
-
-PDFWrap(f::NoWrap, mb, am, fmb, fam) = f.f
-IPDFWrap(f::NoWrap, mb, am, fmb, fam) = f.f
-
-# TODO: Need tests for unwrapped functions.
-"""
     monotonic_ziggurat(pdf, domain, [N]; [ipdf, tailarea, fallback, ...])
 
 Constructs a high-performance sampler for a univariate probability distribution defined by a

@@ -18,7 +18,7 @@ export BoundedZiggurat, UnboundedZiggurat, BellZiggurat, CompositeZiggurat
 export ziggurat, monotonic_ziggurat
 export inversepdf
 
-@compat public monotonic_segments, NoWrap
+@compat public monotonic_segments
 
 abstract type Ziggurat{X,Y} end
 
