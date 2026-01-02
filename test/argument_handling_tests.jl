@@ -24,6 +24,7 @@ issamevector(a::Vector, b::Vector) = false
 
             @test eltype(regularize((0.0f0, 1))) == Float32
             @test eltype(regularize((0.0f0, 1.0f0))) == Float32
+            @test eltype(regularize((0.0f0, Float16(1.0)))) == Float32
         end
 
         @testset "regularize sorts, promotes, and removes duplicates" begin
