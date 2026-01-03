@@ -16,6 +16,7 @@ numlayers(z::SymmetricZiggurat) = numlayers(z.mzig)
 layerratios(z::SymmetricZiggurat) = layerratios(z.mzig)
 heights(z::SymmetricZiggurat) = heights(z.mzig)
 highside(z::SymmetricZiggurat) = highside(z.mzig)
+lowside(z::SymmetricZiggurat) = lowside(z.mzig)
 density(z::SymmetricZiggurat) = density(z.mzig)
 fallback(z::SymmetricZiggurat) = fallback(z.mzig)
 xarray(z::SymmetricZiggurat) = xarray(z.mzig)
@@ -51,7 +52,7 @@ function BellZiggurat(
     BellZiggurat(z)
 end
 
-@inline function _bellzigsample_floats_masked(rng, w, k, y, mb, pdf::F, fb::FB, LM, r) where {F,FB}
+@inline function _bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, r) where {F,FB}
     @inbounds begin
         l = layer_bits_signed(eltype(w), LM, r) + 1
         u = signed(r >>> shiftbits(eltype(w)))
@@ -60,16 +61,16 @@ end
         if u <= k[l]
             return x
         end
-        zigsample_unlikely(bellzigsample_floats_masked, rng, w, k, y, mb, pdf, fb, LM, l, x, flip)
+        zigsample_unlikely(bellzigsample_floats_masked, rng, w, k, y, mb, am, pdf, fb, LM, l, x, flip)
     end
 end
 
-@inline function bellzigsample_floats_masked(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
+@inline function bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _bellzigsample_floats_masked(rng, w, k, y, mb, pdf, fb, LM, r)
+    _bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM, r)
 end
 
-@inline function _bellzigsample_floats(rng, w, k, y, mb, pdf::F, fb::FB, LM, r) where {F,FB}
+@inline function _bellzigsample_floats(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, r) where {F,FB}
     @inbounds begin
         l = rand(rng, 1:(length(w) - 1))
         u = signed(r >>> shiftbits(eltype(w)))
@@ -78,16 +79,16 @@ end
         if u <= k[l]
             return x
         end
-        zigsample_unlikely(bellzigsample_floats, rng, w, k, y, mb, pdf, fb, LM, l, x, flip)
+        zigsample_unlikely(bellzigsample_floats, rng, w, k, y, mb, am, pdf, fb, LM, l, x, flip)
     end
 end
 
-@inline function bellzigsample_floats(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
+@inline function bellzigsample_floats(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _bellzigsample_floats(rng, w, k, y, mb, pdf, fb, LM, r)
+    _bellzigsample_floats(rng, w, k, y, mb, am, pdf, fb, LM, r)
 end
 
-@inline function bellzigsample_general(rng, w, k, y, mb, pdf::F, fb::FB, LM) where {F,FB}
+@inline function bellzigsample_general(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
     @inbounds begin
         l = rand(rng, 1:(length(w) - 1))
         u = rand(rng, eltype(w))
@@ -96,7 +97,7 @@ end
         if u <= k[l]
             return x
         end
-        zigsample_unlikely(bellzigsample_general, rng, w, k, y, mb, pdf, fb, LM, l, x, flip)
+        zigsample_unlikely(bellzigsample_general, rng, w, k, y, mb, am, pdf, fb, LM, l, x, flip)
     end
 end
 
@@ -109,9 +110,10 @@ end
     k = layerratios(z)
     y = heights(z)
     mb = highside(z)
+    am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
-    bellzigsample_floats_masked(rng, w, k, y, mb, pdf, fb, LM)
+    bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM)
 end
 
 @inline function Base.rand(
@@ -123,9 +125,10 @@ end
     k = layerratios(z)
     y = heights(z)
     mb = highside(z)
+    am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
-    bellzigsample_floats(rng, w, k, y, mb, pdf, fb, nothing)
+    bellzigsample_floats(rng, w, k, y, mb, am, pdf, fb, nothing)
 end
 
 @inline function Base.rand(rng::AbstractRNG, sampler::Random.SamplerTrivial{<:BellZiggurat{X,Y}}) where {X,Y}
@@ -134,9 +137,10 @@ end
     k = layerratios(z)
     y = heights(z)
     mb = highside(z)
+    am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
-    bellzigsample_general(rng, w, k, y, mb, pdf, fb, nothing)
+    bellzigsample_general(rng, w, k, y, mb, am, pdf, fb, nothing)
 end
 
 function Random.rand!(
@@ -149,6 +153,7 @@ function Random.rand!(
     k = layerratios(z)
     y = heights(z)
     mb = highside(z)
+    am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
     if length(A) < 7 # TODO: Tune this number
@@ -161,7 +166,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _bellzigsample_floats_masked(rng, w, k, y, mb, pdf, fb, LM, r)
+            @inbounds A[i] = _bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM, r)
         end
     end
     A
@@ -177,6 +182,7 @@ function Random.rand!(
     k = layerratios(z)
     y = heights(z)
     mb = highside(z)
+    am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
     if length(A) < 7 # TODO: Tune this number
@@ -189,7 +195,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _bellzigsample_floats(rng, w, k, y, mb, pdf, fb, nothing, r)
+            @inbounds A[i] = _bellzigsample_floats(rng, w, k, y, mb, am, pdf, fb, nothing, r)
         end
     end
     A
