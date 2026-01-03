@@ -858,8 +858,7 @@ function Random.rand!(
         end
     else
         T = corresponding_uint(X)
-        # UnsafeView is an internal implementation detail of Random.jl
-        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+        GC.@preserve A rand!(rng, UnsafeView{T}(pointer(A), length(A)))
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
@@ -887,8 +886,7 @@ function Random.rand!(
         end
     else
         T = corresponding_uint(X)
-        # UnsafeView is an internal implementation detail of Random.jl
-        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+        GC.@preserve A rand!(rng, UnsafeView{T}(pointer(A), length(A)))
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
