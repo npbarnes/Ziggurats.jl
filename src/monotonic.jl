@@ -121,7 +121,7 @@ end
 """
 Provide error messages for unexpected or invalid results including non-montonicity.
 """
-struct PDFWrap{F,X,Y}
+struct PDFWrap{X,Y,F}
     f::F
     mb::X
     am::X
@@ -130,7 +130,7 @@ struct PDFWrap{F,X,Y}
     function PDFWrap(f, mb, am)
         mb, am = promote(mb, am)
         fmb = f(mb)
-        fam = f(am)
+        fam = isinf(am) ? zero(mb) : f(am)
         fmb, fam = promote(fmb, fam)
         if isnan(fmb) || isnan(fam)
             error("pdf is NaN on the boundary. Check the definition of your pdf. It must \
@@ -149,17 +149,17 @@ struct PDFWrap{F,X,Y}
             error("pdf is zero on both endpoints of the domain, $(minmax(am,mb)). Ensure \
             that the pdf is monotonic.")
         end
-        new{typeof(f),typeof(mb),typeof(fmb)}(f, mb, am, fmb, fam)
+        new{typeof(mb),typeof(fmb),typeof(f)}(f, mb, am, fmb, fam)
     end
 end
 
-function (pdf::PDFWrap)(x)
+function (pdf::PDFWrap{X,Y})(x) where {X,Y}
     if !between(pdf.mb, pdf.am, x)
         error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain.
         Please report this error.")
     end
 
-    result = pdf.f(x)
+    result = isinf(x) ? zero(Y) : pdf.f(x)
 
     if isnan(result)
         error("pdf($x) is NaN. Check the definition of your pdf. It must \
