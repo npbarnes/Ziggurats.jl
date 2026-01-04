@@ -391,7 +391,7 @@ function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, f
         ipdf = inversepdf(wpdf, domain)
     end
 
-    wipdf = IPDFWrap(ipdf, modalboundary, argminboundary, pdf(modalboundary), pdf(argminboundary))
+    wipdf = IPDFWrap(ipdf, modalboundary, argminboundary, wpdf(modalboundary), wpdf(argminboundary))
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
