@@ -510,7 +510,7 @@ function _identify_mode(pdf, domain)
     # Return the modalboundary (mb) and argminboundary (am).
     # Assume that the domain is well formed and appropriate for a monotonic
     # distribution. A constant function is treated as decreasing.
-    a, b = extrema(domain)
+    a, b = extrema(regularize(domain))
     if isinf(a)
         mb = b
         am = a
