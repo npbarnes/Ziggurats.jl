@@ -128,10 +128,32 @@ struct PDFWrap{X,Y,F}
     fmb::Y
     fam::Y
     function PDFWrap(f, mb, am)
-        mb, am = promote(mb, am)
-        fmb = f(mb)
-        fam = isinf(am) ? zero(mb) : f(am)
-        fmb, fam = promote(fmb, fam)
+        mb, am = float.(promote(mb, am))
+        _fmb = f(mb)
+        _fam = isinf(am) ? zero(_fmb) : f(am)
+
+        # Evaluate f at several points to determine the correct output type. This will probably
+        # catch common cases of type unstable f. The `float` function is called at the end.
+        # So in the worst case, when e.g. `f::Union{Int, Float32}` we could end up widening to
+        # Float64 instead of Float32, but that's not serious.
+        if isinf(am)
+            if mb < am
+                # TODO: 10 is arbitrary, the 90th percentile would be better and is computable
+                # recall that the quantile function is the inverse cdf which is used in the fallback.
+                rh = mb + 10
+            else
+                rh = mb - 10
+            end
+        else
+            rh = am
+        end
+
+        points = range(mb, rh; length = 12)
+        vals = f.(points)
+
+        _fmb, _fam, _... = promote(_fmb, _fam, vals...)
+        fmb, fam = float(_fmb), float(_fam)
+
         if isnan(fmb) || isnan(fam)
             error("pdf is NaN on the boundary. Check the definition of your pdf. It must \
             return non-negative numbers everywhere on its domain, including the end points \
@@ -149,6 +171,7 @@ struct PDFWrap{X,Y,F}
             error("pdf is zero on both endpoints of the domain, $(minmax(am,mb)). Ensure \
             that the pdf is monotonic.")
         end
+
         new{typeof(mb),typeof(fmb),typeof(f)}(f, mb, am, fmb, fam)
     end
 end
@@ -159,7 +182,7 @@ function (pdf::PDFWrap{X,Y})(x) where {X,Y}
         Please report this error.")
     end
 
-    result = isinf(x) ? zero(Y) : pdf.f(x)
+    result = isinf(x) ? zero(Y) : convert(Y, pdf.f(x))
 
     if isnan(result)
         error("pdf($x) is NaN. Check the definition of your pdf. It must \
@@ -178,7 +201,7 @@ function (pdf::PDFWrap{X,Y})(x) where {X,Y}
         error("pdf is not monotonic on the domain = ($(d[1]), $(d[2])), pdf($x) = $result.")
     end
 
-    return float(result)
+    return result
 end
 
 """
