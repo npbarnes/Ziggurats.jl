@@ -761,7 +761,7 @@ end
         if l == 1
             # unbounded tail fallback
             x2 = w[2] * significand_bitmask(eltype(w)) + mb
-            result = fb(rng, x2)
+            result = convert(eltype(w), fb(rng, x2))
             return ifelse(flip, 2mb-result, result)
         end
 
