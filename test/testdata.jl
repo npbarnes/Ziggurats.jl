@@ -103,6 +103,17 @@ const BoundedTestCases = reduce(
     [
         [
             MonotonicTestData(;
+                name = "Uniform $T",
+                dist = Uniform(),
+                f = x -> T(1),
+                ipdf = y -> T(1), # Uniform is decreasing
+                tailarea = nothing,
+                fallback = nothing,
+                domain = (T(0), T(1)),
+                constructor = BoundedZiggurat,
+                T = T
+            ),
+            MonotonicTestData(;
                 name = "Truncated Normal (0.5 <= x <= 1) $T",
                 dist = truncated(Normal(); lower = 0.5, upper = 1),
                 f = x -> 1/√T(2π) * exp(-x^2/2),
