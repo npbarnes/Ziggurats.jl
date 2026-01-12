@@ -7,11 +7,7 @@ using LambertW
 using AliasTables
 using Aqua
 using JET
-
-# Future versions of Supposition may support x86. See Supposition.jl's issue #76 on GitHub
-@static if Sys.ARCH !== :x86
-    using Supposition
-end
+using Supposition
 
 include("stat_testutils.jl")
 
