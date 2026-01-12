@@ -11,6 +11,8 @@ struct BellZiggurat{X,Y,LM,Z<:MonotonicZiggurat{X,Y}} <: SymmetricZiggurat{X,Y,L
     end
 end
 
+mask(::SymmetricZiggurat{X,Y,LM}) where {X,Y,LM} = LM
+
 widths(z::SymmetricZiggurat) = widths(z.mzig)
 numlayers(z::SymmetricZiggurat) = numlayers(z.mzig)
 layerratios(z::SymmetricZiggurat) = layerratios(z.mzig)
@@ -52,60 +54,126 @@ function BellZiggurat(
     BellZiggurat(z)
 end
 
-@inline function _bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, r) where {F,FB}
+# The where clause is required to force method specialization
+@noinline function bellzigsample_unlikely(rng, w, k, y, mb, am, pdf::F, fb::Nothing, LM, l, x, flip) where {F}
     @inbounds begin
-        l = layer_bits_signed(eltype(w), LM, r) + 1
-        u = signed(r >>> shiftbits(eltype(w)))
-        flip = r % Bool
-        x = ifelse(flip, -u, u)*w[l] + mb
-        if u <= k[l]
+        # Check density, by evaluating the pdf in its proper half-domain
+        xx = x_in_domain(x, mb, am, flip)
+        yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
+
+        if yy < pdf(xx)
             return x
         end
-        zigsample_unlikely(bellzigsample_floats_masked, rng, w, k, y, mb, am, pdf, fb, LM, l, x, flip)
+
+        # reject sample and retry
+        bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM)
     end
 end
 
-@inline function bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
+# The where clause is required to force method specialization
+@noinline function bellzigsample_unlikely(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, l, x, flip) where {F,FB}
+    @inbounds begin
+        if l == 1
+            # unbounded tail fallback
+            x2 = w[2] * significand_bitmask(eltype(w)) + mb
+            result = convert(eltype(w), fb(rng, x2))
+            return ifelse(flip, 2mb-result, result)
+        end
+
+        # Check density, by evaluating the pdf in its proper half-domain
+        xx = x_in_domain(x, mb, am, flip)
+        yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
+
+        if yy < pdf(xx)
+            return x
+        end
+
+        # reject sample and retry
+        bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM)
+    end
+end
+
+# The where clause is required to force method specialization
+@inline function bellzigsample(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, l, u, s) where {F,FB}
+    @inbounds begin
+        x = ifelse(s, -u, u) * w[l] + mb
+        if u <= k[l]
+            return x
+        end
+        bellzigsample_unlikely(rng, w, k, y, mb, am, pdf, fb, LM, l, x, s)
+    end
+end
+
+# The where clause is required to force method specialization
+@inline function bellzigsample(
+    rng,
+    w::AbstractArray{<:FloatXX},
+    k,
+    y,
+    mb,
+    am,
+    pdf::F,
+    fb::FB,
+    LM::Unsigned
+) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM, r)
+    bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
 end
 
-@inline function _bellzigsample_floats(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, r) where {F,FB}
-    @inbounds begin
-        l = rand(rng, 1:(length(w) - 1))
-        u = signed(r >>> shiftbits(eltype(w)))
-        flip = r % Bool
-        x = ifelse(flip, -u, u)*w[l] + mb
-        if u <= k[l]
-            return x
-        end
-        zigsample_unlikely(bellzigsample_floats, rng, w, k, y, mb, am, pdf, fb, LM, l, x, flip)
-    end
-end
-
-@inline function bellzigsample_floats(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
+# This method is identical to the one above, but it's needed to resolve a method ambiguity
+@inline function bellzigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Nothing) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    _bellzigsample_floats(rng, w, k, y, mb, am, pdf, fb, LM, r)
+    bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
 end
 
-@inline function bellzigsample_general(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
-    @inbounds begin
-        l = rand(rng, 1:(length(w) - 1))
-        u = rand(rng, eltype(w))
-        flip = rand(rng, Bool)
-        x = ifelse(flip, -u, u)*w[l] + mb
-        if u <= k[l]
-            return x
-        end
-        zigsample_unlikely(bellzigsample_general, rng, w, k, y, mb, am, pdf, fb, LM, l, x, flip)
-    end
+# The where clause is required to force method specialization
+@inline function bellzigsample(
+    rng,
+    w::AbstractArray{<:FloatXX},
+    k,
+    y,
+    mb,
+    am,
+    pdf::F,
+    fb::FB,
+    LM::Nothing,
+    r
+) where {F,FB}
+    l = rand(rng, 1:(length(w) - 1))
+    u = signed(r >>> shiftbits(eltype(w)))
+    s = r % Bool
+    bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u, s)
 end
 
-@inline function Base.rand(
-    rng::AbstractRNG,
-    sampler::Random.SamplerTrivial{<:BellZiggurat{X,Y,LM}}
-) where {X<:FloatXX,Y,LM}
-    z = sampler[]
+# The where clause is required to force method specialization
+@inline function bellzigsample(
+    rng,
+    w::AbstractArray{<:FloatXX},
+    k,
+    y,
+    mb,
+    am,
+    pdf::F,
+    fb::FB,
+    LM::Unsigned,
+    r
+) where {F,FB}
+    l = layer_bits_signed(eltype(w), LM, r) + 1
+    u = signed(r >>> shiftbits(eltype(w)))
+    s = r % Bool
+    bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u, s)
+end
+
+# The where clause is required to force method specialization
+@inline function bellzigsample(rng, w, k, y, mb, am, pdf::F, fb::FB, LM::Nothing) where {F,FB}
+    l = rand(rng, 1:(length(w) - 1))
+    u = rand(rng, eltype(w))
+    s = rand(rng, Bool)
+    bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u, s)
+end
+
+@inline function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:BellZiggurat})
+    z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
     y = heights(z)
@@ -113,41 +181,15 @@ end
     am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
-    bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM)
+    LM = mask(z)
+    bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM)
 end
 
-@inline function Base.rand(
-    rng::AbstractRNG,
-    sampler::Random.SamplerTrivial{<:BellZiggurat{X,Y,nothing}}
-) where {X<:FloatXX,Y}
-    z = sampler[]
-    w = widths(z)
-    k = layerratios(z)
-    y = heights(z)
-    mb = highside(z)
-    am = lowside(z)
-    pdf = density(z)
-    fb = fallback(z)
-    bellzigsample_floats(rng, w, k, y, mb, am, pdf, fb, nothing)
-end
-
-@inline function Base.rand(rng::AbstractRNG, sampler::Random.SamplerTrivial{<:BellZiggurat{X,Y}}) where {X,Y}
-    z = sampler[]
-    w = widths(z)
-    k = layerratios(z)
-    y = heights(z)
-    mb = highside(z)
-    am = lowside(z)
-    pdf = density(z)
-    fb = fallback(z)
-    bellzigsample_general(rng, w, k, y, mb, am, pdf, fb, nothing)
-end
-
-function Random.rand!(
+@inline function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:BellZiggurat{X,Y,LM}}
-) where {X<:FloatXX,Y,LM}
+    s::Random.SamplerTrivial{<:BellZiggurat{X}}
+) where {X<:FloatXX}
     z = s[]
     w = widths(z)
     k = layerratios(z)
@@ -156,6 +198,7 @@ function Random.rand!(
     am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
+    LM = mask(z)
     if length(A) < 7 # TODO: Tune this number
         for i in eachindex(A)
             @inbounds A[i] = rand(rng, s)
@@ -166,36 +209,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _bellzigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM, r)
-        end
-    end
-    A
-end
-
-function Random.rand!(
-    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
-    A::Array{X},
-    s::Random.SamplerTrivial{<:BellZiggurat{X,Y,nothing}}
-) where {X<:FloatXX,Y}
-    z = s[]
-    w = widths(z)
-    k = layerratios(z)
-    y = heights(z)
-    mb = highside(z)
-    am = lowside(z)
-    pdf = density(z)
-    fb = fallback(z)
-    if length(A) < 7 # TODO: Tune this number
-        for i in eachindex(A)
-            @inbounds A[i] = rand(rng, s)
-        end
-    else
-        T = corresponding_uint(X)
-        GC.@preserve A rand!(rng, UnsafeView{T}(pointer(A), length(A)))
-
-        for i in eachindex(A)
-            @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _bellzigsample_floats(rng, w, k, y, mb, am, pdf, fb, nothing, r)
+            @inbounds A[i] = bellzigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
         end
     end
     A

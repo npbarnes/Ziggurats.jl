@@ -28,6 +28,8 @@ struct UnboundedZiggurat{X,Y,LM,K,N,NP1,F,FB} <: MonotonicZiggurat{X,Y,LM}
     end
 end
 
+mask(::MonotonicZiggurat{X,Y,LM}) where {X,Y,LM} = LM
+
 widths(z::Ziggurat) = z.w
 numlayers(z::Ziggurat) = length(widths(z)) - 1
 layerratios(z::Ziggurat) = z.k
@@ -709,16 +711,15 @@ function finalize!(x, y, modalboundary, A, ipdf, modalpdf)
 end
 
 ## Sampling
-# There's a lot of code duplication in this section, but it's difficult to do anything different
-# without compromising performance. Be careful when making any changes. Even innocuous looking
-# refactors can affect performance. For example, unpacking the Ziggurat and passing it's
+# Be careful when making any changes to the sampling code. Even innocuous looking refactors
+# can sometimes affect performance. For example, unpacking the Ziggurat and passing it's
 # components into another function is faster than passing the Ziggurat object directly. I have
 # no idea why.
 
-@inline function x_in_domain(x, mb, am, flip)
-    # Flips x into the proper half-domain if needed, rarely roundoff causes x to be outside
-    # the domain, so clamp into the range if it's close. Error if it's far outside the domain,
-    # but that shouldn't happen.
+@inline function x_in_domain(x, mb, am, flip = false)
+    # Rarely, roundoff causes x to be outside the domain, so clamp into the range if it's
+    # close. Error if it's far outside the domain, but that shouldn't happen.
+    # BellZiggurats may also flip x into the proper half-domain if needed.
 
     T = typeof(mb)
     a, b = minmax(mb, am)
@@ -735,24 +736,10 @@ end
 end
 
 # The where clause is required to force method specialization
-@noinline function zigsample_unlikely(
-    parent::P,
-    rng,
-    w,
-    k,
-    y,
-    mb,
-    am,
-    pdf::F,
-    fb::Nothing,
-    LM,
-    l,
-    x,
-    flip = false
-) where {P,F}
+@noinline function zigsample_unlikely(rng, w, k, y, mb, am, pdf::F, fb::Nothing, LM, l, x) where {F}
     @inbounds begin
         # Check density, by evaluating the pdf in its proper half-domain
-        xx = x_in_domain(x, mb, am, flip)
+        xx = x_in_domain(x, mb, am)
         yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
 
         if yy < pdf(xx)
@@ -760,36 +747,21 @@ end
         end
 
         # reject sample and retry
-        parent(rng, w, k, y, mb, am, pdf, fb, LM)
+        zigsample(rng, w, k, y, mb, am, pdf, fb, LM)
     end
 end
 
 # The where clause is required to force method specialization
-@noinline function zigsample_unlikely(
-    parent::P,
-    rng,
-    w,
-    k,
-    y,
-    mb,
-    am,
-    pdf::F,
-    fb::FB,
-    LM,
-    l,
-    x,
-    flip = false
-) where {P,F,FB}
+@noinline function zigsample_unlikely(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, l, x) where {F,FB}
     @inbounds begin
         if l == 1
             # unbounded tail fallback
             x2 = w[2] * significand_bitmask(eltype(w)) + mb
-            result = convert(eltype(w), fb(rng, x2))
-            return ifelse(flip, 2mb-result, result)
+            return convert(eltype(w), fb(rng, x2))
         end
 
         # Check density, by evaluating the pdf in its proper half-domain
-        xx = x_in_domain(x, mb, am, flip)
+        xx = x_in_domain(x, mb, am)
         yy = (y[l + 1] - y[l]) * rand(rng, eltype(y)) + y[l]
 
         if yy < pdf(xx)
@@ -797,65 +769,55 @@ end
         end
 
         # reject sample and retry
-        parent(rng, w, k, y, mb, am, pdf, fb, LM)
+        zigsample(rng, w, k, y, mb, am, pdf, fb, LM)
     end
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample_floats_masked(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
-    r = rand(rng, corresponding_uint(eltype(w)))
-    _zigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM, r)
+@inline function zigsample(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, l, u) where {F,FB}
+    @inbounds begin
+        x = u * w[l] + mb
+        if u <= k[l]
+            return x
+        end
+        zigsample_unlikely(rng, w, k, y, mb, am, pdf, fb, LM, l, x)
+    end
 end
 
 # The where clause is required to force method specialization
-@inline function _zigsample_floats_masked(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, r) where {F,FB}
+@inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Unsigned) where {F,FB}
+    r = rand(rng, corresponding_uint(eltype(w)))
+    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+end
+
+# This method is identical to the one above, but it's necessary to resolve a method ambiguity.
+@inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Nothing) where {F,FB}
+    r = rand(rng, corresponding_uint(eltype(w)))
+    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+end
+
+# The where clause is required to force method specialization
+@inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Nothing, r) where {F,FB}
+    l = rand(rng, 1:(length(w) - 1))
+    u = r >>> shiftbits(eltype(w))
+    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
+end
+
+# The where clause is required to force method specialization
+@inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Unsigned, r) where {F,FB}
     l = layer_bits(eltype(w), LM, r) + 1
     u = r >>> shiftbits(eltype(w))
-    @inbounds begin
-        x = u * w[l] + mb
-        if u <= k[l]
-            return x
-        end
-        zigsample_unlikely(zigsample_floats_masked, rng, w, k, y, mb, am, pdf, fb, LM, l, x)
-    end
+    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample_floats(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
-    r = rand(rng, corresponding_uint(eltype(w)))
-    _zigsample_floats(rng, w, k, y, mb, am, pdf, fb, LM, r)
-end
-
-# The where clause is required to force method specialization
-@inline function _zigsample_floats(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, r) where {F,FB}
-    l = rand(rng, 1:(length(w) - 1))
-    u = r >>> shiftbits(eltype(w))
-    @inbounds begin
-        x = u * w[l] + mb
-        if u <= k[l]
-            return x
-        end
-        zigsample_unlikely(zigsample_floats, rng, w, k, y, mb, am, pdf, fb, LM, l, x)
-    end
-end
-
-# The where clause is required to force method specialization
-@inline function zigsample_general(rng, w, k, y, mb, am, pdf::F, fb::FB, LM) where {F,FB}
+@inline function zigsample(rng, w, k, y, mb, am, pdf::F, fb::FB, LM::Nothing) where {F,FB}
     l = rand(rng, 1:(length(w) - 1))
     u = rand(rng, eltype(w))
-    @inbounds begin
-        x = u * w[l] + mb
-        if u <= k[l]
-            return x
-        end
-        zigsample_unlikely(zigsample_general, rng, w, k, y, mb, am, pdf, fb, LM, l, x)
-    end
+    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
 end
 
-function Base.rand(
-    rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,LM}}
-) where {X<:FloatXX,Y,LM}
+@inline function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat})
     z = zig_sampler[]
     w = widths(z)
     k = layerratios(z)
@@ -864,41 +826,15 @@ function Base.rand(
     am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
-    zigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM)
+    LM = mask(z)
+    zigsample(rng, w, k, y, mb, am, pdf, fb, LM)
 end
 
-function Base.rand(
-    rng::AbstractRNG,
-    zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,nothing}}
-) where {X<:FloatXX,Y}
-    z = zig_sampler[]
-    w = widths(z)
-    k = layerratios(z)
-    y = heights(z)
-    mb = highside(z)
-    am = lowside(z)
-    pdf = density(z)
-    fb = fallback(z)
-    zigsample_floats(rng, w, k, y, mb, am, pdf, fb, nothing)
-end
-
-function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y}}) where {X,Y}
-    z = zig_sampler[]
-    w = widths(z)
-    k = layerratios(z)
-    y = heights(z)
-    mb = highside(z)
-    am = lowside(z)
-    pdf = density(z)
-    fb = fallback(z)
-    zigsample_general(rng, w, k, y, mb, am, pdf, fb, nothing)
-end
-
-function Random.rand!(
+@inline function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,LM}}
-) where {X<:FloatXX,Y,LM}
+    s::Random.SamplerTrivial{<:MonotonicZiggurat{X}}
+) where {X<:FloatXX}
     z = s[]
     w = widths(z)
     k = layerratios(z)
@@ -907,6 +843,7 @@ function Random.rand!(
     am = lowside(z)
     pdf = density(z)
     fb = fallback(z)
+    LM = mask(z)
     if length(A) < 7 # TODO: Tune this number
         for i in eachindex(A)
             @inbounds A[i] = rand(rng, s)
@@ -917,36 +854,7 @@ function Random.rand!(
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats_masked(rng, w, k, y, mb, am, pdf, fb, LM, r)
-        end
-    end
-    A
-end
-
-function Random.rand!(
-    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
-    A::Array{X},
-    s::Random.SamplerTrivial{<:MonotonicZiggurat{X,Y,nothing}}
-) where {X<:FloatXX,Y}
-    z = s[]
-    w = widths(z)
-    k = layerratios(z)
-    y = heights(z)
-    mb = highside(z)
-    am = lowside(z)
-    pdf = density(z)
-    fb = fallback(z)
-    if length(A) < 7 # TODO: Tune this number
-        for i in eachindex(A)
-            @inbounds A[i] = rand(rng, s)
-        end
-    else
-        T = corresponding_uint(X)
-        GC.@preserve A rand!(rng, UnsafeView{T}(pointer(A), length(A)))
-
-        for i in eachindex(A)
-            @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = _zigsample_floats(rng, w, k, y, mb, am, pdf, fb, nothing, r)
+            @inbounds A[i] = zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
         end
     end
     A
