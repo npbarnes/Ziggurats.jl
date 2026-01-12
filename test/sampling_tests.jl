@@ -135,7 +135,7 @@ end
         @testset "$(td.name)" for td in BellTestCases
             bell_sampling_tests(td)
         end
-        @testset "Laplace w/ half-pdf" for td in LaplaceTestCases
+        @testset "$(td.name) w/ half-pdf" for td in LaplaceTestCases
             laplace_sampling_tests(td)
         end
     end
