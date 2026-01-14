@@ -181,7 +181,8 @@ end
 function (pdf::PDFWrap{X,Y})(x) where {X,Y}
     if !between(pdf.mb, pdf.am, x)
         error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain. \
-        Please report this error.")
+        This error is not expected to ever be thrown. Please report it because it indicates \
+        an internal error with the package.")
     end
 
     result = isinf(x) ? zero(Y) : convert(Y, pdf.f(x))
