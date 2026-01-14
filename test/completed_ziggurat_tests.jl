@@ -277,7 +277,7 @@ end
         @testset "SteppedExponential" begin
             dist = SteppedExponential(oneunit(T))
             f = Base.Fix1(pdf, dist)
-            invf = inversepdf(f, extrema(dist)) # TODO: replace with direct implementation of inverse
+            invf = ipdf_SteppedExponential(dist)
             tailarea = Base.Fix1(ccdf, dist)
 
             uf(x) = 3 * f(x)
