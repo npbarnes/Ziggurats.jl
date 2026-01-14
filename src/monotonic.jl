@@ -612,7 +612,7 @@ function _search(y_domain, p)
             @warn "the ziggurat doesn't fully cover the pdf, but a larger ziggurat can't be constructed. \
             This is sometimes caused by using too many layers for the level of floating point precision. \
             The ziggurat may be accurate enough to be usable if the height of the ziggurat, \
-            `Ziggurats.heights(zig)[end])`, is close to the height of the pdf, `Ziggurats.density(zig, Ziggurats.highside(zig))`."
+            `Ziggurats.heights(zig)[end])`, is close to the height of the pdf, `Ziggurats.density(zig)(Ziggurats.highside(zig))`."
 
             return x, y
         end
