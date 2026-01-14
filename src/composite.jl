@@ -236,42 +236,10 @@ function zigprobs(cdf, subdomains, p::AbstractArray)
     _p
 end
 
-tuple_length(::Type{<:NTuple{N,Any}}) where {N} = N
-@generated function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Z}}) where {X,Y,Z}
-    # The code generated here is basically manual union splitting. Except instead of splitting
-    # on the returned type of zigs[i] (which is type unstable) it's splitting on the value of i.
-    # Since zigs is a tuple, the types of zigs[1], zigs[2], etc are inferable.
-
-    N = tuple_length(Z)
-    # The type constraint on CompositeZiggurat should mean N == 0 and N == 1 are impossible.
-    # Nevertheless, return something sensible for any N.
-    if N == 0
-        return :(error("It's impossible to sample from a CompositeZiggurat with zero underlying Ziggurats."))
-    elseif N == 1
-        return :(rand(rng, s[].zigs[1]))
-    end
-
-    if N == 2
-        ifchain = :(if i == 1
-            rand(rng, zigs[1])
-        else
-            rand(rng, zigs[2])
-        end)
-    else
-        ifchain = Expr(:elseif, :(i==$(N-1)), :(return rand(rng, zigs[$(N - 1)])), :(return rand(rng, zigs[$N])))
-        for n in (N - 2):-1:2
-            ifchain = Expr(:elseif, :(i==$n), :(return rand(rng, zigs[$n])), ifchain)
-        end
-        ifchain = Expr(:if, :(i==1), :(return rand(rng, zigs[1])), ifchain)
-    end
-
-    quote
-        @inline
-        @inbounds begin
-            cz = s[]
-            zigs = cz.zigs
-            i = rand(rng, cz.at)
-            $ifchain
-        end
-    end
+function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat})
+    cz = s[]
+    zigs = cz.zigs
+    i = rand(rng, cz.at)
+    @inbounds z = zigs[i]
+    rand(rng, z)
 end
