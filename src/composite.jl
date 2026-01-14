@@ -243,3 +243,38 @@ function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggura
     @inbounds z = zigs[i]
     rand(rng, z)
 end
+
+@inline function Random.rand!(
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
+    A::Array{X},
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X}}
+) where {X<:FloatXX}
+    cz = s[]
+    if length(A) < 7 # TODO: Tune this number
+        for i in eachindex(A)
+            @inbounds A[i] = rand(rng, s)
+        end
+    else
+        T = corresponding_uint(X)
+        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
+        for i in eachindex(A)
+            @inbounds r = reinterpret(T, A[i])
+
+            j = rand(rng, cz.at)
+            @inbounds z = cz.zigs[j]
+
+            w = widths(z)
+            k = layerratios(z)
+            y = heights(z)
+            mb = highside(z)
+            am = lowside(z)
+            pdf = density(z)
+            fb = fallback(z)
+            LM = mask(z)
+
+            @inbounds A[i] = zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+        end
+    end
+    A
+end
