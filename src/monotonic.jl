@@ -180,7 +180,7 @@ end
 
 function (pdf::PDFWrap{X,Y})(x) where {X,Y}
     if !between(pdf.mb, pdf.am, x)
-        error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain.
+        error("Unexpected Error: attempted to evaluate pdf at x = $x outside the domain. \
         Please report this error.")
     end
 
