@@ -236,7 +236,7 @@ function zigprobs(cdf, subdomains, p::AbstractArray)
     _p
 end
 
-function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat})
+@inline function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat})
     cz = s[]
     zigs = cz.zigs
     i = rand(rng, cz.at)
