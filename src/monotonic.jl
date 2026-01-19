@@ -294,11 +294,11 @@ if necessary.
  since the default fallback algorithm uses `tailarea`.
 
  - `cdf`: (Optional) The cumulative distribution function. It should be normalized the same \
- way the pdf is normalized. Superceeded by `tailarea`, and ignored when the domain is \
+ way the pdf is normalized. Superseded by `tailarea`, and ignored when the domain is \
  bounded.
 
  - `ccdf`: (Optional) The complementary cumulative distribution function. It should be \
- normalized the same way the pdf is normalized. Superceeded by `tailarea`, and ignored \
+ normalized the same way the pdf is normalized. Superseded by `tailarea`, and ignored \
  when the domain is bounded.
 
  - `fallback`: (Optional) A function that takes arguments (rng, a) and produces a random \
@@ -363,7 +363,7 @@ probability density function (`pdf`) with bounded support. The pdf must be monot
 domain and must not diverge to infinity anywhere on the domain, including at the endpoints,
 but may otherwise be arbitrary - including discontinuous functions. An inverse function to the
 pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is computed
-numerically, but it can also be provided explicity if necessary. 
+numerically, but it can also be provided explicitly if necessary.
 """
 function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
     domain = extrema(regularize(domain))
@@ -404,7 +404,7 @@ domain and must not diverge to infinity anywhere on the domain, including at the
 but may otherwise be arbitrary - including discontinuous functions. An inverse pdf and a
 tailarea function are used in the construction of the ziggurat, and a `fallback` is used
 during sampling. Normally these additional functions are computed numerically, but they can
-be provided explicity as keyword arguments if necessary.
+be provided explicitly as keyword arguments if necessary.
 """
 function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, fallback = nothing)
     domain = extrema(regularize(domain))

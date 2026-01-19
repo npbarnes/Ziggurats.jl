@@ -10,7 +10,7 @@ a probability density function (pdf) and a list of extremal points of the pdf th
 domain into subdomains where the pdf is monotonic.
 
 The Ziggurat Algorithm is designed for very high marginal sampling performance at the expense
-of a longer setup time. It's appopriate for situations where you need a large number of samples
+of a longer setup time. It's appropriate for situations where you need a large number of samples
 from a fixed distribution with a known pdf.
 
 # Installation
@@ -67,7 +67,7 @@ that automates the ziggurat construction producing fast samplers for a wide vari
 user-specified distributions. Usually only a pdf function and a list of extremal points of the pdf
 is required. Other libraries with similar
 functionality require the programmer to provide an inverse pdf function, a cumulative distribution
-function, etc.. Ziggurats.jl by default generates those auxilurary functions using robust
+function, etc.. Ziggurats.jl by default generates those auxiliary functions using robust
 numerical methods. This makes the ziggurat method much more ergonomic to use.
 
 By default, the `ipdf` is computed
@@ -76,10 +76,10 @@ Gauss-Kronrod quadrature (via `QuadGK.jl`). The fallback algorithm for samples i
 unbounded distributions is inverse transform sampling over the renormalized `tailarea` function,
 where the inverse is computed similarly to the `ipdf`.
 
-Ziggurats.jl also extends the ziggurat algorithm to distributions with peicewise monotonic pdfs.
+Ziggurats.jl also extends the ziggurat algorithm to distributions with piecewise monotonic pdfs.
 The extension is relatively simple, ziggurats are generated for each monotonic subdomain
 (which are separated by extremal points), and
-their areas are computed by quadtrature. To take a sample, first select a subdomain with the appropriate probability
+their areas are computed by quadrature. To take a sample, first select a subdomain with the appropriate probability
 (proportional to area, via `AliasTables.jl`) and then sample within that subdomain using the
 corresponding ziggurat.
 
@@ -105,7 +105,7 @@ Any number of layers is possible,
 but the fastest sampling algorithms are available when the number of layers is a power of two.
 I recommend benchmarking your application with different powers of two numbers of layers up to a maximum of 2^12 = 4096
 for Float64 domains, 2^9 = 512 for Float32 domains and 2^6 = 64
-for Float16 domains. For techincal reasons, the quality of the statistical distribution can degrade if you
+for Float16 domains. For technical reasons, the quality of the statistical distribution can degrade if you
 use a power of two larger than those limits. The default number of layers is 2^8 = 256 or 2^6=64 for Float16.
 That's generally a good trade off between speed and memory size.
 
