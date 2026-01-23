@@ -194,9 +194,8 @@ julia> Ziggurats.get_subdomains(sign, [-1, 0, 1])
  [5.0e-324, 1.0]
 ```
 """
-get_subdomains(f, domain) = _get_subdomains(f, promote(float.(domain)...))
-get_subdomains(f, domain::NTuple{N,<:AbstractFloat}) where {N} = _get_subdomains(f, domain)
-get_subdomains(f, domain::AbstractArray{<:AbstractFloat}) = _get_subdomains(f, domain)
+get_subdomains(f, domain) = _get_subdomains(f, regularize(domain))
+get_subdomains(f, domain::Regularized) = _get_subdomains(f, domain)
 function _get_subdomains(f, domain)
     sd = Array{eltype(domain)}(undef, length(domain)-1, 2)
 
