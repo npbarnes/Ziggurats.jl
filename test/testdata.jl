@@ -211,6 +211,18 @@ const OtherBellTestCases = reduce(
                 right_fallback = (rng, x) -> tan(atan(x) + rand(rng, T)*(T(π)/2 - atan(x))),
                 domain = (T(-Inf), T(0.0), T(Inf)),
                 T = T
+            ),
+            CompositeTestData(;
+                name = "Cosine $T",
+                dist = Cosine(),
+                f = x -> (1 + cos(T(π)*x))/2,
+                ipdfs = [y -> -acos(2y-1)/T(π), y -> acos(2y-1)/T(π)],
+                cdf = x -> (1 + x + sin(T(π)*x)/T(π))/2,
+                ccdf = x -> 1 - (1 + x + sin(T(π)*x)/T(π))/2,
+                left_fallback = nothing,
+                right_fallback = nothing,
+                domain = (T(-1), T(0), T(1)),
+                T = T
             )
         ] for T in TestTypes
     ]
