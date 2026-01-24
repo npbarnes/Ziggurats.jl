@@ -343,10 +343,10 @@ function monotonic_ziggurat(
     fallback = nothing
 )
     domain = regularize(domain)
-
     N = default_numlayers(N, eltype(domain))
+    _check_arguments(N, domain)
 
-    a, b = extrema(domain)
+    a, b = domain
     if isinf(a) || isinf(b)
         tailarea = _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
         UnboundedZiggurat(pdf, domain, N; ipdf, tailarea, fallback)
@@ -366,9 +366,13 @@ pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is comp
 numerically, but it can also be provided explicitly if necessary.
 """
 function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
-    domain = extrema(regularize(domain))
-
+    domain = regularize(domain)
     _check_arguments(N, domain)
+    a, b = domain
+    if isinf(a) || isinf(b)
+        error("expected a bounded domain, got domain=$domain.")
+    end
+
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     wpdf = PDFWrap(pdf, modalboundary, argminboundary)
@@ -381,10 +385,6 @@ function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
-    end
-
-    if isinf(domain[1]) || isinf(domain[2])
-        error("expected a bounded domain, got domain=$domain.")
     end
 
     # Build ziggurats using wrapped functions
@@ -407,8 +407,13 @@ during sampling. Normally these additional functions are computed numerically, b
 be provided explicitly as keyword arguments if necessary.
 """
 function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, fallback = nothing)
-    domain = extrema(regularize(domain))
+    domain = regularize(domain)
     _check_arguments(N, domain)
+    a, b = domain
+    if !isinf(a) && !isinf(b)
+        error("expected an unbounded domain, got domain=$domain.")
+    end
+
     modalboundary, argminboundary = _identify_mode(pdf, domain)
 
     wpdf = PDFWrap(pdf, modalboundary, argminboundary)
@@ -421,10 +426,6 @@ function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, f
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
-    end
-
-    if !isinf(domain[1]) && !isinf(domain[2])
-        error("expected an unbounded domain, got domain=$domain.")
     end
 
     if tailarea === nothing
@@ -488,7 +489,7 @@ function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
     end
 
     # below here, tailarea is nothing, and cdf and ccdf are not both nothing.
-    a, b = extrema(domain)
+    a, b = domain
     fa, fb = pdf(a), pdf(b)
     if fa < fb # pdf is increasing (constant functions are decreasing)
         if cdf !== nothing
@@ -513,18 +514,18 @@ function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
     error("Unreachable error: it should be impossible to throw this error.")
 end
 
-function _check_arguments(N, domain)
+"""Check arguments for monotonic distributions"""
+function _check_arguments(N, domain::Regularized)
     if N < 1
         throw(DomainError(N, "N must be a positive integer, got N=$N."))
     end
-    if isempty(domain)
-        error("empty domains are not allowed, got domain=$domain.")
+    if length(domain) != 2
+        # Regularized guarentees that the points in the domain are distinct,
+        # so we only need to check the length, not uniqueness.
+        error("the domain needs exactly two distinct points. Got $domain")
     end
 
-    a, b = extrema(domain)
-    if a == b
-        error("empty domains are not allowed, got domain=$domain.")
-    end
+    a, b = domain
     if isinf(a) && isinf(b)
         error("a domain of (-Inf, Inf) is impossible for a monotonic distribution.")
     end
@@ -532,11 +533,11 @@ function _check_arguments(N, domain)
     return nothing
 end
 
-function _identify_mode(pdf, domain)
+function _identify_mode(pdf, domain::Regularized)
     # Return the modalboundary (mb) and argminboundary (am).
     # Assume that the domain is well formed and appropriate for a monotonic
     # distribution. A constant function is treated as decreasing.
-    a, b = extrema(regularize(domain))
+    a, b = domain
     if isinf(a)
         mb = b
         am = a

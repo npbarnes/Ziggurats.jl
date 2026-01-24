@@ -94,128 +94,54 @@ issamevector(a::Vector, b::Vector) = false
     end
 
     @testset "_check_arguments" begin
+        using Ziggurats: _check_arguments
+        valid_domains = regularize.([(0, Inf), (0, 1), (-Inf, 1)])
+
+        inf_domains = regularize.([(-Inf, Inf)])
+
+        wrong_length_domains = regularize.([(0, 0.5, 1), (0, 0.5, Inf), (-Inf, 0.5, 1), (-Inf, 0.5, Inf), ()])
+
+        invalid_domains = [
+            inf_domains;
+            wrong_length_domains
+        ]
+
+        domains = [
+            valid_domains;
+            invalid_domains
+        ]
+
+        valid_Ns = [1, 2, 3, 4, 5, 2^6, 2^8, 2^12]
+        invalid_Ns = [-1, 0]
+
+        Ns = [
+            valid_Ns;
+            invalid_Ns
+        ]
+
         @testset "Using a non-positive N throws an error" begin
-            @testset "When domain is valid" begin
-                @test_throws "N must" Ziggurats._check_arguments(-1, (0, Inf))
-                @test_throws "N must" Ziggurats._check_arguments(-1, (0, 1))
-                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, 1))
-                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, Inf))
-
-                @test_throws "N must" Ziggurats._check_arguments(-1, [0, 1])
-                @test_throws "N must" Ziggurats._check_arguments(-1, [0, Inf])
-                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, 1])
-                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, Inf])
-
-                @test_throws "N must" Ziggurats._check_arguments(0, (0, 1))
-                @test_throws "N must" Ziggurats._check_arguments(0, (0, Inf))
-                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, 1))
-                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, Inf))
-
-                @test_throws "N must" Ziggurats._check_arguments(0, [0, 1])
-                @test_throws "N must" Ziggurats._check_arguments(0, [0, Inf])
-                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, 1])
-                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, Inf])
-
-                @test_throws "N must" Ziggurats._check_arguments(-1, (0, 0.5, 1))
-                @test_throws "N must" Ziggurats._check_arguments(-1, (0, 0.5, Inf))
-                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, 0.5, 1))
-                @test_throws "N must" Ziggurats._check_arguments(-1, (-Inf, 0.5, Inf))
-
-                @test_throws "N must" Ziggurats._check_arguments(-1, [0, 0.5, 1])
-                @test_throws "N must" Ziggurats._check_arguments(-1, [0, 0.5, Inf])
-                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, 0.5, 1])
-                @test_throws "N must" Ziggurats._check_arguments(-1, [-Inf, 0.5, Inf])
-
-                @test_throws "N must" Ziggurats._check_arguments(0, (0, 0.5, 1))
-                @test_throws "N must" Ziggurats._check_arguments(0, (0, 0.5, Inf))
-                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, 0.5, 1))
-                @test_throws "N must" Ziggurats._check_arguments(0, (-Inf, 0.5, Inf))
-
-                @test_throws "N must" Ziggurats._check_arguments(0, [0, 0.5, 1])
-                @test_throws "N must" Ziggurats._check_arguments(0, [0, 0.5, Inf])
-                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, 0.5, 1])
-                @test_throws "N must" Ziggurats._check_arguments(0, [-Inf, 0.5, Inf])
-            end
-
-            @testset "When the domain is invalid" begin
-                @test_throws "N must be" Ziggurats._check_arguments(-1, ())
-                @test_throws "N must be" Ziggurats._check_arguments(-1, (0,))
-                @test_throws "N must be" Ziggurats._check_arguments(-1, (Inf,))
-                @test_throws "N must be" Ziggurats._check_arguments(-1, (0, 0))
-                @test_throws "N must be" Ziggurats._check_arguments(-1, (Inf, Inf))
-                @test_throws "N must be" Ziggurats._check_arguments(-1, (-Inf, -Inf))
-                @test_throws "N must be" Ziggurats._check_arguments(-1, (-Inf, Inf))
-
-                @test_throws "N must be" Ziggurats._check_arguments(0, (0, 0))
-                @test_throws "N must be" Ziggurats._check_arguments(0, (Inf, Inf))
-                @test_throws "N must be" Ziggurats._check_arguments(0, (-Inf, -Inf))
-                @test_throws "N must be" Ziggurats._check_arguments(0, (-Inf, Inf))
-
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [])
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [0])
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [Inf])
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [0, 0])
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [Inf, Inf])
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [-Inf, -Inf])
-                @test_throws "N must be" Ziggurats._check_arguments(-1, [-Inf, Inf])
-
-                @test_throws "N must be" Ziggurats._check_arguments(0, [0, 0])
-                @test_throws "N must be" Ziggurats._check_arguments(0, [Inf, Inf])
-                @test_throws "N must be" Ziggurats._check_arguments(0, [-Inf, -Inf])
-                @test_throws "N must be" Ziggurats._check_arguments(0, [-Inf, Inf])
+            @testset for N in invalid_Ns, d in domains
+                @test_throws DomainError _check_arguments(N, d)
             end
         end
 
         # Empty domian
-        @testset "Empty domains throw an empty domain error" begin
-            @test_throws "empty domains" Ziggurats._check_arguments(256, ())
-            @test_throws "empty domains" Ziggurats._check_arguments(256, (0,))
-            @test_throws "empty domains" Ziggurats._check_arguments(256, (Inf,))
-            @test_throws "empty domains" Ziggurats._check_arguments(256, (0, 0))
-            @test_throws "empty domains" Ziggurats._check_arguments(256, (Inf, Inf))
-            @test_throws "empty domains" Ziggurats._check_arguments(256, (-Inf, -Inf))
-            @test_throws "empty domains" Ziggurats._check_arguments(256, (0, 0, 0))
-
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [])
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [0])
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [Inf])
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [0, 0])
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [Inf, Inf])
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [-Inf, -Inf])
-            @test_throws "empty domains" Ziggurats._check_arguments(256, [0, 0, 0])
+        @testset "error when domain doesn't have exactly two distinct points" begin
+            @testset for N in valid_Ns, d in wrong_length_domains
+                @test_throws "the domian needs" _check_arguments(N, d)
+            end
         end
 
-        @testset "Infinite domains throw an infinite domain error" begin
-            @test_throws "a domain" Ziggurats._check_arguments(256, (-Inf, Inf))
-            @test_throws "a domain" Ziggurats._check_arguments(256, (Inf, -Inf))
-            @test_throws "a domain" Ziggurats._check_arguments(256, (Inf, 1, -Inf))
-            @test_throws "a domain" Ziggurats._check_arguments(256, (1, Inf, -Inf, 0))
-            @test_throws "a domain" Ziggurats._check_arguments(256, (-Inf, 1, Inf))
-
-            @test_throws "a domain" Ziggurats._check_arguments(256, [-Inf, Inf])
-            @test_throws "a domain" Ziggurats._check_arguments(256, [Inf, -Inf])
-            @test_throws "a domain" Ziggurats._check_arguments(256, [Inf, 1, -Inf])
-            @test_throws "a domain" Ziggurats._check_arguments(256, [1, Inf, -Inf, 0])
-            @test_throws "a domain" Ziggurats._check_arguments(256, [-Inf, 1, Inf])
+        @testset "error when the domain is unbounded in both directions" begin
+            @testset for N in valid_Ns, d in inf_domains
+                @test_throws "a domain of (-Inf, Inf)" _check_arguments(N, d)
+            end
         end
 
         @testset "Return nothing when everything checks out" begin
-            @test Ziggurats._check_arguments(256, (0, 1)) === nothing
-            @test Ziggurats._check_arguments(256, (0, 0.5, 1)) === nothing
-            @test Ziggurats._check_arguments(256, (1, 0, 0.5)) === nothing
-            @test Ziggurats._check_arguments(256, (1, 0)) === nothing
-            @test Ziggurats._check_arguments(256, (0, Inf)) === nothing
-            @test Ziggurats._check_arguments(256, (Inf, 0)) === nothing
-            @test Ziggurats._check_arguments(256, (0, 1, Inf)) === nothing
-            @test Ziggurats._check_arguments(256, (Inf, 1, 0)) === nothing
-            @test Ziggurats._check_arguments(256, (Inf, 0, 1)) === nothing
-            @test Ziggurats._check_arguments(256, (0, 0, 1)) === nothing
-            @test Ziggurats._check_arguments(256, (1, 0, 1)) === nothing
-            @test Ziggurats._check_arguments(256, (Inf, 0, Inf)) === nothing
-            @test Ziggurats._check_arguments(256, (0, Inf, 0)) === nothing
-            @test Ziggurats._check_arguments(256, (0, 1, Inf, Inf)) === nothing
-            @test Ziggurats._check_arguments(256, (Inf, 1, 0, 1)) === nothing
-            @test Ziggurats._check_arguments(256, (Inf, 0, 1, 1)) === nothing
+            for N in valid_Ns, d in valid_domains
+                @test _check_arguments(N, d) === nothing
+            end
         end
     end
 

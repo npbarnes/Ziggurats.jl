@@ -71,4 +71,49 @@
             false # test fails
         end
     end
+
+    @testset "ziggurat constructors fail fast when the domain is invalid" begin
+        @testset "BoundedZiggurats fail when the domain contains Inf" begin
+            invalid_domains = [(1, Inf), (-Inf, 1), (-Inf, Inf)]
+
+            for d in invalid_domains
+                @test_throws BoundedZiggurat(x -> 1, d, 4)
+            end
+        end
+
+        @testset "UnboundedZiggurats fail when the domain does not contain exactly one Inf" begin
+            invalid_domains = [(-Inf, Inf), (0, 1)]
+
+            for d in invalid_domains
+                @test_throws UnboundedZiggurat(x -> 1, d, 4)
+            end
+        end
+
+        @testset "monotonic ziggurats fail when the domain is not a pair" begin
+            invalid_domains = [(1, 2, 3), (1,), (1, 1.0)]
+
+            constructors = [monotonic_ziggurat, BoundedZiggurat, UnboundedZiggurat]
+
+            f = x->1
+
+            @testset for d in invalid_domains, c in constructors
+                @test_throws c(f, d, 4)
+            end
+        end
+
+        @testset "domains without at least two distinct points are always invalid" begin
+            @test_throws ziggurat(x->1, (), 4)
+            @test_throws ziggurat(x->1, (1,), 4)
+            @test_throws monotonic_ziggurat(x->1, (), 4)
+            @test_throws monotonic_ziggurat(x->1, (1,), 4)
+            @test_throws BellZiggurat(x->1, (), 4)
+            @test_throws BellZiggurat(x->1, (1,), 4)
+            @test_throws BoundedZiggurat(x->1, (), 4)
+            @test_throws BoundedZiggurat(x->1, (1,), 4)
+            @test_throws Unboundediggurat(x->1, (), 4)
+            @test_throws Unboundediggurat(x->1, (1,), 4)
+            @test_throws CompositeZiggurat(x->1, (), 4)
+            @test_throws CompositeZiggurat(x->1, (1,), 4)
+        end
+    end
 end
