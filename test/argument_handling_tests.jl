@@ -4,6 +4,14 @@ issamevector(a::Vector, b::Vector) = false
 @testset "Argument handling" begin
     @testset "regularize domains" begin
         import Ziggurats: regularize
+        @testset "arrays, tuples, and iterators are accepted" begin
+            domains = [[1, 2, 3], (1, 2, 3), 1:3, (i for i in 1:3)]
+
+            @testset for d in domains
+                @test issamevector(regularize(d).a, [1.0, 2.0, 3.0])
+            end
+        end
+
         @testset "regularize errors if it doesn't contain 2 or more distinct elements" begin
             @test_throws "empty domain" regularize(0)
             @test_throws "empty domain" regularize([0])
