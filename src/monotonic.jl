@@ -474,7 +474,7 @@ end
 # TODO: a way to pass through arguments to quadgk.
 function (ta::TailArea)(x)
     if x == ta.r
-        # quadgk returns nan when the domain is empty like that
+        # quadgk returns nan when the domain is empty
         # this is a workaround
         zero(ta.r)
     else
