@@ -251,9 +251,9 @@ end
 
 Constructs a high-performance sampler for a univariate probability distribution defined by a
 probability density function (`pdf`). The pdf must be monotonic on the domain and must not
-diverge to infinity anywhere on the domain, including at the endpoints, but may otherwise be
-arbitrary - including discontinuous functions. Generate random numbers by passing the returned
-ziggurat object to Julia's `rand` or `rand!` functions.
+diverge to infinity, but may otherwise be arbitrary - including discontinuous functions.
+Generate random numbers by passing the returned ziggurat object to Julia's `rand` or `rand!`
+functions.
 
 `monotonic_ziggurat` selects between constructing a [`BoundedZiggurat`](@ref) or an
 [`UnboundedZiggurat`](@ref) based on whether the domain is finite. Both types of ziggurats
@@ -265,15 +265,13 @@ if necessary.
 
 # Arguments
  - `pdf`: The probability density function of the desired distribution. It must be monotonic \
- and must not diverge to infinity anywhere on the `domain`, including the endpoints. It \
- does not need to be normalized, but `ipdf` and `tailarea` need to have the same \
- normalization as `pdf`.
+ and must not diverge to infinity. It does not need to be normalized, but `ipdf` and `tailarea` \
+ need to have the same normalization as `pdf`.
 
- - `domain`: The domain of the pdf. `domain` may be any collection of numbers, but only its \
- extrema will be used as the boundaries of the domain. The values will be promoted to the \
- highest float type present, or Float64 if there are no floats. The type that they are \
- promoted to will be the type produced by sampling from the resulting ziggurat. The domain \
- may be unbounded, for example, `(0, Inf)`.
+ - `domain`: A pair of numbers that are the end points of the domain of the pdf. The values \
+ will be promoted to the highest float type present, or Float64 if there are no floats. The \
+ type that they are promoted to will be the type produced by sampling from the resulting \
+ ziggurat. The domain may be unbounded, for example, `(0, Inf)`.
 
  - `N`: (Optional) The number of layers in the ziggurat. If `N` is a power of two and the \
  domain is Float64 with N <= 4096, Float32 with N <= 512, or Float16 with N <= 64, then \
