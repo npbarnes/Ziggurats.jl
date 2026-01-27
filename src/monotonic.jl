@@ -138,6 +138,7 @@ struct PDFWrap{X,Y,F}
         # catch common cases of type unstable f. The `float` function is called at the end.
         # So in the worst case, when e.g. `f::Union{Int, Float32}` we could end up widening to
         # Float64 instead of Float32, but that's not serious.
+        # TODO: use @inferred to avoid these evaluations when f is type stable.
         if isinf(am)
             if mb < am
                 # TODO: 10 is arbitrary, the 90th percentile would be better and is computable
