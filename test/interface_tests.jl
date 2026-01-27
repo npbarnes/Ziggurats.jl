@@ -74,19 +74,15 @@
 
     @testset "ziggurat constructors fail fast when the domain is invalid" begin
         @testset "BoundedZiggurats fail when the domain contains Inf" begin
-            invalid_domains = [(1, Inf), (-Inf, 1), (-Inf, Inf)]
-
-            for d in invalid_domains
-                @test_throws BoundedZiggurat(x -> 1, d, 4)
-            end
+            @test_throws "expected a bounded domain" BoundedZiggurat(x -> 1, (1, Inf), 4)
+            @test_throws "expected a bounded domain" BoundedZiggurat(x -> 1, (-Inf, 1), 4)
+            @test_throws "expected a bounded domain" BoundedZiggurat(x -> 1, (1, Inf), 4)
+            @test_throws "a domain of (-Inf, Inf) is impossible" BoundedZiggurat(x -> 1, (-Inf, Inf), 4)
         end
 
         @testset "UnboundedZiggurats fail when the domain does not contain exactly one Inf" begin
-            invalid_domains = [(-Inf, Inf), (0, 1)]
-
-            for d in invalid_domains
-                @test_throws UnboundedZiggurat(x -> 1, d, 4)
-            end
+            @test_throws "expected an unbounded domain" UnboundedZiggurat(x -> 1, (0, 1), 4)
+            @test_throws "a domain of (-Inf, Inf) is impossible" UnboundedZiggurat(x -> 1, (-Inf, Inf), 4)
         end
 
         @testset "monotonic ziggurats fail when the domain is not a pair" begin
@@ -97,23 +93,23 @@
             f = x->1
 
             @testset for d in invalid_domains, c in constructors
-                @test_throws c(f, d, 4)
+                @test_throws ErrorException c(f, d, 4)
             end
         end
 
         @testset "domains without at least two distinct points are always invalid" begin
-            @test_throws ziggurat(x->1, (), 4)
-            @test_throws ziggurat(x->1, (1,), 4)
-            @test_throws monotonic_ziggurat(x->1, (), 4)
-            @test_throws monotonic_ziggurat(x->1, (1,), 4)
-            @test_throws BellZiggurat(x->1, (), 4)
-            @test_throws BellZiggurat(x->1, (1,), 4)
-            @test_throws BoundedZiggurat(x->1, (), 4)
-            @test_throws BoundedZiggurat(x->1, (1,), 4)
-            @test_throws Unboundediggurat(x->1, (), 4)
-            @test_throws Unboundediggurat(x->1, (1,), 4)
-            @test_throws CompositeZiggurat(x->1, (), 4)
-            @test_throws CompositeZiggurat(x->1, (1,), 4)
+            @test_throws ErrorException ziggurat(x->1, (), 4)
+            @test_throws ErrorException ziggurat(x->1, (1,), 4)
+            @test_throws ErrorException monotonic_ziggurat(x->1, (), 4)
+            @test_throws ErrorException monotonic_ziggurat(x->1, (1,), 4)
+            @test_throws ErrorException BellZiggurat(x->1, (), 4)
+            @test_throws ErrorException BellZiggurat(x->1, (1,), 4)
+            @test_throws ErrorException BoundedZiggurat(x->1, (), 4)
+            @test_throws ErrorException BoundedZiggurat(x->1, (1,), 4)
+            @test_throws ErrorException UnboundedZiggurat(x->1, (), 4)
+            @test_throws ErrorException UnboundedZiggurat(x->1, (1,), 4)
+            @test_throws ErrorException CompositeZiggurat(x->1, (), 4)
+            @test_throws ErrorException CompositeZiggurat(x->1, (1,), 4)
         end
     end
 end

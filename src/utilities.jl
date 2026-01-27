@@ -11,7 +11,7 @@ regularize(domain::Regularized) = domain
 function regularize(domain)
     reg = unique(sort!(collect(float.(promote(domain...)))))
     if length(reg) < 2
-        error("empty domain. The domain needs at least two distinct points to mark the boundaries.")
+        error("The domain needs at least two distinct points to mark the boundaries.")
     end
     Regularized(reg)
 end

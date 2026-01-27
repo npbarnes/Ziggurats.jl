@@ -13,13 +13,13 @@ issamevector(a::Vector, b::Vector) = false
         end
 
         @testset "regularize errors if it doesn't contain 2 or more distinct elements" begin
-            @test_throws "empty domain" regularize(0)
-            @test_throws "empty domain" regularize([0])
-            @test_throws "empty domain" regularize((0,))
-            @test_throws "empty domain" regularize([1, 1, 1])
-            @test_throws "empty domain" regularize([1, 1.0f0, 1.0])
-            @test_throws "empty domain" regularize([])
-            @test_throws "empty domain" regularize(())
+            @test_throws "The domain needs at least two" regularize(0)
+            @test_throws "The domain needs at least two" regularize([0])
+            @test_throws "The domain needs at least two" regularize((0,))
+            @test_throws "The domain needs at least two" regularize([1, 1, 1])
+            @test_throws "The domain needs at least two" regularize([1, 1.0f0, 1.0])
+            @test_throws "The domain needs at least two" regularize([])
+            @test_throws "The domain needs at least two" regularize(())
         end
 
         @testset "regularize promotes to highest float or Float64 if none" begin
@@ -103,11 +103,11 @@ issamevector(a::Vector, b::Vector) = false
 
     @testset "_check_arguments" begin
         using Ziggurats: _check_arguments
-        valid_domains = regularize.([(0, Inf), (0, 1), (-Inf, 1)])
+        valid_domains = [(0, Inf), (0, 1), (-Inf, 1)]
 
-        inf_domains = regularize.([(-Inf, Inf)])
+        inf_domains = [(-Inf, Inf)]
 
-        wrong_length_domains = regularize.([(0, 0.5, 1), (0, 0.5, Inf), (-Inf, 0.5, 1), (-Inf, 0.5, Inf), ()])
+        wrong_length_domains = [(0, 0.5, 1), (0, 0.5, Inf), (-Inf, 0.5, 1), (-Inf, 0.5, Inf)]
 
         invalid_domains = [
             inf_domains;
@@ -129,26 +129,25 @@ issamevector(a::Vector, b::Vector) = false
 
         @testset "Using a non-positive N throws an error" begin
             @testset for N in invalid_Ns, d in domains
-                @test_throws DomainError _check_arguments(N, d)
+                @test_throws DomainError _check_arguments(N, regularize(d))
             end
         end
 
-        # Empty domian
         @testset "error when domain doesn't have exactly two distinct points" begin
             @testset for N in valid_Ns, d in wrong_length_domains
-                @test_throws "the domian needs" _check_arguments(N, d)
+                @test_throws "the domain needs exactly" _check_arguments(N, regularize(d))
             end
         end
 
         @testset "error when the domain is unbounded in both directions" begin
             @testset for N in valid_Ns, d in inf_domains
-                @test_throws "a domain of (-Inf, Inf)" _check_arguments(N, d)
+                @test_throws "a domain of (-Inf, Inf)" _check_arguments(N, regularize(d))
             end
         end
 
         @testset "Return nothing when everything checks out" begin
             for N in valid_Ns, d in valid_domains
-                @test _check_arguments(N, d) === nothing
+                @test _check_arguments(N, regularize(d)) === nothing
             end
         end
     end
@@ -190,25 +189,25 @@ issamevector(a::Vector, b::Vector) = false
     @testset "_identify_mode" begin
         import Ziggurats: _identify_mode
         f = x->x
-        @test _identify_mode(f, (0, 1)) == (1, 0)
+        @test _identify_mode(f, regularize((0, 1))) == (1, 0)
 
         f = x->5-x
-        @test _identify_mode(f, (0, 1)) == (0, 1)
+        @test _identify_mode(f, regularize((0, 1))) == (0, 1)
 
         @testset "the finite side of an unbounded domain is the mode" begin
             f = x->error("This function shouldn't be evaluated")
-            @test _identify_mode(f, (0, Inf)) == (0, Inf)
-            @test _identify_mode(f, (-Inf, 0)) == (0, -Inf)
+            @test _identify_mode(f, regularize((0, Inf))) == (0, Inf)
+            @test _identify_mode(f, regularize((-Inf, 0))) == (0, -Inf)
         end
 
         @testset "Check for invalid values on the boundaries" begin
             f = x -> x==1 ? NaN : x
-            @test_throws "pdf(x) is NaN on the boundary." _identify_mode(f, (0, 1))
-            @test_throws "pdf(x) is NaN on the boundary." _identify_mode(f, (1, 2))
+            @test_throws "pdf(x) is NaN on the boundary." _identify_mode(f, regularize((0, 1)))
+            @test_throws "pdf(x) is NaN on the boundary." _identify_mode(f, regularize((1, 2)))
 
             f = x -> x==1 ? Inf : x
-            @test_throws "pdf(x) is infinite on the boundary." _identify_mode(f, (0, 1))
-            @test_throws "pdf(x) is infinite on the boundary." _identify_mode(f, (1, 2))
+            @test_throws "pdf(x) is infinite on the boundary." _identify_mode(f, regularize((0, 1)))
+            @test_throws "pdf(x) is infinite on the boundary." _identify_mode(f, regularize((1, 2)))
         end
     end
 end
