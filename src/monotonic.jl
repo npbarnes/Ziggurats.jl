@@ -334,7 +334,7 @@ function monotonic_ziggurat(
     pdf,
     domain,
     N = nothing;
-    ipdf = inversepdf(pdf, domain),
+    ipdf = nothing,
     tailarea = nothing,
     cdf = nothing,
     ccdf = nothing,
