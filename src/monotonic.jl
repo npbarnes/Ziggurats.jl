@@ -364,8 +364,9 @@ but may otherwise be arbitrary - including discontinuous functions. An inverse f
 pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is computed
 numerically, but it can also be provided explicitly if necessary.
 """
-function BoundedZiggurat(pdf, domain, N; ipdf = nothing)
+function BoundedZiggurat(pdf, domain, N = nothing; ipdf = nothing)
     domain = regularize(domain)
+    N = default_numlayers(N, eltype(domain))
     _check_arguments(N, domain)
     a, b = domain
     if isinf(a) || isinf(b)
@@ -405,8 +406,9 @@ tailarea function are used in the construction of the ziggurat, and a `fallback`
 during sampling. Normally these additional functions are computed numerically, but they can
 be provided explicitly as keyword arguments if necessary.
 """
-function UnboundedZiggurat(pdf, domain, N; ipdf = nothing, tailarea = nothing, fallback = nothing)
+function UnboundedZiggurat(pdf, domain, N = nothing; ipdf = nothing, tailarea = nothing, fallback = nothing)
     domain = regularize(domain)
+    N = default_numlayers(N, eltype(domain))
     _check_arguments(N, domain)
     a, b = domain
     if !isinf(a) && !isinf(b)

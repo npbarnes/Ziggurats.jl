@@ -10,6 +10,12 @@ struct CompositeZiggurat{X,Y,Z<:Tuple{Ziggurat{X,Y},Ziggurat{X,Y},Vararg{Ziggura
 end
 
 # TODO: add option to autodetect monotonic subdomains.
+function CompositeZiggurat(pdf, domain; kwargs...)
+    domain = regularize(domain)
+    N = default_numlayers(nothing, eltype(domain))
+    CompositeZiggurat(pdf, domain, N; kwargs...)
+end
+
 function CompositeZiggurat(pdf, domain, N::Integer; kwargs...)
     domain = regularize(domain)
     Ns = fill(N, length(domain)-1)
