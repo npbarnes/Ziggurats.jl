@@ -17,6 +17,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
+[workspace]
+projects = ["docs"]
+
 [compat]
 AliasTables = "1.1"
 Compat = "3.47, 4.10"
