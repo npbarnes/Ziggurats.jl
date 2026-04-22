@@ -1,14 +1,45 @@
 abstract type SymmetricZiggurat{X,Y,LM} <: Ziggurat{X,Y} end
 
-struct BellZiggurat{X,Y,LM,Z<:MonotonicZiggurat{X,Y}} <: SymmetricZiggurat{X,Y,LM}
+struct BellZiggurat{X,Y,N,LM,Z<:MonotonicZiggurat{X,Y,N}} <: SymmetricZiggurat{X,Y,LM}
     mzig::Z
 
-    BellZiggurat(z::MonotonicZiggurat{X,Y}, LM) where {X,Y} = new{X,Y,LM,typeof(z)}(z)
+    BellZiggurat(z::MonotonicZiggurat{X,Y,N}, LM) where {N,X,Y} = new{X,Y,N,LM,typeof(z)}(z)
 
-    function BellZiggurat(z::MonotonicZiggurat{X,Y}) where {X,Y}
+    function BellZiggurat(z::MonotonicZiggurat)
         LM = layermask_signed(eltype(z), numlayers(z))
         BellZiggurat(z, LM)
     end
+end
+
+const BoundedBellZiggurat{X,Y,N,LM,Z} = BellZiggurat{X,Y,N,LM,Z} where {X,Y,N,LM,Z<:BoundedZiggurat{X,Y,N}}
+const UnboundedBellZiggurat{X,Y,N,LM,Z} = BellZiggurat{X,Y,N,LM,Z} where {X,Y,N,LM,Z<:UnboundedZiggurat{X,Y,N}}
+
+function BoundedBellZiggurat{X,Y}(pdf, half_domain; ipdf = nothing) where {X,Y}
+    BoundedBellZiggurat{X,Y,default_numlayers(X)}(pdf, half_domain; ipdf)
+end
+function BoundedBellZiggurat{X,Y,N}(pdf, half_domain; ipdf = nothing) where {X,Y,N}
+    z = BoundedZiggurat{X,Y,N}(pdf, half_domain; ipdf)
+    BellZiggurat(z)
+end
+
+function UnboundedBellZiggurat{X,Y}(
+    pdf,
+    half_domain;
+    ipdf = nothing,
+    tailarea = nothing,
+    fallback = nothing
+) where {X,Y}
+    UnboundedBellZiggurat{X,Y,default_numlayers(X)}(pdf, half_domain; ipdf, tailarea, fallback)
+end
+function UnboundedBellZiggurat{X,Y,N}(
+    pdf,
+    half_domain;
+    ipdf = nothing,
+    tailarea = nothing,
+    fallback = nothing
+) where {X,Y,N}
+    z = UnboundedZiggurat{X,Y,N}(pdf, half_domain; ipdf, tailarea, fallback)
+    BellZiggurat(z)
 end
 
 mask(::SymmetricZiggurat{X,Y,LM}) where {X,Y,LM} = LM
@@ -24,7 +55,7 @@ fallback(z::SymmetricZiggurat) = fallback(z.mzig)
 xarray(z::SymmetricZiggurat) = xarray(z.mzig)
 
 """
-    BellZiggurat(pdf, half_domain, [N]; [ipdf, tailarea, fallback, ...])
+    bell_ziggurat(pdf, half_domain, [N]; [ipdf, tailarea, fallback, ...])
 
 Constructs a high performance sampler for a univariate, unimodal, symmetric probability
 distributions (a.k.a. bell-shaped distributions) defined by a probability density function,
@@ -40,7 +71,11 @@ The arguments are the same as `monotonic_ziggurat()`. Keep in mind that the
 `ipdf`, `tailarea`, and `fallback` arguments are one sided and all must agree on which side
 with each other and with the half-domain.
 """
-function BellZiggurat(
+function bell_ziggurat(pdf, ::Val{half_domain}, ::Val{N} = Val(nothing); kwargs...) where {half_domain,N}
+    bell_ziggurat(pdf, half_domain, N; kwargs...)
+end
+
+function bell_ziggurat(
     pdf,
     half_domain,
     N = nothing;

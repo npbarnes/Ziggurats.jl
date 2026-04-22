@@ -8,9 +8,9 @@
         func(x) = exp(-x^2)
 
         @testset "BoundedZiggurat" begin
-            z_call = BoundedZiggurat(call, (0, 1), 8)
-            z_lamb = BoundedZiggurat(lamb, (0, 1), 8)
-            z_func = BoundedZiggurat(func, (0, 1), 8)
+            z_call = BoundedZiggurat{Float64,Float64,8}(call, (0, 1))
+            z_lamb = BoundedZiggurat{Float64,Float64,8}(lamb, (0, 1))
+            z_func = BoundedZiggurat{Float64,Float64,8}(func, (0, 1))
 
             import Ziggurats: widths, layerratios, heights, highside
             @test widths(z_call) == widths(z_lamb) == widths(z_func)
@@ -20,9 +20,9 @@
         end
 
         @testset "UnboundedZiggurat" begin
-            z_call = UnboundedZiggurat(call, (0, Inf), 8)
-            z_lamb = UnboundedZiggurat(lamb, (0, Inf), 8)
-            z_func = UnboundedZiggurat(func, (0, Inf), 8)
+            z_call = UnboundedZiggurat{Float64,Float64,8}(call, (0, Inf))
+            z_lamb = UnboundedZiggurat{Float64,Float64,8}(lamb, (0, Inf))
+            z_func = UnboundedZiggurat{Float64,Float64,8}(func, (0, Inf))
 
             import Ziggurats: widths, layerratios, heights, highside
             @test widths(z_call) == widths(z_lamb) == widths(z_func)
@@ -56,8 +56,8 @@
             false # test fails
         end
 
-        @test ziggurat(f, (-2, 0, 1), 2) isa CompositeZiggurat{Float64}
-        @test_throws "pdf is not monotonic" ziggurat(f, (-2, 1, 1), 256)
+        @test ziggurat(f, (-2, 0, 1), 2) isa Ziggurats.CompositeZiggurat{Float64}
+        @test_throws "pdf is not monotonic" ziggurat(f, (-2, 1), 256)
 
         @test_broken try
             ziggurat(f, (-2, -1, 1), 2)
@@ -74,27 +74,26 @@
 
     @testset "ziggurat constructors fail fast when the domain is invalid" begin
         @testset "BoundedZiggurats fail when the domain contains Inf" begin
-            @test_throws "expected a bounded domain" BoundedZiggurat(x -> 1, (1, Inf), 4)
-            @test_throws "expected a bounded domain" BoundedZiggurat(x -> 1, (-Inf, 1), 4)
-            @test_throws "expected a bounded domain" BoundedZiggurat(x -> 1, (1, Inf), 4)
-            @test_throws "a domain of (-Inf, Inf) is impossible" BoundedZiggurat(x -> 1, (-Inf, Inf), 4)
+            @test_throws "expected a bounded domain" BoundedZiggurat{Float64,Float64,4}(x -> 1, (1, Inf))
+            @test_throws "expected a bounded domain" BoundedZiggurat{Float64,Float64,4}(x -> 1, (-Inf, 1))
+            @test_throws "expected a bounded domain" BoundedZiggurat{Float64,Float64,4}(x -> 1, (1, Inf))
+            @test_throws "a domain of (-Inf, Inf) is impossible" BoundedZiggurat{Float64,Float64,4}(x -> 1, (-Inf, Inf))
         end
 
         @testset "UnboundedZiggurats fail when the domain does not contain exactly one Inf" begin
-            @test_throws "expected an unbounded domain" UnboundedZiggurat(x -> 1, (0, 1), 4)
-            @test_throws "a domain of (-Inf, Inf) is impossible" UnboundedZiggurat(x -> 1, (-Inf, Inf), 4)
+            @test_throws "expected an unbounded domain" UnboundedZiggurat{Float64,Float64,4}(x -> 1, (0, 1))
+            @test_throws "a domain of (-Inf, Inf) is impossible" UnboundedZiggurat{Float64,Float64,4}(
+                x -> 1,
+                (-Inf, Inf)
+            )
         end
 
         @testset "monotonic ziggurats fail when the domain is not a pair" begin
-            invalid_domains = [(1, 2, 3), (1,), (1, 1.0)]
-
-            constructors = [monotonic_ziggurat, BoundedZiggurat, UnboundedZiggurat]
-
             f = x->1
 
-            @testset for d in invalid_domains, c in constructors
-                @test_throws ErrorException c(f, d, 4)
-            end
+            @test_throws ErrorException monotonic_ziggurat(f, (1, 2, 3), 4)
+            @test_throws ErrorException BoundedZiggurat{Float64,Float64,4}(f, (1, 2, 3))
+            @test_throws ErrorException UnboundedZiggurat{Float64,Float64,4}(f, (1, 2, Inf))
         end
 
         @testset "domains without at least two distinct points are always invalid" begin
@@ -102,14 +101,14 @@
             @test_throws ErrorException ziggurat(x->1, (1,), 4)
             @test_throws ErrorException monotonic_ziggurat(x->1, (), 4)
             @test_throws ErrorException monotonic_ziggurat(x->1, (1,), 4)
-            @test_throws ErrorException BellZiggurat(x->1, (), 4)
-            @test_throws ErrorException BellZiggurat(x->1, (1,), 4)
-            @test_throws ErrorException BoundedZiggurat(x->1, (), 4)
-            @test_throws ErrorException BoundedZiggurat(x->1, (1,), 4)
-            @test_throws ErrorException UnboundedZiggurat(x->1, (), 4)
-            @test_throws ErrorException UnboundedZiggurat(x->1, (1,), 4)
-            @test_throws ErrorException CompositeZiggurat(x->1, (), 4)
-            @test_throws ErrorException CompositeZiggurat(x->1, (1,), 4)
+            @test_throws ErrorException BoundedBellZiggurat{Float64,Float64,4}(x->1, ())
+            @test_throws ErrorException BoundedBellZiggurat{Float64,Float64,4}(x->1, (1,))
+            @test_throws ErrorException UnboundedBellZiggurat{Float64,Float64,4}(x->1, ())
+            @test_throws ErrorException UnboundedBellZiggurat{Float64,Float64,4}(x->1, (1,))
+            @test_throws ErrorException BoundedZiggurat{Float64,Float64,4}(x->1, ())
+            @test_throws ErrorException BoundedZiggurat{Float64,Float64,4}(x->1, (1,))
+            @test_throws ErrorException UnboundedZiggurat{Float64,Float64,4}(x->1, ())
+            @test_throws ErrorException UnboundedZiggurat{Float64,Float64,4}(x->1, (1,))
         end
     end
 end

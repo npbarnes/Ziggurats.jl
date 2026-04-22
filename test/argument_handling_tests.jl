@@ -8,18 +8,31 @@ issamevector(a::Vector, b::Vector) = false
             domains = [[1, 2, 3], (1, 2, 3), 1:3, (i for i in 1:3)]
 
             @testset for d in domains
-                @test issamevector(regularize(d).a, [1.0, 2.0, 3.0])
+                @test all(regularize(d).a .=== [1.0, 2.0, 3.0])
             end
+        end
+
+        @testset "tuples, and some arrays are type inferred" begin
+            @test @inferred(regularize((1, 2, 3))).a === (1.0, 2.0, 3.0)
+            @test @inferred(regularize((1, 2, 3.0))).a === (1.0, 2.0, 3.0)
+            @test @inferred(regularize((1, 2, 3.0f0))).a === (1.0f0, 2.0f0, 3.0f0)
+            @test @inferred(regularize((Float16(1), Float16(2), 3.0f0))).a === (1.0f0, 2.0f0, 3.0f0)
+
+            @test issamevector(@inferred(regularize(Integer[1, Int32(2)])).a, [1.0, 2.0])
+            @test issamevector(@inferred(regularize(Real[1, π])).a, [1.0, float(π)])
         end
 
         @testset "regularize errors if it doesn't contain 2 or more distinct elements" begin
             @test_throws "The domain needs at least two" regularize(0)
             @test_throws "The domain needs at least two" regularize([0])
             @test_throws "The domain needs at least two" regularize((0,))
-            @test_throws "The domain needs at least two" regularize([1, 1, 1])
-            @test_throws "The domain needs at least two" regularize([1, 1.0f0, 1.0])
             @test_throws "The domain needs at least two" regularize([])
             @test_throws "The domain needs at least two" regularize(())
+        end
+
+        @testset "error when there are duplicate entries" begin
+            @test_throws "duplicate values" regularize((1, 2, 1))
+            @test_throws "duplicate values" regularize([1, 2, 1])
         end
 
         @testset "regularize promotes to highest float or Float64 if none" begin
@@ -35,41 +48,60 @@ issamevector(a::Vector, b::Vector) = false
             @test eltype(regularize((0.0f0, Float16(1.0)))) == Float32
         end
 
-        @testset "regularize sorts, promotes, and removes duplicates" begin
-            @test issamevector(regularize((0, Inf)).a, [0.0, Inf])
-            @test issamevector(regularize((Inf, 0)).a, [0.0, Inf])
-            @test issamevector(regularize((0.0, Inf)).a, [0.0, Inf])
-            @test issamevector(regularize((Inf, 0.0)).a, [0.0, Inf])
-            @test issamevector(regularize((0.0f0, Inf)).a, [0.0, Inf])
-            @test issamevector(regularize((Inf, 0.0f0)).a, [0.0, Inf])
-            @test issamevector(regularize((0, 0.0, Inf)).a, [0.0, Inf])
-            @test issamevector(regularize((0, 0.0, Inf32)).a, [0.0, Inf])
-            @test issamevector(regularize((0, 0.0f0, Inf)).a, [0.0, Inf])
-            @test issamevector(regularize((0, 0.0f0, Inf32)).a, [0.0f0, Inf32])
-            @test issamevector(regularize((0.0f0, Inf32)).a, [0.0f0, Inf32])
-            @test issamevector(regularize((Inf32, 0.0f0)).a, [0.0f0, Inf32])
+        @testset "regularize sorts, and promotes" begin
+            @test regularize((0, Inf)).a === (0.0, Inf)
+            @test regularize((Inf, 0)).a === (0.0, Inf)
+            @test regularize((0.0, Inf)).a === (0.0, Inf)
+            @test regularize((Inf, 0.0)).a === (0.0, Inf)
+            @test regularize((0.0f0, Inf)).a === (0.0, Inf)
+            @test regularize((Inf, 0.0f0)).a === (0.0, Inf)
+            @test regularize((0.0f0, Inf32)).a === (0.0f0, Inf32)
+            @test regularize((Inf32, 0.0f0)).a === (0.0f0, Inf32)
 
-            @test issamevector(regularize((0, 7)).a, [0.0, 7.0])
-            @test issamevector(regularize((7, 0)).a, [0.0, 7.0])
-            @test issamevector(regularize((0.0, 7)).a, [0.0, 7.0])
-            @test issamevector(regularize((7.0, 0)).a, [0.0, 7.0])
-            @test issamevector(regularize((0, 7.0)).a, [0.0, 7.0])
-            @test issamevector(regularize((7, 0.0)).a, [0.0, 7.0])
-            @test issamevector(regularize((0.0, 7.0)).a, [0.0, 7.0])
-            @test issamevector(regularize((7.0, 0.0)).a, [0.0, 7.0])
-            @test issamevector(regularize((0, 0, 7, 7)).a, [0.0, 7.0])
-            @test issamevector(regularize((7, 7, 0, 0)).a, [0.0, 7.0])
-            @test issamevector(regularize((0, 0.0, 7.0, 7)).a, [0.0, 7.0])
-            @test issamevector(regularize((7, 7.0, 0.0, 0)).a, [0.0, 7.0])
+            @test regularize((0, 7)).a === (0.0, 7.0)
+            @test regularize((7, 0)).a === (0.0, 7.0)
+            @test regularize((0.0, 7)).a === (0.0, 7.0)
+            @test regularize((7.0, 0)).a === (0.0, 7.0)
+            @test regularize((0, 7.0)).a === (0.0, 7.0)
+            @test regularize((7, 0.0)).a === (0.0, 7.0)
+            @test regularize((0.0, 7.0)).a === (0.0, 7.0)
+            @test regularize((7.0, 0.0)).a === (0.0, 7.0)
 
-            @test issamevector(regularize((0.0f0, 7)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((7.0f0, 0)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((0, 7.0f0)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((7, 0.0f0)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((0.0f0, 7.0f0)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((7.0f0, 0.0f0)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((0, 0.0f0, 7.0f0, 7)).a, [0.0f0, 7.0f0])
-            @test issamevector(regularize((7, 7.0f0, 0.0f0, 0)).a, [0.0f0, 7.0f0])
+            @test regularize((0.0f0, 7)).a === (0.0f0, 7.0f0)
+            @test regularize((7.0f0, 0)).a === (0.0f0, 7.0f0)
+            @test regularize((0, 7.0f0)).a === (0.0f0, 7.0f0)
+            @test regularize((7, 0.0f0)).a === (0.0f0, 7.0f0)
+            @test regularize((0.0f0, 7.0f0)).a === (0.0f0, 7.0f0)
+            @test regularize((7.0f0, 0.0f0)).a === (0.0f0, 7.0f0)
+
+            @test regularize((Inf, 7, 3, 0)).a === (0.0, 3.0, 7.0, Inf)
+
+            @test issamevector(regularize([0, Inf]).a, [0.0, Inf])
+            @test issamevector(regularize([Inf, 0]).a, [0.0, Inf])
+            @test issamevector(regularize([0.0, Inf]).a, [0.0, Inf])
+            @test issamevector(regularize([Inf, 0.0]).a, [0.0, Inf])
+            @test issamevector(regularize([0.0f0, Inf]).a, [0.0, Inf])
+            @test issamevector(regularize([Inf, 0.0f0]).a, [0.0, Inf])
+            @test issamevector(regularize([0.0f0, Inf32]).a, [0.0f0, Inf32])
+            @test issamevector(regularize([Inf32, 0.0f0]).a, [0.0f0, Inf32])
+
+            @test issamevector(regularize([0, 7]).a, [0.0, 7.0])
+            @test issamevector(regularize([7, 0]).a, [0.0, 7.0])
+            @test issamevector(regularize([0.0, 7]).a, [0.0, 7.0])
+            @test issamevector(regularize([7.0, 0]).a, [0.0, 7.0])
+            @test issamevector(regularize([0, 7.0]).a, [0.0, 7.0])
+            @test issamevector(regularize([7, 0.0]).a, [0.0, 7.0])
+            @test issamevector(regularize([0.0, 7.0]).a, [0.0, 7.0])
+            @test issamevector(regularize([7.0, 0.0]).a, [0.0, 7.0])
+
+            @test issamevector(regularize([0.0f0, 7]).a, [0.0f0, 7.0f0])
+            @test issamevector(regularize([7.0f0, 0]).a, [0.0f0, 7.0f0])
+            @test issamevector(regularize([0, 7.0f0]).a, [0.0f0, 7.0f0])
+            @test issamevector(regularize([7, 0.0f0]).a, [0.0f0, 7.0f0])
+            @test issamevector(regularize([0.0f0, 7.0f0]).a, [0.0f0, 7.0f0])
+            @test issamevector(regularize([7.0f0, 0.0f0]).a, [0.0f0, 7.0f0])
+
+            @test issamevector(regularize([Inf, 7, 3, 0]).a, [0.0, 3.0, 7.0, Inf])
         end
 
         @testset "regularize is idempotent" begin

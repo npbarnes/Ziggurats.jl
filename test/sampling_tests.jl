@@ -25,7 +25,7 @@ function bell_sampling_tests(td::CompositeTestData)
                 test_rightfallbacks = unique([nothing, td.right_fallback])
                 @testset for left_fallback in test_leftfallbacks, right_fallback in test_rightfallbacks
                     @testset "Left side domain" begin
-                        z_left = BellZiggurat(
+                        z_left = bell_ziggurat(
                             td.f,
                             (td.domain[1], td.domain[2]),
                             N;
@@ -41,7 +41,7 @@ function bell_sampling_tests(td::CompositeTestData)
                     end
 
                     @testset "Right side domain" begin
-                        z_right = BellZiggurat(
+                        z_right = bell_ziggurat(
                             td.f,
                             (td.domain[2], td.domain[3]),
                             N;
@@ -69,7 +69,7 @@ function laplace_sampling_tests(td::CompositeTestData)
                 test_rightfallbacks = unique([nothing, td.right_fallback])
                 @testset for left_fallback in test_leftfallbacks, right_fallback in test_rightfallbacks
                     @testset "Left side domain" begin
-                        z_left = BellZiggurat(
+                        z_left = bell_ziggurat(
                             x -> exp(x)/2,
                             (td.domain[1], td.domain[2]),
                             N;
@@ -85,7 +85,7 @@ function laplace_sampling_tests(td::CompositeTestData)
                     end
 
                     @testset "Right side domain" begin
-                        z_right = BellZiggurat(
+                        z_right = bell_ziggurat(
                             x -> exp(-x)/2,
                             (td.domain[2], td.domain[3]),
                             N;
@@ -112,7 +112,7 @@ function composite_sampling_tests(td::CompositeTestData)
                 test_leftfallbacks = unique([nothing, td.left_fallback])
                 test_rightfallbacks = unique([nothing, td.right_fallback])
                 @testset for left_fallback in test_leftfallbacks, right_fallback in test_rightfallbacks
-                    z = CompositeZiggurat(td.f, td.domain, N; td.ipdfs, td.cdf, td.ccdf, left_fallback, right_fallback)
+                    z = composite_ziggurat(td.f, td.domain, N; td.ipdfs, td.cdf, td.ccdf, left_fallback, right_fallback)
 
                     @test typeof(rand(z)) == eltype(z) == td.T
                     @test eltype(rand(z, 3)) == td.T

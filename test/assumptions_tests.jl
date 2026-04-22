@@ -3,7 +3,7 @@
         f = x -> isinf(x) ? error("pdf evaluated at infinity") : exp(-x)
 
         @testset "PDFWrap doesn't evaluate pdf at infinity" begin
-            wf = Ziggurats.PDFWrap(f, 0, Inf)
+            wf = Ziggurats.PDFWrap{Float64,Float64}(f, 0.0, Inf)
             @test wf(Inf) == 0
         end
 

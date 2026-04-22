@@ -4,12 +4,51 @@ function between(a, b, x)
 end
 
 struct Regularized{T}
-    a::Vector{T}
+    a::T
 end
+
+promote_to_float(a) = float.(promote(a...))
+@generated function promote_to_float(a::AbstractVector{X}) where {X}
+    if isconcretetype(X) && X <: AbstractFloat
+        return :(copy(a))
+    elseif isconcretetype(X) && !(X <: AbstractFloat)
+        return :(float.(a))
+    elseif !isconcretetype(X) && X <: AbstractFloat
+        return :(collect(promote(a...)))
+    elseif !isconcretetype(X) && !(X <: AbstractFloat)
+        if X <: Real
+            return :(Vector{Float64}(a))
+        else
+            return :(collect(float.(promote(a...))))
+        end
+    else
+        error("Unreachable error")
+    end
+end
+
+sort_maybeinplace(x::Tuple) = sort(x)
+sort_maybeinplace(x::AbstractArray) = sort!(x)
 
 regularize(domain::Regularized) = domain
 function regularize(domain)
-    reg = unique(sort!(collect(float.(promote(domain...)))))
+    reg = domain |> promote_to_float |> sort_maybeinplace
+    if !allunique(reg)
+        error("duplicate values found in domain.")
+    end
+    if length(reg) < 2
+        error("The domain needs at least two distinct points to mark the boundaries.")
+    end
+    Regularized(reg)
+end
+
+regularize(::Type{A}, domain::Regularized{B}) where {A,B<:AbstractArray{A}} = domain
+regularize(::Type{A}, domain::Regularized{B}) where {A,N,B<:NTuple{N,A}} = domain
+regularize(a::Type{A}, domain::Regularized) where {A} = throw(MethodError(regularize, (a, domain)))
+function regularize(T, domain)
+    reg = convert.(T, domain) |> sort_maybeinplace
+    if !allunique(reg)
+        error("duplicate values found in domain.")
+    end
     if length(reg) < 2
         error("The domain needs at least two distinct points to mark the boundaries.")
     end

@@ -1,29 +1,274 @@
-struct CompositeZiggurat{X,Y,Z<:Tuple{Ziggurat{X,Y},Ziggurat{X,Y},Vararg{Ziggurat{X,Y}}},AT} <: Ziggurat{X,Y}
+struct CompositeZiggurat{
+    X,
+    Y,
+    Ns,
+    M,
+    ZL<:MonotonicZiggurat{X,Y},
+    ZR<:MonotonicZiggurat{X,Y},
+    Z<:NTuple{M,MonotonicZiggurat{X,Y}},
+    AT
+} <: Ziggurat{X,Y}
     zigs::Z
     at::AT
-    function CompositeZiggurat(
-        zigs::Tuple{Ziggurat{X,Y},Ziggurat{X,Y},Vararg{Ziggurat{X,Y}}},
-        at::AliasTable
-    ) where {X,Y}
-        new{X,Y,typeof(zigs),typeof(at)}(zigs, at)
+
+    function CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at) where {X,Y,Ns<:Tuple,M,ZL,ZR,Z,AT}
+        if Z.parameters[1] != ZL || Z.parameters[end] != ZR
+            error("the first and last entries of Z must match ZL and ZR respectively.")
+        end
+
+        for (z, n) in zip(Z.parameters, Ns.parameters)
+            if numlayers(z) != n
+                error("The number of layers in each entry of Z must equal the cooresponding entry of Ns")
+            end
+        end
+
+        for z in Z.parameters[2:(end - 1)]
+            if !(z <: BoundedZiggurat)
+                error("each entry in Z except the first and last must be BoundedZiggurat.")
+            end
+        end
+
+        new{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
     end
 end
 
-# TODO: add option to autodetect monotonic subdomains.
-function CompositeZiggurat(pdf, domain; kwargs...)
-    domain = regularize(domain)
-    N = default_numlayers(nothing, eltype(domain))
-    CompositeZiggurat(pdf, domain, N; kwargs...)
+const BoundedCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:BoundedZiggurat,ZR<:BoundedZiggurat,Z,AT}
+const LeftTailCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:UnboundedZiggurat,ZR<:BoundedZiggurat,Z,AT}
+const RightTailCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:BoundedZiggurat,ZR<:UnboundedZiggurat,Z,AT}
+const TwoTailCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:UnboundedZiggurat,ZR<:UnboundedZiggurat,Z,AT}
+
+tupletypelength(::Type{T}) where {T<:Tuple} = fieldcount(T)
+
+tupletypefirst(::Type{<:Tuple{First,Vararg}}) where {First} = First
+tupletypelast(::Type{T}) where {T<:Tuple{Any,Vararg}} = fieldtype(T, fieldcount(T))
+
+asatupletype(t::Type{<:Tuple}) = t
+asatupletype(t) = Tuple{t...}
+
+handle_N_as_value(N::Integer, M) = NTuple{M,N}
+handle_N_as_value(N::Tuple, M) = asatupletype(N)
+
+for CZ in
+    (:BoundedCompositeZiggurat, :LeftTailCompositeZiggurat, :RightTailCompositeZiggurat, :TwoTailCompositeZiggurat)
+    @eval begin
+        function $(CZ){X,Y,N,M}(pdf, domain; kwargs...) where {X,Y,N,M}
+            _N = handle_N_as_value(N, M)
+            $(CZ){X,Y,_N,M}(pdf, domain; kwargs...)
+        end
+
+        function $(CZ){X,Y,Ns}(pdf, domain; kwargs...) where {X,Y,Ns}
+            _Ns = asatupletype(Ns)
+            M = tupletypelength(_Ns)
+            $(CZ){X,Y,_Ns,M}(pdf, domain; kwargs...)
+        end
+
+        $(CZ){X,Y,Ns,M}(pdf, domain; kwargs...) where {X,Y,Ns<:Tuple,M} =
+            error("the Tuple of layer counts, Ns, must have length equal to M.")
+    end
 end
 
-function CompositeZiggurat(pdf, domain, N::Integer; kwargs...)
+function BoundedCompositeZiggurat{X,Y,Ns,M}(
+    pdf,
+    domain;
+    area = nothing,
+    cdf = nothing,
+    ccdf = nothing,
+    ipdfs = nothing,
+    p = nothing
+) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+
+    zig_L = BoundedZiggurat{X,Y,tupletypefirst(Ns)}(pdf, subdomains[1, :]; ipdf = _ipdfs[1])
+    zig_R = BoundedZiggurat{X,Y,tupletypelast(Ns)}(pdf, subdomains[end, :]; ipdf = _ipdfs[end])
+
+    zigs = (zig_L, zigs_middle..., zig_R)
+
+    ZL = typeof(zig_L)
+    ZR = typeof(zig_R)
+    Z = typeof(zigs)
+    AT = typeof(at)
+
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+end
+
+function LeftTailCompositeZiggurat{X,Y,Ns,M}(
+    pdf,
+    domain;
+    ipdfs = nothing,
+    area = nothing,
+    cdf = nothing,
+    ccdf = nothing,
+    left_fallback = nothing,
+    p = nothing
+) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+
+    zig_L = UnboundedZiggurat{X,Y,tupletypefirst(Ns)}(
+        pdf,
+        subdomains[1, :];
+        ipdf = _ipdfs[1],
+        tailarea = cdf,
+        fallback = left_fallback
+    )
+    zig_R = BoundedZiggurat{X,Y,tupletypelast(Ns)}(pdf, subdomains[end, :]; ipdf = _ipdfs[end])
+
+    zigs = (zig_L, zigs_middle..., zig_R)
+
+    ZL = typeof(zig_L)
+    ZR = typeof(zig_R)
+    Z = typeof(zigs)
+    AT = typeof(at)
+
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+end
+
+function RightTailCompositeZiggurat{X,Y,Ns,M}(
+    pdf,
+    domain;
+    ipdfs = nothing,
+    area = nothing,
+    cdf = nothing,
+    ccdf = nothing,
+    right_fallback = nothing,
+    p = nothing
+) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+
+    zig_L = BoundedZiggurat{X,Y,tupletypefirst(Ns)}(pdf, subdomains[1, :]; ipdf = _ipdfs[1])
+    zig_R = UnboundedZiggurat{X,Y,tupletypelast(Ns)}(
+        pdf,
+        subdomains[end, :];
+        ipdf = _ipdfs[end],
+        tailarea = ccdf,
+        fallback = right_fallback
+    )
+
+    zigs = (zig_L, zigs_middle..., zig_R)
+
+    ZL = typeof(zig_L)
+    ZR = typeof(zig_R)
+    Z = typeof(zigs)
+    AT = typeof(at)
+
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+end
+
+function TwoTailCompositeZiggurat{X,Y,Ns,M}(
+    pdf,
+    domain;
+    ipdfs = nothing,
+    area = nothing,
+    cdf = nothing,
+    ccdf = nothing,
+    left_fallback = nothing,
+    right_fallback = nothing,
+    p = nothing
+) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+
+    zig_L = UnboundedZiggurat{X,Y,tupletypefirst(Ns)}(
+        pdf,
+        subdomains[1, :];
+        ipdf = _ipdfs[1],
+        tailarea = cdf,
+        fallback = left_fallback
+    )
+    zig_R = UnboundedZiggurat{X,Y,tupletypelast(Ns)}(
+        pdf,
+        subdomains[end, :];
+        ipdf = _ipdfs[end],
+        tailarea = ccdf,
+        fallback = right_fallback
+    )
+
+    zigs = (zig_L, zigs_middle..., zig_R)
+
+    ZL = typeof(zig_L)
+    ZR = typeof(zig_R)
+    Z = typeof(zigs)
+    AT = typeof(at)
+
+    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+end
+
+function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+    dom = regularize(domain)
+
+    if M != length(dom) - 1
+        error("the number of subdomains must match the number of layernums.")
+    end
+
+    if area === nothing
+        if cdf !== nothing
+            _area = let cdf = cdf
+                (a, b) -> abs(cdf(b) - cdf(a))
+            end
+        elseif ccdf !== nothing
+            _area = let ccdf = ccdf
+                (a, b) -> abs(ccdf(a) - ccdf(b))
+            end
+        else
+            segbuf = alloc_segbuf(X, Y, Y)
+            _tailarea = TailArea(pdf, first(dom), segbuf)
+
+            _area = let _tailarea=_tailarea
+                (a, b) -> abs(_tailarea(b) - _tailarea(a))
+            end
+        end
+    else
+        _area = area
+    end
+
+    if ipdfs === nothing
+        _ipdfs = ntuple(i->nothing, M)
+    else
+        _ipdfs = ipdfs
+    end
+
+    subdomains = get_subdomains(pdf, dom)
+
+    zigs_middle = middle_zigs(X, Y, Ns, pdf, subdomains, _ipdfs)
+    _p = zigprobs(_area, subdomains, p)
+    at = AliasTable(_p)
+
+    return zigs_middle, at, _ipdfs, subdomains
+end
+
+extracttype(::Type{Type{T}}) where {T} = T
+@generated function middle_zigs(X, Y, Ns::Type{<:Tuple}, pdf, subdomains, ipdfs)
+    # TODO: Check if this @generated method is needed for type stability. The generic method
+    # (below) may be sufficient.
+    NN = extracttype(Ns).parameters
+    idxs = eachindex(NN)
+
+    middles = collect(zip(idxs, NN))[2:(end - 1)]
+
+    Expr(:tuple, (:(BoundedZiggurat{X,Y,$N}(pdf, subdomains[$i, :]; ipdf = ipdfs[$i])) for (i, N) in middles)...)
+end
+
+function middle_zigs(X, Y, Ns, pdf, subdomains, ipdfs)
+    ntuple(i -> BoundedZiggurat{X,Y,Ns[i + 1]}(pdf, subdomains[i + 1, :]; ipdf = ipdfs[i + 1]), length(Ns)-2)
+end
+
+# TODO: add option to autodetect monotonic subdomains.
+function composite_ziggurat(pdf, domain; kwargs...)
+    domain = regularize(domain)
+    N = default_numlayers(nothing, eltype(domain))
+    composite_ziggurat(pdf, domain, N; kwargs...)
+end
+
+function composite_ziggurat(pdf, domain, N::Integer; kwargs...)
     domain = regularize(domain)
     Ns = fill(N, length(domain)-1)
-    CompositeZiggurat(pdf, domain, Ns; kwargs...)
+    composite_ziggurat(pdf, domain, Ns; kwargs...)
 end
 
 """
-    CompositeZiggurat(pdf, domain, Ns; [ipdf, cdf, ccdf, left_fallback, right_fallback, p])
+    composite_ziggurat(pdf, domain, Ns; [ipdf, cdf, ccdf, left_fallback, right_fallback, p])
 
 Constructs a sampler for a piecewise-monotonic univariate probability distribution defined by
 a probability density function (`pdf`). The domain must be a list of numbers that divides
@@ -32,7 +277,7 @@ not diverge to infinity anywhere on the domain, including at the division points
 otherwise be arbitrary - including discontinuous functions. Generate random numbers by
 passing the returned ziggurat object to Julia's `rand` or `rand!` functions.
 
-`CompositeZiggurat` independently generates monotonic ziggurats for each subdomain. The
+`composite_ziggurat` independently generates monotonic ziggurats for each subdomain. The
 leftmost and rightmost ziggurats may be unbounded. Internal subdomains are necessarily bounded.
 The [`monotonic_ziggurat`](@ref) function is used internally. The `ipdf` argument is used to
 pass a list of inverse pdfs; one for each subdomain. Use the `cdf` and `ccdf` arguments to
@@ -92,68 +337,35 @@ julia> rand(z, 3)
  -1.3362254231230777
 ```
 """
-function CompositeZiggurat(
+function composite_ziggurat(
     pdf,
     domain,
     Ns;
     ipdfs = nothing,
+    area = nothing,
     cdf = nothing,
     ccdf = nothing,
     left_fallback = nothing,
     right_fallback = nothing,
     p = nothing
 )
-    domain = regularize(domain)
+    dom = regularize(domain)
+    X = eltype(dom)
+    Y = guess_ytype(pdf, dom)
+    M = length(dom) - 1
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, dom; ipdfs, area, cdf, ccdf, p)
 
-    a, b = extrema(domain)
-    subdomains = get_subdomains(pdf, domain)
+    zig_L = monotonic_ziggurat(pdf, subdomains[1, :]; ipdf = _ipdfs[1], cdf = cdf, fallback = left_fallback)
+    zig_R = monotonic_ziggurat(pdf, subdomains[end, :]; ipdf = _ipdfs[end], ccdf = ccdf, fallback = right_fallback)
 
-    if size(subdomains, 1) != length(Ns)
-        throw(ArgumentError("Ns must be either an Integer or an iterable with length equal to the number of subdomains."))
-    end
-    if ipdfs === nothing
-        ipdfs = [nothing for d in eachrow(subdomains)]
-    end
-    if cdf === nothing
-        val = pdf(Roots.__middle(a, b))
-        domain_type = eltype(domain)
-        range_type = typeof(val)
-        error_type = typeof(norm(val))
-        segbuf = alloc_segbuf(domain_type, range_type, error_type)
+    zigs = (zig_L, zigs_middle..., zig_R)
 
-        cdf = TailArea(pdf, a, segbuf)
-    end
-    if ccdf === nothing
-        val = pdf(Roots.__middle(a, b))
-        domain_type = typeof(domain[1])
-        range_type = typeof(val)
-        error_type = typeof(norm(val))
-        segbuf = alloc_segbuf(domain_type, range_type, error_type)
+    ZL = typeof(zig_L)
+    ZR = typeof(zig_R)
+    Z = typeof(zigs)
+    AT = typeof(at)
 
-        ccdf = TailArea(pdf, b, segbuf)
-    end
-
-    _p = zigprobs(cdf, subdomains, p)
-
-    if !(length(domain) - 1 == length(Ns) == length(ipdfs) == length(_p))
-        throw(ArgumentError("Ns, ipdfs, and p must all have a length one less than the length of domain."))
-    end
-
-    zig_gen = i -> begin
-        if i == 1
-            fallback = left_fallback
-        elseif i == size(subdomains, 1)
-            fallback = right_fallback
-        else
-            fallback = nothing
-        end
-        monotonic_ziggurat(pdf, @view(subdomains[i, :]), Ns[i]; ipdf = ipdfs[i], cdf, ccdf, fallback)
-    end
-
-    zigs = ntuple(zig_gen, size(subdomains, 1))
-    at = AliasTable(_p)
-
-    CompositeZiggurat(zigs, at)
+    CompositeZiggurat{X,Y,asatupletype(Ns),M,ZL,ZR,Z,AT}(zigs, at)
 end
 
 """
@@ -223,8 +435,8 @@ function _get_subdomains(f, domain)
     sd
 end
 
-zigprobs(cdf, subdomains, ::Nothing) = [cdf(b) - cdf(a) for (a, b) in eachrow(subdomains)]
-function zigprobs(cdf, subdomains, p::AbstractArray)
+zigprobs(area, subdomains, ::Nothing) = [area(a, b) for (a, b) in eachrow(subdomains)]
+function zigprobs(area, subdomains, p::AbstractArray)
     if length(p) != size(subdomains, 1)
         error("the length of p is not equal to the number of subdomains.")
     end
@@ -233,7 +445,7 @@ function zigprobs(cdf, subdomains, p::AbstractArray)
     for i in eachindex(p)
         if p[i] === nothing
             a, b = @view(subdomains[i, :])
-            _p[i] = cdf(b) - cdf(a)
+            _p[i] = area(a, b)
         else
             _p[i] = p[i]
         end

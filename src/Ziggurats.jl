@@ -14,8 +14,10 @@ using Logging
 using Compat
 
 export Ziggurat, MonotonicZiggurat
-export BoundedZiggurat, UnboundedZiggurat, BellZiggurat, CompositeZiggurat
-export ziggurat, monotonic_ziggurat
+export BoundedZiggurat, UnboundedZiggurat
+export BoundedBellZiggurat, UnboundedBellZiggurat
+export BoundedCompositeZiggurat, LeftTailCompositeZiggurat, RightTailCompositeZiggurat, TwoTailCompositeZiggurat
+export ziggurat, monotonic_ziggurat, bell_ziggurat, composite_ziggurat
 export inversepdf
 
 @compat public monotonic_segments
@@ -28,8 +30,9 @@ Base.eltype(::Type{<:Ziggurat{X}}) where {X} = X
 Ytype(::Type{<:Ziggurat{X,Y}}) where {X,Y} = Y
 Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
 
+default_numlayers(T) = T == Float16 ? 64 : 256
 default_numlayers(N::Number, T) = N
-default_numlayers(N::Nothing, T) = T == Float16 ? 64 : 256
+default_numlayers(::Nothing, T) = default_numlayers(T)
 
 include("utilities.jl")
 include("inverse_pdf.jl")
@@ -50,8 +53,8 @@ passing the returned ziggurat object to Julia's `rand` or `rand!` functions.
 If the domain only has two endpoints and no internal points, then the keyword arguments
 `ipdf`, `tailarea`, `cdf`, `ccdf`, and `fallback` get passed along to
 [`monotonic_ziggurat`](@ref), otherwise the arguments  `ipdf`, `cdf`, `ccdf`, `left_fallback`,
-`right_fallback`, and `p` get passed along to [`CompositeZiggurat`](@ref). See the
-documentation of those functions for more details on the interactions between arguments.
+`right_fallback`, and `p` get passed along to [`composite_ziggurat`](@ref). See the
+documentation of those functions for more details on the arguments.
 
 # Examples
 ```julia-repl
@@ -103,7 +106,7 @@ function ziggurat(
     if length(domain) == 2
         monotonic_ziggurat(pdf, domain, N; ipdf, tailarea, cdf, ccdf, fallback)
     else
-        CompositeZiggurat(pdf, domain, N; ipdfs = ipdf, cdf, ccdf, left_fallback, right_fallback, p)
+        composite_ziggurat(pdf, domain, N; ipdfs = ipdf, cdf, ccdf, left_fallback, right_fallback, p)
     end
 end
 

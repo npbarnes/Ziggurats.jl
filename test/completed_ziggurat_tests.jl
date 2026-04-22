@@ -84,10 +84,11 @@ end
             modalboundary = T(0.0)
             argminboundary = T(Inf)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -138,10 +139,11 @@ end
             modalboundary = T(0.0)
             argminboundary = T(-Inf)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -194,10 +196,11 @@ end
             modalboundary = T(1.0)
             argminboundary = T(-Inf)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -258,8 +261,8 @@ end
             modalboundary = T(0.0)
             argminboundary = T(2.0)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
 
             slopesign = -1
 
@@ -287,10 +290,11 @@ end
             modalboundary = T(0.0)
             argminboundary = T(Inf)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -335,10 +339,11 @@ end
             modalboundary = T(0.5)
             argminboundary = T(1.0)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -383,10 +388,11 @@ end
             modalboundary = T(0.5)
             argminboundary = T(10.0)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
@@ -431,10 +437,11 @@ end
             modalboundary = T(-0.5)
             argminboundary = T(-1.0)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -479,10 +486,11 @@ end
             modalboundary = T(-0.5)
             argminboundary = T(-10.0)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = 1
 
@@ -529,10 +537,11 @@ end
             modalboundary = T(0.0)
             argminboundary = T(Inf)
 
-            wf = Ziggurats.PDFWrap(f, modalboundary, argminboundary)
-            winvf = Ziggurats.IPDFWrap(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
-            wuf = Ziggurats.PDFWrap(uf, modalboundary, argminboundary)
-            wuinvf = Ziggurats.IPDFWrap(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
+            wf = Ziggurats.PDFWrap{T,T}(f, modalboundary, argminboundary)
+            winvf = Ziggurats.IPDFWrap{T,T}(invf, modalboundary, argminboundary, wf(modalboundary), wf(argminboundary))
+            wuf = Ziggurats.PDFWrap{T,T}(uf, modalboundary, argminboundary)
+            wuinvf =
+                Ziggurats.IPDFWrap{T,T}(uinvf, modalboundary, argminboundary, wuf(modalboundary), wuf(argminboundary))
 
             slopesign = -1
 
