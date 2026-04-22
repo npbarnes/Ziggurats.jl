@@ -355,8 +355,9 @@ function composite_ziggurat(
     M = length(dom) - 1
     zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, dom; ipdfs, area, cdf, ccdf, p)
 
-    zig_L = monotonic_ziggurat(pdf, subdomains[1, :]; ipdf = _ipdfs[1], cdf = cdf, fallback = left_fallback)
-    zig_R = monotonic_ziggurat(pdf, subdomains[end, :]; ipdf = _ipdfs[end], ccdf = ccdf, fallback = right_fallback)
+    zig_L = monotonic_ziggurat(pdf, subdomains[1, :], Ns[1]; ipdf = _ipdfs[1], cdf = cdf, fallback = left_fallback)
+    zig_R =
+        monotonic_ziggurat(pdf, subdomains[end, :], Ns[end]; ipdf = _ipdfs[end], ccdf = ccdf, fallback = right_fallback)
 
     zigs = (zig_L, zigs_middle..., zig_R)
 
