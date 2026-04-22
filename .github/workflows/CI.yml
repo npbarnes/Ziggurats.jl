@@ -33,11 +33,8 @@ jobs:
                     - windows-latest
                 julia-arch:
                     - x64
-                    - x86
                     - aarch64
                 exclude:
-                    - os: macos-latest
-                      julia-arch: x86
                     - os: macos-latest
                       julia-arch: x64
                     - os: ubuntu-latest
