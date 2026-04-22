@@ -222,17 +222,18 @@ end
 function guess_ytype(f, domain::Regularized)
     a, b = extrema(domain)
 
-    # TODO: The number 10 is arbitrary, could use percentiles instead.
-    if isinf(a)
-        l = oftype(a, b-10)
-    else
-        l = a
-    end
-
-    if isinf(b)
-        r = oftype(b, a+10)
-    else
+    # TODO: The number 10 is arbitrary, could use percentiles instead. Or Roots.__middle
+    if isinf(a) && isinf(b)
+        l = zero(eltype(domain)) - 10
+        r = zero(eltype(domain)) + 10
+    elseif isinf(a) && !isinf(b)
+        l = b - 10
         r = b
+    elseif !isinf(a) && isinf(b)
+        l = a
+        r = a + 10
+    else
+        l, r = a, b
     end
 
     points = range(l, r; length = 12)

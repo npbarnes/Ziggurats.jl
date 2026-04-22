@@ -12,6 +12,7 @@ include("layermask_tests.jl")
 
 include("layer_bits_tests.jl")
 
+include("misc_tests.jl")
 include("argument_handling_tests.jl")
 include("assumptions_tests.jl")
 include("interface_tests.jl")
