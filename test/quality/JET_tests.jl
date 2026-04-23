@@ -1,3 +1,7 @@
+using Test
+using Ziggurats
+using JET
+
 @testset "JET.jl Tests" begin
     @testset for T in (Float64, Float32, Float16)
         @testset for N in [1, 2, 3, 4]

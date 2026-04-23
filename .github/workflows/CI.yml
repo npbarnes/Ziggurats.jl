@@ -33,8 +33,11 @@ jobs:
                     - windows-latest
                 julia-arch:
                     - x64
+                    - x86
                     - aarch64
                 exclude:
+                    - os: macos-latest
+                      julia-arch: x86
                     - os: macos-latest
                       julia-arch: x64
                     - os: ubuntu-latest
@@ -50,3 +53,44 @@ jobs:
             - uses: julia-actions/cache@v2
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
+    fuzz:
+        name: Fuzz Julia ${{ matrix.julia-version }} - ${{ matrix.os }} - ${{ matrix.julia-arch }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                julia-version:
+                    - "1"
+                    - "lts"
+                    - "pre"
+                os:
+                    - ubuntu-latest
+                    - macos-latest
+                    - windows-latest
+                julia-arch:
+                    - x64
+                    - aarch64
+                exclude:
+                    - os: macos-latest
+                      julia-arch: x64
+                    - os: ubuntu-latest
+                      julia-arch: aarch64
+                    - os: windows-latest
+                      julia-arch: aarch64
+        steps:
+            - uses: actions/checkout@v4
+            - uses: julia-actions/setup-julia@v2
+              with:
+                version: ${{ matrix.julia-version }}
+                arch: ${{ matrix.julia-arch }}
+            - uses: julia-actions/cache@v2
+            - name: Set up test environment
+              run: |
+                julia --color=yes --project=test -e '
+                    using Pkg
+                    Pkg.develop(path=".")
+                    Pkg.add(["Supposition"])
+                    Pkg.instantiate()
+                '
+            - name: Run JET tests
+              run: julia --color=yes --project=test test/fuzz/layer_bits_tests.jl

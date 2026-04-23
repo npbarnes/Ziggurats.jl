@@ -1,3 +1,7 @@
+using Test
+using Supposition
+using Ziggurats
+
 @testset "layer_bits()" begin
     import Ziggurats: layer_bits, layer_bits_signed, layermask, layermask_signed
 

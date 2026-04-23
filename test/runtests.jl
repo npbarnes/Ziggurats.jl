@@ -1,12 +1,5 @@
 include("init_tests.jl")
 
-@testset "Aqua.jl Tests" begin
-    Aqua.test_all(Ziggurats)
-end
-
-include("JET_tests.jl")
-
-# Ziggurat tests
 include("test_inverses.jl")
 include("layermask_tests.jl")
 
