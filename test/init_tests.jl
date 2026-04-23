@@ -5,8 +5,6 @@ using Distributions
 using SpecialFunctions
 using LambertW
 using AliasTables
-using Aqua
-using JET
 using Supposition
 
 include("stat_testutils.jl")
