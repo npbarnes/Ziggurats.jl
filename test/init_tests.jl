@@ -5,7 +5,6 @@ using Distributions
 using SpecialFunctions
 using LambertW
 using AliasTables
-using Supposition
 
 include("stat_testutils.jl")
 
