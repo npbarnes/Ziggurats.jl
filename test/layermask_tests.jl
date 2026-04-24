@@ -54,12 +54,12 @@
         @testset "return nothing when N is too large for a bitmask" begin
             # Powers of two
             @test layermask(Float64, big(2)^65) === nothing
-            @test layermask(Float32, 2^33) === nothing
+            @test layermask(Float32, Int64(2)^33) === nothing
             @test layermask(Float16, 2^17) === nothing
 
             # Non-powers of two
             @test layermask(Float64, big(2)^64 + 1) === nothing
-            @test layermask(Float32, 2^32 + 1) === nothing
+            @test layermask(Float32, Int64(2)^32 + 1) === nothing
             @test layermask(Float16, 2^16 + 1) === nothing
         end
         @testset "return nothing when N is not a power of 2" begin
@@ -83,7 +83,7 @@
             @test layermask(Float32, 2) === UInt32(0x00000001)
             @test layermask(Float32, 4) === UInt32(0x00000003)
             @test layermask(Float32, 8) === UInt32(0x00000007)
-            @test layermask(Float32, 2^32) === UInt32(0xFFFFFFFF)
+            @test layermask(Float32, Int64(2)^32) === UInt32(0xFFFFFFFF)
 
             # Float64 → UInt64
             @test layermask(Float64, 1) === UInt64(0x0000000000000000)
@@ -148,12 +148,12 @@
         @testset "return nothing when N is too large for a bitmask" begin
             # Powers of two
             @test layermask_signed(Float64, big(2)^64) === nothing
-            @test layermask_signed(Float32, 2^32) === nothing
+            @test layermask_signed(Float32, Int64(2)^32) === nothing
             @test layermask_signed(Float16, 2^16) === nothing
 
             # Non-powers of two
             @test layermask_signed(Float64, big(2)^63 + 1) === nothing
-            @test layermask_signed(Float32, 2^31 + 1) === nothing
+            @test layermask_signed(Float32, Int64(2)^31 + 1) === nothing
             @test layermask_signed(Float16, 2^15 + 1) === nothing
         end
         @testset "return nothing when N is not a power of 2" begin
@@ -177,7 +177,7 @@
             @test layermask_signed(Float32, 2) === UInt32(0x00000002)
             @test layermask_signed(Float32, 4) === UInt32(0x00000006)
             @test layermask_signed(Float32, 8) === UInt32(0x0000000E)
-            @test layermask_signed(Float32, 2^31) === UInt32(0xFFFFFFFE)
+            @test layermask_signed(Float32, Int64(2)^31) === UInt32(0xFFFFFFFE)
 
             # Float64 → UInt64
             @test layermask_signed(Float64, 1) === UInt64(0x0000000000000000)
