@@ -26,7 +26,8 @@ promote_to_float(a) = float.(promote(a...))
     end
 end
 
-sort_maybeinplace(x::Tuple) = sort(x)
+# Workaround for no sort(::NTuple) method in the LTS version Julia 1.10.4
+sort_maybeinplace(x::Tuple) = Tuple(sort(SVector(x)))
 sort_maybeinplace(x::AbstractArray) = sort!(x)
 
 regularize(domain::Regularized) = domain
