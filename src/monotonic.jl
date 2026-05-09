@@ -1,16 +1,36 @@
 # Type parameters: domain type, range type, Layer Mask (unsigned integer), Rearrange layer bits (Bool).
-abstract type MonotonicZiggurat{X,Y,N,LM} <: Ziggurat{X,Y} end
+abstract type MonotonicZiggurat{X,Y,N,K,NP1,LM,F,FB} <: Ziggurat{X,Y} end
 
-struct BoundedZiggurat{X,Y,N,K,NP1,LM,F} <: MonotonicZiggurat{X,Y,N,LM}
+struct BoundedZiggurat{X,Y,N,K,NP1,LM,F} <: MonotonicZiggurat{X,Y,N,K,NP1,LM,F,nothing}
     w::SVector{NP1,X}
     k::SVector{N,K}
     y::SVector{NP1,Y}
     modalboundary::X
     argminboundary::X
     pdf::F
+    function BoundedZiggurat{X,Y,N,K,NP1,LM,F}(w, k, y, modalboundary, argminboundary, pdf) where {X,Y,N,K,NP1,LM,F}
+        if !(N isa Int)
+            error("type parameter `N` must be an Int (a value, not a type).")
+        end
+        if !(NP1 isa Int)
+            error("type parameter `NP1` must be an Int (a value not a type).")
+        end
+        if !(LM isa Union{Nothing,Unsigned})
+            error("type parameter LM must be either an Unsigned number or `nothing` (a value not a type).")
+        end
+        if !(NP1 == N + 1)
+            error("type parameter `NP1` must equal `N + 1`.")
+        end
+
+        if K !== ktype(X)
+            error("incorrect `K` type.")
+        end
+
+        new{X,Y,N,K,NP1,LM,F}(w, k, y, modalboundary, argminboundary, pdf)
+    end
 end
 
-struct UnboundedZiggurat{X,Y,N,K,NP1,LM,F,FB} <: MonotonicZiggurat{X,Y,N,LM}
+struct UnboundedZiggurat{X,Y,N,K,NP1,LM,F,FB} <: MonotonicZiggurat{X,Y,N,K,NP1,LM,F,FB}
     w::SVector{NP1,X}
     k::SVector{N,K}
     y::SVector{NP1,Y}
@@ -18,9 +38,37 @@ struct UnboundedZiggurat{X,Y,N,K,NP1,LM,F,FB} <: MonotonicZiggurat{X,Y,N,LM}
     argminboundary::X
     pdf::F
     fallback::FB
+    function UnboundedZiggurat{X,Y,N,K,NP1,LM,F,FB}(
+        w,
+        k,
+        y,
+        modalboundary,
+        argminboundary,
+        pdf,
+        fallback
+    ) where {X,Y,N,K,NP1,LM,F,FB}
+        if !(N isa Int)
+            error("type parameter `N` must be an Int (a value, not a type).")
+        end
+        if !(NP1 isa Int)
+            error("type parameter `NP1` must be an Int (a value not a type).")
+        end
+        if !(LM isa Union{Nothing,Unsigned})
+            error("type parameter LM must be either an Unsigned number or `nothing` (a value not a type).")
+        end
+        if !(NP1 == N + 1)
+            error("type parameter `NP1` must equal `N + 1`.")
+        end
+
+        if K !== ktype(X)
+            error("incorrect `K` type.")
+        end
+
+        new{X,Y,N,K,NP1,LM,F,FB}(w, k, y, modalboundary, argminboundary, pdf, fallback)
+    end
 end
 
-mask(::MonotonicZiggurat{X,Y,N,LM}) where {X,Y,N,LM} = LM
+mask(::MonotonicZiggurat{X,Y,N,K,NP1,LM}) where {X,Y,N,K,NP1,LM} = LM
 
 widths(z::Ziggurat) = z.w
 numlayers(::MonotonicZiggurat{X,Y,N}) where {X,Y,N} = N
@@ -40,6 +88,9 @@ corresponding_uint(::Type{Float32}) = UInt32
 corresponding_uint(::Type{Float16}) = UInt16
 
 const FloatXX = Union{Float64,Float32,Float16}
+
+ktype(xtype::Type{<:FloatXX}) = corresponding_uint(xtype)
+ktype(xtype::Type) = xtype
 
 significand_bits(::Type{Float64}) = 52
 significand_bits(::Type{Float32}) = 23
@@ -155,7 +206,7 @@ function (pdf::PDFWrap{X,Y})(x) where {X,Y}
         an internal error with the package.")
     end
 
-    result = isinf(x) ? zero(Y) : convert(Y, pdf.f(x))
+    result::Y = isinf(x) ? zero(Y) : convert(Y, pdf.f(x))
 
     if isnan(result)
         error("pdf($x) is NaN. Check the definition of your pdf. It must \
@@ -192,7 +243,7 @@ struct IPDFWrap{X,Y,F}
 end
 
 # TODO: make inverse and IPDFWrap give the same error messages.
-function (ipdf::IPDFWrap)(y)
+function (ipdf::IPDFWrap{X,Y})(y::Y) where {X,Y}
     if y < zero(y)
         error("Unexpected error: ipdf was about to be evaluated at y = $y, but the argument \
         to ipdf should always be positive.")
@@ -208,10 +259,22 @@ function (ipdf::IPDFWrap)(y)
         error("ipdf evaluated at y = $y which is greater than the pdf at either boundary. \
         Make sure your pdf is monotonic and the inverse pdf is correct.")
     else
-        result = ipdf.ipdf(y)
+        result = convert(X, ipdf.ipdf(y))::X
         lb, ub = minmax(ipdf.mb, ipdf.am)
         return clamp(result, lb, ub)
     end
+end
+
+struct WrapArea{X,Y,A,F}
+    tailarea::F
+
+    function WrapArea{X,Y}(func) where {X,Y}
+        new{X,Y,typeof(oneunit(X)*oneunit(Y)),typeof(func)}(func)
+    end
+end
+
+function (ta::WrapArea{X,Y,A})(x::X) where {X,Y,A}
+    convert(A, ta.tailarea(x))::A
 end
 
 # TODO: It might be possible to improve guess_ytype by incorporating it with PDFWrap and
@@ -352,9 +415,9 @@ function monotonic_ziggurat(
 )
     dom = regularize(domain)
     X = eltype(dom)
-    num = default_numlayers(N, X)
-    _check_arguments(num, dom)
     Y = guess_ytype(pdf, dom)
+    num = default_numlayers(X, Y, N)
+    _check_arguments(num, dom)
 
     a, b = dom
     if isinf(a) || isinf(b)
@@ -376,7 +439,10 @@ pdf, `ipdf`, is needed to construct the sampler. By default, the inverse is comp
 numerically, but it can also be provided explicitly if necessary.
 """
 function BoundedZiggurat{X,Y}(pdf, domain; ipdf = nothing) where {X,Y}
-    BoundedZiggurat{X,Y,default_numlayers(X)}(pdf, domain; ipdf)
+    BoundedZiggurat{X,Y,default_numlayers(X, Y)}(pdf, domain; ipdf)
+end
+function BoundedZiggurat{X,Y,nothing}(pdf, domain; ipdf = nothing) where {X,Y}
+    BoundedZiggurat{X,Y}(pdf, domain; ipdf)
 end
 function BoundedZiggurat{X,Y,N}(pdf, domain; ipdf = nothing) where {X,Y,N}
     domain = regularize(X, domain)
@@ -391,21 +457,23 @@ function BoundedZiggurat{X,Y,N}(pdf, domain; ipdf = nothing) where {X,Y,N}
     wpdf = PDFWrap{X,Y}(pdf, modalboundary, argminboundary)
 
     if ipdf === nothing
-        ipdf = inversepdf(wpdf, domain)
+        _ipdf = InverseFunc{X,Y}(wpdf, extrema(domain)...)
+    else
+        _ipdf = ipdf
     end
 
-    wipdf = IPDFWrap{X,Y}(ipdf, modalboundary, argminboundary, wpdf(modalboundary), wpdf(argminboundary))
+    wipdf = IPDFWrap{X,Y}(_ipdf, modalboundary, argminboundary, wpdf(modalboundary), wpdf(argminboundary))
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
     end
 
     # Build ziggurats using wrapped functions
-    x, y = search(N, modalboundary, argminboundary, wpdf, wipdf)
+    x, y = search(X, Y, N, modalboundary, argminboundary, wpdf, wipdf)
 
     w, k = _optimized_tables(x, modalboundary)
 
-    K = eltype(k)
+    K = ktype(X)
     NP1 = N + 1
     LM = layermask(X, N)
     F = typeof(wpdf)
@@ -425,85 +493,99 @@ during sampling. Normally these additional functions are computed numerically, b
 be provided explicitly as keyword arguments if necessary.
 """
 function UnboundedZiggurat{X,Y}(pdf, domain; kwargs...) where {X,Y}
-    UnboundedZiggurat{X,Y,default_numlayers{X}}(pdf, domain; kwargs...)
+    UnboundedZiggurat{X,Y,default_numlayers(X, Y)}(pdf, domain; kwargs...)
+end
+function UnboundedZiggurat{X,Y,nothing}(pdf, domain; kwargs...) where {X,Y}
+    UnboundedZiggurat{X,Y}(pdf, domain; kwargs...)
 end
 function UnboundedZiggurat{X,Y,N}(pdf, domain; ipdf = nothing, tailarea = nothing, fallback = nothing) where {X,Y,N}
-    domain = regularize(domain)
-    _check_arguments(N, domain)
-    a, b = domain
+    dom = regularize(X, domain)
+    _check_arguments(N, dom)
+    a, b = extrema(dom)
     if !isinf(a) && !isinf(b)
-        error("expected an unbounded domain, got domain=$domain.")
+        error("expected an unbounded domain, got domain=$dom.")
     end
 
-    modalboundary, argminboundary = _identify_mode(pdf, domain)
+    modalboundary, argminboundary = _identify_mode(pdf, dom)
 
     wpdf = PDFWrap{X,Y}(pdf, modalboundary, argminboundary)
 
     if ipdf === nothing
-        ipdf = inversepdf(wpdf, domain)
+        _ipdf = InverseFunc{X,Y}(wpdf, extrema(dom)...)
+    else
+        _ipdf = ipdf
     end
 
-    wipdf = IPDFWrap{X,Y}(ipdf, modalboundary, argminboundary, wpdf(modalboundary), wpdf(argminboundary))
+    wipdf = IPDFWrap{X,Y}(_ipdf, modalboundary, argminboundary, wpdf(modalboundary), wpdf(argminboundary))
 
     if wpdf(modalboundary) == 0
         error("expected the pdf to be non-zero on at least one boundary.")
     end
 
     if tailarea === nothing
-        modepdf = wpdf(modalboundary)
-        domain_type = typeof(modalboundary)
-        range_type = typeof(modepdf)
-        error_type = typeof(norm(modepdf))
-        segbuf = alloc_segbuf(domain_type, range_type, error_type)
-
-        tailarea = TailArea(wpdf, argminboundary, segbuf)
+        _tailarea = TailArea{X,Y}(wpdf, argminboundary)
+    else
+        _tailarea = WrapArea{X,Y}(tailarea)
     end
 
     # Build ziggurats using wrapped functions
-    x, y = search(N, modalboundary, argminboundary, wpdf, wipdf, tailarea)
+    x, y = search(X, Y, N, modalboundary, argminboundary, wpdf, wipdf, _tailarea)
 
     w, k = _optimized_tables(x, modalboundary)
 
     if fallback === nothing
         # TODO: fallback should come from a 'tool' with this as default but also allows customization.
         # e.g. pass arguments through inverse to find_zero. Think about reducing layers of indirection.
-        ta = tailarea(x[2])
+        ta = _tailarea(x[2])
+        P = typeof(oneunit(X)*oneunit(Y)/ta)
         td = minmax(argminboundary, x[2])
-        inverse_tailprob = let tailarea = tailarea, ta = ta, td = td
-            inversepdf(xx -> tailarea(xx) / ta, td)
+        inverse_tailprob = let X=X, P=P, _tailarea = _tailarea, ta = ta, td = td
+            InverseFunc{X,P}(xx -> _tailarea(xx) / ta, td...)
         end
 
-        fallback = (rng, _) -> inverse_tailprob(rand(rng, typeof(modalboundary)))
+        _fallback = let inverse_tailprob=inverse_tailprob, P=P
+            (rng, _) -> inverse_tailprob(rand(rng, P))
+        end
+    else
+        _fallback = fallback
     end
 
-    K = eltype(w)
+    K = ktype(X)
     NP1 = N + 1
     LM = layermask(X, N)
     F = typeof(wpdf)
-    FB = typeof(fallback)
+    FB = typeof(_fallback)
 
-    UnboundedZiggurat{X,Y,N,K,NP1,LM,F,FB}(w, k, y, modalboundary, argminboundary, wpdf, fallback)
+    UnboundedZiggurat{X,Y,N,K,NP1,LM,F,FB}(w, k, y, modalboundary, argminboundary, wpdf, _fallback)
 end
 
 function _optimized_tables(x, modalboundary)
     w = (x .- modalboundary) ./ significand_bitmask(eltype(x))
-    k = [fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)]
+    k = ktype(eltype(x))[
+        fixedbit_fraction((x[i + 1] - modalboundary)/(x[i] - modalboundary)) for i in 1:(length(x) - 1)
+    ]
 
     w, k
 end
 
-struct TailArea{F,X,S}
+struct TailArea{X,Y,A,S,F}
     f::F
     r::X
     segbuf::S
+
+    function TailArea{X,Y}(f, r::X) where {X,Y}
+        A = typeof(oneunit(X)*oneunit(Y))
+        segbuf = alloc_segbuf(X, Y, A)
+        new{X,Y,A,typeof(segbuf),typeof(f)}(f, r, segbuf)
+    end
 end
 
 # TODO: a way to pass through arguments to quadgk.
-function (ta::TailArea)(x)
+function (ta::TailArea{X,Y,A})(x::X)::A where {X,Y,A}
     if x == ta.r
         # quadgk returns nan when the domain is empty
         # this is a workaround
-        zero(ta.r)
+        zero(A)
     else
         # TODO: Add error tolerance and check the returned error estimate.
         abs(quadgk(ta.f, x, ta.r; ta.segbuf)[1])
@@ -595,27 +677,27 @@ function _identify_mode(pdf, domain::Regularized)
 end
 
 # Bounded
-function search(N, modalboundary, argminboundary, pdf, ipdf)
-    x, y, y_domain, modalpdf = _search_setup(N, modalboundary, pdf)
+function search(X, Y, N, modalboundary, argminboundary, pdf, ipdf)
+    x, y, y_domain, modalpdf = _search_setup(X, Y, N, modalboundary, pdf)
     buildargs = (modalboundary, argminboundary, ipdf, modalpdf)
     p = (; x, y, modalpdf, buildargs)
     _search(y_domain, p)
 end
 
 # Unbounded
-function search(N, modalboundary, argminboundary, pdf, ipdf, tailarea)
-    x, y, y_domain, modalpdf = _search_setup(N, modalboundary, pdf)
+function search(X, Y, N, modalboundary, argminboundary, pdf, ipdf, tailarea)
+    x, y, y_domain, modalpdf = _search_setup(X, Y, N, modalboundary, pdf)
     buildargs = (modalboundary, argminboundary, ipdf, modalpdf, tailarea)
     p = (; x, y, modalpdf, buildargs)
     _search(y_domain, p)
 end
 
-function _search_setup(N, modalboundary, pdf)
+function _search_setup(X, Y, N, modalboundary, pdf)
     modalpdf = pdf(modalboundary)
-    x = Vector{typeof(float(modalboundary))}(undef, N + 1)
-    y = Vector{typeof(modalpdf)}(undef, N + 1)
+    x = Vector{X}(undef, N + 1)
+    y = Vector{Y}(undef, N + 1)
 
-    y_domain = (nextfloat(zero(modalpdf)), modalpdf)
+    y_domain = (nextfloat(zero(Y)), modalpdf)
 
     x, y, y_domain, modalpdf
 end
@@ -786,7 +868,7 @@ end
         if l == 1
             # unbounded tail fallback
             x2 = w[2] * significand_bitmask(eltype(w)) + mb
-            return convert(eltype(w), fb(rng, x2))
+            return convert(typeof(x), fb(rng, x2))::typeof(x)
         end
 
         # Check density, by evaluating the pdf in its proper half-domain
@@ -803,7 +885,7 @@ end
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, l, u) where {F,FB}
+@inline function zigsample3(rng, w, k, y, mb, am, pdf::F, fb::FB, LM, l, u) where {F,FB}
     @inbounds begin
         x = u * w[l] + mb
         if u <= k[l]
@@ -816,34 +898,45 @@ end
 # The where clause is required to force method specialization
 @inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Unsigned) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+    zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
 end
 
 # This method is identical to the one above, but it's necessary to resolve a method ambiguity.
 @inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Nothing) where {F,FB}
     r = rand(rng, corresponding_uint(eltype(w)))
-    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+    zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Nothing, r) where {F,FB}
+@inline function zigsample2(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Nothing, r) where {F,FB}
     l = rand(rng, 1:(length(w) - 1))
     u = r >>> shiftbits(eltype(w))
-    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
+    zigsample3(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
 end
 
 # The where clause is required to force method specialization
-@inline function zigsample(rng, w::AbstractArray{<:FloatXX}, k, y, mb, am, pdf::F, fb::FB, LM::Unsigned, r) where {F,FB}
+@inline function zigsample2(
+    rng,
+    w::AbstractArray{<:FloatXX},
+    k,
+    y,
+    mb,
+    am,
+    pdf::F,
+    fb::FB,
+    LM::Unsigned,
+    r
+) where {F,FB}
     l = layer_bits(eltype(w), LM, r) + 1
     u = r >>> shiftbits(eltype(w))
-    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
+    zigsample3(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
 end
 
 # The where clause is required to force method specialization
 @inline function zigsample(rng, w, k, y, mb, am, pdf::F, fb::FB, LM::Nothing) where {F,FB}
     l = rand(rng, 1:(length(w) - 1))
     u = rand(rng, eltype(w))
-    zigsample(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
+    zigsample3(rng, w, k, y, mb, am, pdf, fb, LM, l, u)
 end
 
 @inline function Base.rand(rng::AbstractRNG, zig_sampler::Random.SamplerTrivial{<:MonotonicZiggurat})
@@ -883,7 +976,7 @@ end
 
         for i in eachindex(A)
             @inbounds r = reinterpret(T, A[i])
-            @inbounds A[i] = zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+            @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
         end
     end
     A

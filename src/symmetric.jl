@@ -15,7 +15,7 @@ const BoundedBellZiggurat{X,Y,N,LM,Z} = BellZiggurat{X,Y,N,LM,Z} where {X,Y,N,LM
 const UnboundedBellZiggurat{X,Y,N,LM,Z} = BellZiggurat{X,Y,N,LM,Z} where {X,Y,N,LM,Z<:UnboundedZiggurat{X,Y,N}}
 
 function BoundedBellZiggurat{X,Y}(pdf, half_domain; ipdf = nothing) where {X,Y}
-    BoundedBellZiggurat{X,Y,default_numlayers(X)}(pdf, half_domain; ipdf)
+    BoundedBellZiggurat{X,Y,default_numlayers(X, Y)}(pdf, half_domain; ipdf)
 end
 function BoundedBellZiggurat{X,Y,N}(pdf, half_domain; ipdf = nothing) where {X,Y,N}
     z = BoundedZiggurat{X,Y,N}(pdf, half_domain; ipdf)
@@ -29,7 +29,7 @@ function UnboundedBellZiggurat{X,Y}(
     tailarea = nothing,
     fallback = nothing
 ) where {X,Y}
-    UnboundedBellZiggurat{X,Y,default_numlayers(X)}(pdf, half_domain; ipdf, tailarea, fallback)
+    UnboundedBellZiggurat{X,Y,default_numlayers(X, Y)}(pdf, half_domain; ipdf, tailarea, fallback)
 end
 function UnboundedBellZiggurat{X,Y,N}(
     pdf,

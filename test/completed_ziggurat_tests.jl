@@ -96,7 +96,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     @test eltype(x) == eltype(y) == T
 
@@ -112,7 +112,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     @test eltype(x) == eltype(y) == T
 
@@ -151,7 +151,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     @test eltype(x) == eltype(y) == T
 
@@ -167,7 +167,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     @test eltype(x) == eltype(y) == T
 
@@ -208,7 +208,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -222,7 +222,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
@@ -266,7 +266,7 @@ end
 
             slopesign = -1
 
-            x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
+            x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf)
 
             test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -302,7 +302,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -316,7 +316,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
@@ -351,7 +351,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -365,7 +365,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
@@ -400,7 +400,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -414,7 +414,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
@@ -449,7 +449,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -463,7 +463,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
@@ -498,7 +498,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -512,7 +512,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 
@@ -549,7 +549,7 @@ end
 
             @testset "Normalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wf, winvf, tailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wf, winvf, tailarea)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wf, winvf)
 
@@ -563,7 +563,7 @@ end
 
             @testset "Unnormalized pdf" begin
                 @testset for N in Ns
-                    x, y = Ziggurats.search(N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
+                    x, y = Ziggurats.search(T, T, N, modalboundary, argminboundary, wuf, wuinvf, utailarea)
 
                     test_common_layer_properties(x, y, N, modalboundary, slopesign, wuf, wuinvf)
 

@@ -18,7 +18,6 @@ export BoundedZiggurat, UnboundedZiggurat
 export BoundedBellZiggurat, UnboundedBellZiggurat
 export BoundedCompositeZiggurat, LeftTailCompositeZiggurat, RightTailCompositeZiggurat, TwoTailCompositeZiggurat
 export ziggurat, monotonic_ziggurat, bell_ziggurat, composite_ziggurat
-export inversepdf
 
 @compat public monotonic_segments
 
@@ -30,9 +29,9 @@ Base.eltype(::Type{<:Ziggurat{X}}) where {X} = X
 Ytype(::Type{<:Ziggurat{X,Y}}) where {X,Y} = Y
 Ytype(::Ziggurat{X,Y}) where {X,Y} = Y
 
-default_numlayers(T) = T == Float16 ? 64 : 256
-default_numlayers(N::Number, T) = N
-default_numlayers(::Nothing, T) = default_numlayers(T)
+default_numlayers(X, Y) = X == Float16 || Y == Float16 ? 64 : 256
+default_numlayers(X, Y, N::Number) = N
+default_numlayers(X, Y, ::Nothing) = default_numlayers(X, Y)
 
 include("utilities.jl")
 include("inverse_pdf.jl")
@@ -98,11 +97,6 @@ function ziggurat(
     fallback = nothing,
     p = nothing
 )
-    domain = regularize(domain)
-
-    N = default_numlayers(N, eltype(domain))
-
-    # regularize guarentees that length(domain) >= 2
     if length(domain) == 2
         monotonic_ziggurat(pdf, domain, N; ipdf, tailarea, cdf, ccdf, fallback)
     else

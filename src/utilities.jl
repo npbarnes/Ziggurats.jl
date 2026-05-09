@@ -28,6 +28,7 @@ end
 
 # Workaround for no sort(::NTuple) method in the LTS version Julia 1.10.4
 sort_maybeinplace(x::Tuple) = Tuple(sort(SVector(x)))
+sort_maybeinplace(x::SVector) = sort(x)
 sort_maybeinplace(x::AbstractArray) = sort!(x)
 
 regularize(domain::Regularized) = domain

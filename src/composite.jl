@@ -3,72 +3,119 @@ struct CompositeZiggurat{
     Y,
     Ns,
     M,
-    ZL<:MonotonicZiggurat{X,Y},
-    ZR<:MonotonicZiggurat{X,Y},
-    Z<:NTuple{M,MonotonicZiggurat{X,Y}},
+    Mm2,
+    F,
+    ZL<:MonotonicZiggurat{X,Y,N,K,NP1,LM,F} where {N,K,NP1,LM},
+    ZM<:NTuple{Mm2,BoundedZiggurat{X,Y,N,K,NP1,LM,F} where {N,K,NP1,LM}},
+    ZR<:MonotonicZiggurat{X,Y,N,K,NP1,LM,F} where {N,K,NP1,LM},
     AT
 } <: Ziggurat{X,Y}
-    zigs::Z
+    zl::ZL
+    zm::ZM
+    zr::ZR
     at::AT
 
-    function CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at) where {X,Y,Ns<:Tuple,M,ZL,ZR,Z,AT}
-        if Z.parameters[1] != ZL || Z.parameters[end] != ZR
-            error("the first and last entries of Z must match ZL and ZR respectively.")
+    function CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT}(
+        zl::ZL,
+        zm::ZM,
+        zr::ZR,
+        at
+    ) where {X,Y,Ns<:Tuple,M,Mm2,F,ZL,ZM,ZR,AT}
+        ns = Ns.parameters
+        if numlayers(zl) != ns[1]
+            error("the number of layers in one of the ziggurats does not match the number provided in the type parameter.")
         end
-
-        for (z, n) in zip(Z.parameters, Ns.parameters)
+        for (z, n) in zip(zm, ns[2:(end - 1)])
             if numlayers(z) != n
-                error("The number of layers in each entry of Z must equal the cooresponding entry of Ns")
+                error("the number of layers in one of the ziggurats does not match the number provided in the type parameter.")
             end
         end
-
-        for z in Z.parameters[2:(end - 1)]
-            if !(z <: BoundedZiggurat)
-                error("each entry in Z except the first and last must be BoundedZiggurat.")
-            end
+        if numlayers(zr) != ns[end]
+            error("the number of layers in one of the ziggurats does not match the number provided in the type parameter.")
         end
 
-        new{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+        if !isinteger(M) || M < 2
+            error("the number of subdomains, M, must be an integer greater than one.")
+        end
+
+        if Mm2 != M - 2
+            error("the type parameter `Mm2` must be exactly `M - 2`.")
+        end
+
+        new{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zl, zm, zr, at)
     end
 end
 
-const BoundedCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:BoundedZiggurat,ZR<:BoundedZiggurat,Z,AT}
-const LeftTailCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:UnboundedZiggurat,ZR<:BoundedZiggurat,Z,AT}
-const RightTailCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:BoundedZiggurat,ZR<:UnboundedZiggurat,Z,AT}
-const TwoTailCompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} =
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT} where {X,Y,Ns,M,ZL<:UnboundedZiggurat,ZR<:UnboundedZiggurat,Z,AT}
+density(z::CompositeZiggurat) = density(z.zigs[1])
+
+const BoundedCompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} =
+    CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} where {X,Y,Ns,M,Mm2,F,ZL<:BoundedZiggurat,ZM,ZR<:BoundedZiggurat,AT}
+
+const LeftTailCompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} =
+    CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} where {X,Y,Ns,M,Mm2,F,ZL<:UnboundedZiggurat,ZM,ZR<:BoundedZiggurat,AT}
+
+const RightTailCompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} =
+    CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} where {X,Y,Ns,M,Mm2,F,ZL<:BoundedZiggurat,ZM,ZR<:UnboundedZiggurat,AT}
+
+const TwoTailCompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} = CompositeZiggurat{
+    X,
+    Y,
+    Ns,
+    M,
+    Mm2,
+    F,
+    ZL,
+    ZM,
+    ZR,
+    AT
+} where {X,Y,Ns,M,Mm2,F,ZL<:UnboundedZiggurat,ZM,ZR<:UnboundedZiggurat,AT}
 
 tupletypelength(::Type{T}) where {T<:Tuple} = fieldcount(T)
 
 tupletypefirst(::Type{<:Tuple{First,Vararg}}) where {First} = First
 tupletypelast(::Type{T}) where {T<:Tuple{Any,Vararg}} = fieldtype(T, fieldcount(T))
 
-asatupletype(t::Type{<:Tuple}) = t
-asatupletype(t) = Tuple{t...}
-
-handle_N_as_value(N::Integer, M) = NTuple{M,N}
-handle_N_as_value(N::Tuple, M) = asatupletype(N)
-
 for CZ in
     (:BoundedCompositeZiggurat, :LeftTailCompositeZiggurat, :RightTailCompositeZiggurat, :TwoTailCompositeZiggurat)
     @eval begin
-        function $(CZ){X,Y,N,M}(pdf, domain; kwargs...) where {X,Y,N,M}
-            _N = handle_N_as_value(N, M)
-            $(CZ){X,Y,_N,M}(pdf, domain; kwargs...)
+        function $(CZ){X,Y}(pdf, domain::Union{NTuple{Mp1,Any},StaticVector{Mp1}}; kwargs...) where {X,Y,Mp1}
+            M = Mp1 - 1
+            N = default_numlayers(X, Y)
+            $(CZ){X,Y,N,M}(pdf, domain; kwargs...)
         end
 
-        function $(CZ){X,Y,Ns}(pdf, domain; kwargs...) where {X,Y,Ns}
-            _Ns = asatupletype(Ns)
-            M = tupletypelength(_Ns)
-            $(CZ){X,Y,_Ns,M}(pdf, domain; kwargs...)
+        function $(CZ){X,Y,Ns}(pdf, domain; kwargs...) where {X,Y,M,Ns<:NTuple{M,Any}}
+            $(CZ){X,Y,Ns,M}(pdf, domain; kwargs...)
         end
 
-        $(CZ){X,Y,Ns,M}(pdf, domain; kwargs...) where {X,Y,Ns<:Tuple,M} =
+        function $(CZ){X,Y,nothing,M}(pdf, domain; kwargs...) where {X,Y,M}
+            N = default_numlayers(X, Y)
+            $(CZ){X,Y,N,M}(pdf, domain; kwargs...)
+        end
+
+        function $(CZ){X,Y,Ns,M}(pdf, domain; kwargs...) where {X,Y,Ns<:Tuple,M}
+            # Notice that the case `where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}} is defined below.
+            # This case is an error when the length of Ns does not equal M.
             error("the Tuple of layer counts, Ns, must have length equal to M.")
+        end
+
+        function $(CZ){X,Y,N,M}(pdf, domain; kwargs...) where {X,Y,N,M}
+            # This method is called when four type parameters are given, and N is not a
+            # subtype of Tuple. It should be an Int value.
+            Ns = NTuple{M,N}
+            $(CZ){X,Y,Ns,M}(pdf, domain; kwargs...)
+        end
     end
+end
+
+@generated function tupletype_default_numlayers(X, Y, Ns)
+    _X = extracttype(X)
+    _Y = extracttype(Y)
+    _Ns = extracttype(Ns)
+
+    vals = default_numlayers.(_X, _Y, _Ns.parameters)
+
+    :(Tuple{$(vals)...})
 end
 
 function BoundedCompositeZiggurat{X,Y,Ns,M}(
@@ -80,19 +127,20 @@ function BoundedCompositeZiggurat{X,Y,Ns,M}(
     ipdfs = nothing,
     p = nothing
 ) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
-    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+    _Ns = tupletype_default_numlayers(X, Y, Ns)
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
 
-    zig_L = BoundedZiggurat{X,Y,tupletypefirst(Ns)}(pdf, subdomains[1, :]; ipdf = _ipdfs[1])
-    zig_R = BoundedZiggurat{X,Y,tupletypelast(Ns)}(pdf, subdomains[end, :]; ipdf = _ipdfs[end])
+    zig_L = BoundedZiggurat{X,Y,tupletypefirst(_Ns)}(pdf, subdomains[1, :]; ipdf = _ipdfs[1])
+    zig_R = BoundedZiggurat{X,Y,tupletypelast(_Ns)}(pdf, subdomains[end, :]; ipdf = _ipdfs[end])
 
-    zigs = (zig_L, zigs_middle..., zig_R)
-
+    Mm2 = M - 2
+    F = typeof(density(zig_L))
     ZL = typeof(zig_L)
+    ZM = typeof(zigs_middle)
     ZR = typeof(zig_R)
-    Z = typeof(zigs)
     AT = typeof(at)
 
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+    CompositeZiggurat{X,Y,_Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zig_L, zigs_middle, zig_R, at)
 end
 
 function LeftTailCompositeZiggurat{X,Y,Ns,M}(
@@ -105,25 +153,26 @@ function LeftTailCompositeZiggurat{X,Y,Ns,M}(
     left_fallback = nothing,
     p = nothing
 ) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
-    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+    _Ns = tupletype_default_numlayers(X, Y, Ns)
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
 
-    zig_L = UnboundedZiggurat{X,Y,tupletypefirst(Ns)}(
+    zig_L = UnboundedZiggurat{X,Y,tupletypefirst(_Ns)}(
         pdf,
         subdomains[1, :];
         ipdf = _ipdfs[1],
         tailarea = cdf,
         fallback = left_fallback
     )
-    zig_R = BoundedZiggurat{X,Y,tupletypelast(Ns)}(pdf, subdomains[end, :]; ipdf = _ipdfs[end])
+    zig_R = BoundedZiggurat{X,Y,tupletypelast(_Ns)}(pdf, subdomains[end, :]; ipdf = _ipdfs[end])
 
-    zigs = (zig_L, zigs_middle..., zig_R)
-
+    Mm2 = M - 2
+    F = typeof(density(zig_L))
     ZL = typeof(zig_L)
+    ZM = typeof(zigs_middle)
     ZR = typeof(zig_R)
-    Z = typeof(zigs)
     AT = typeof(at)
 
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+    CompositeZiggurat{X,Y,_Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zig_L, zigs_middle, zig_R, at)
 end
 
 function RightTailCompositeZiggurat{X,Y,Ns,M}(
@@ -136,10 +185,11 @@ function RightTailCompositeZiggurat{X,Y,Ns,M}(
     right_fallback = nothing,
     p = nothing
 ) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
-    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+    _Ns = tupletype_default_numlayers(X, Y, Ns)
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
 
-    zig_L = BoundedZiggurat{X,Y,tupletypefirst(Ns)}(pdf, subdomains[1, :]; ipdf = _ipdfs[1])
-    zig_R = UnboundedZiggurat{X,Y,tupletypelast(Ns)}(
+    zig_L = BoundedZiggurat{X,Y,tupletypefirst(_Ns)}(pdf, subdomains[1, :]; ipdf = _ipdfs[1])
+    zig_R = UnboundedZiggurat{X,Y,tupletypelast(_Ns)}(
         pdf,
         subdomains[end, :];
         ipdf = _ipdfs[end],
@@ -147,14 +197,14 @@ function RightTailCompositeZiggurat{X,Y,Ns,M}(
         fallback = right_fallback
     )
 
-    zigs = (zig_L, zigs_middle..., zig_R)
-
+    Mm2 = M - 2
+    F = typeof(density(zig_L))
     ZL = typeof(zig_L)
+    ZM = typeof(zigs_middle)
     ZR = typeof(zig_R)
-    Z = typeof(zigs)
     AT = typeof(at)
 
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+    CompositeZiggurat{X,Y,_Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zig_L, zigs_middle, zig_R, at)
 end
 
 function TwoTailCompositeZiggurat{X,Y,Ns,M}(
@@ -168,16 +218,17 @@ function TwoTailCompositeZiggurat{X,Y,Ns,M}(
     right_fallback = nothing,
     p = nothing
 ) where {X,Y,M,Ns<:Tuple{Vararg{Any,M}}}
-    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
+    _Ns = tupletype_default_numlayers(X, Y, Ns)
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
 
-    zig_L = UnboundedZiggurat{X,Y,tupletypefirst(Ns)}(
+    zig_L = UnboundedZiggurat{X,Y,tupletypefirst(_Ns)}(
         pdf,
         subdomains[1, :];
         ipdf = _ipdfs[1],
         tailarea = cdf,
         fallback = left_fallback
     )
-    zig_R = UnboundedZiggurat{X,Y,tupletypelast(Ns)}(
+    zig_R = UnboundedZiggurat{X,Y,tupletypelast(_Ns)}(
         pdf,
         subdomains[end, :];
         ipdf = _ipdfs[end],
@@ -185,21 +236,21 @@ function TwoTailCompositeZiggurat{X,Y,Ns,M}(
         fallback = right_fallback
     )
 
-    zigs = (zig_L, zigs_middle..., zig_R)
-
+    Mm2 = M - 2
+    F = typeof(density(zig_L))
     ZL = typeof(zig_L)
+    ZM = typeof(zigs_middle)
     ZR = typeof(zig_R)
-    Z = typeof(zigs)
     AT = typeof(at)
 
-    CompositeZiggurat{X,Y,Ns,M,ZL,ZR,Z,AT}(zigs, at)
+    CompositeZiggurat{X,Y,_Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zig_L, zigs_middle, zig_R, at)
 end
 
 function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
-    dom = regularize(domain)
+    dom = regularize(X, domain)
 
     if M != length(dom) - 1
-        error("the number of subdomains must match the number of layernums.")
+        error("exactly one number of ziggurat layers (or nothing) must be given for each subdomain, but the number of subdomains does not match the number of layer counts given.")
     end
 
     if area === nothing
@@ -212,8 +263,7 @@ function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
                 (a, b) -> abs(ccdf(a) - ccdf(b))
             end
         else
-            segbuf = alloc_segbuf(X, Y, Y)
-            _tailarea = TailArea(pdf, first(dom), segbuf)
+            _tailarea = TailArea{X,Y}(pdf, first(dom))
 
             _area = let _tailarea=_tailarea
                 (a, b) -> abs(_tailarea(b) - _tailarea(a))
@@ -224,12 +274,12 @@ function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
     end
 
     if ipdfs === nothing
-        _ipdfs = ntuple(i->nothing, M)
+        _ipdfs = ntuple(i->nothing, Val(M))
     else
         _ipdfs = ipdfs
     end
 
-    subdomains = get_subdomains(pdf, dom)
+    subdomains = get_subdomains(Val(X), Val(M), pdf, dom)
 
     zigs_middle = middle_zigs(X, Y, Ns, pdf, subdomains, _ipdfs)
     _p = zigprobs(_area, subdomains, p)
@@ -240,8 +290,6 @@ end
 
 extracttype(::Type{Type{T}}) where {T} = T
 @generated function middle_zigs(X, Y, Ns::Type{<:Tuple}, pdf, subdomains, ipdfs)
-    # TODO: Check if this @generated method is needed for type stability. The generic method
-    # (below) may be sufficient.
     NN = extracttype(Ns).parameters
     idxs = eachindex(NN)
 
@@ -257,8 +305,8 @@ end
 # TODO: add option to autodetect monotonic subdomains.
 function composite_ziggurat(pdf, domain; kwargs...)
     domain = regularize(domain)
-    N = default_numlayers(nothing, eltype(domain))
-    composite_ziggurat(pdf, domain, N; kwargs...)
+    Ns = fill(nothing, length(domain) - 1)
+    composite_ziggurat(pdf, domain, Ns; kwargs...)
 end
 
 function composite_ziggurat(pdf, domain, N::Integer; kwargs...)
@@ -352,21 +400,23 @@ function composite_ziggurat(
     dom = regularize(domain)
     X = eltype(dom)
     Y = guess_ytype(pdf, dom)
+    Ns = default_numlayers.(X, Y, Ns)
+    _Ns = Tuple{Ns...}
     M = length(dom) - 1
-    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, Ns, M, pdf, dom; ipdfs, area, cdf, ccdf, p)
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, dom; ipdfs, area, cdf, ccdf, p)
 
     zig_L = monotonic_ziggurat(pdf, subdomains[1, :], Ns[1]; ipdf = _ipdfs[1], cdf = cdf, fallback = left_fallback)
     zig_R =
         monotonic_ziggurat(pdf, subdomains[end, :], Ns[end]; ipdf = _ipdfs[end], ccdf = ccdf, fallback = right_fallback)
 
-    zigs = (zig_L, zigs_middle..., zig_R)
-
+    Mm2 = M - 2
+    F = typeof(density(zig_L))
     ZL = typeof(zig_L)
+    ZM = typeof(zigs_middle)
     ZR = typeof(zig_R)
-    Z = typeof(zigs)
     AT = typeof(at)
 
-    CompositeZiggurat{X,Y,asatupletype(Ns),M,ZL,ZR,Z,AT}(zigs, at)
+    CompositeZiggurat{X,Y,_Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zig_L, zigs_middle, zig_R, at)
 end
 
 """
@@ -413,23 +463,22 @@ julia> Ziggurats.get_subdomains(sign, [-1, 0, 1])
  [5.0e-324, 1.0]
 ```
 """
-get_subdomains(f, domain) = _get_subdomains(f, regularize(domain))
-get_subdomains(f, domain::Regularized) = _get_subdomains(f, domain)
-function _get_subdomains(f, domain)
-    sd = Array{eltype(domain)}(undef, length(domain)-1, 2)
+function get_subdomains(::Val{X}, ::Val{M}, f, domain::Regularized) where {X,M}
+    sd = Array{X}(undef, M, 2)
 
     sd[1, 1] = domain[1]
-    for (i, x) in enumerate(domain[2:(end - 1)])
+    for i in 2:M
+        x = domain[i]
         if isapprox(f(prevfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i, 2] = x
+            sd[i - 1, 2] = x
         else
-            sd[i, 2] = prevfloat(x)
+            sd[i - 1, 2] = prevfloat(x)
         end
 
         if isapprox(f(nextfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i + 1, 1] = x
+            sd[i, 1] = x
         else
-            sd[i + 1, 1] = nextfloat(x)
+            sd[i, 1] = nextfloat(x)
         end
     end
     sd[end, 2] = domain[end]
@@ -454,19 +503,81 @@ function zigprobs(area, subdomains, p::AbstractArray)
     _p
 end
 
-@inline function Base.rand(rng::AbstractRNG, s::Random.SamplerTrivial{<:CompositeZiggurat})
+# special case of no just two ziggurats, no 'middle' ziggurats
+@inline function Base.rand(
+    rng::AbstractRNG,
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Ns,2,0,F,ZL,Tuple{},ZR}}
+) where {X,Y,Ns,F,ZL,ZR}
     cz = s[]
-    zigs = cz.zigs
+
     i = rand(rng, cz.at)
-    @inbounds z = zigs[i]
-    rand(rng, z)
+    if i == 1
+        return rand(rng, cz.zl)
+    else
+        return rand(rng, cz.zr)
+    end
+end
+
+# special case of all 'middle' ziggurats the same
+@inline function Base.rand(
+    rng::AbstractRNG,
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR}}
+) where {X,Y,Ns,M,Mm2,F,ZL,ZM<:NTuple{Mm2,BoundedZiggurat{X,Y,N,K,NP1,LM,F}} where {N,K,NP1,LM},ZR}
+    cz = s[]
+
+    i = rand(rng, cz.at)
+    if i == 1
+        return rand(rng, cz.zl)
+    elseif i == M
+        return rand(rng, cz.zr)
+    else
+        # The type signature of this method guarantees that this indexing operation is type-stable
+        return rand(rng, cz.zm[i - 1])
+    end
+end
+
+# general case
+@generated function Base.rand(
+    rng::AbstractRNG,
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR}}
+) where {X,Y,Ns,M,Mm2,F,ZL,ZM,ZR}
+    # The expression built up here is an if-elseif-else block. Here's an example for M=4:
+    #
+    # if i == 1
+    #     return rand(rng, cz.zl)
+    # elseif i == 2
+    #     return rand(rng, cz.zm[1]
+    # elseif i == 3
+    #     return rand(rng, cz.zm[2])
+    # else
+    #     return rand(rng, cz.zr)
+    # end
+    #
+    # It looks like you could just do `rand(rng, cz.zm[i-1])` and not need a generated function,
+    # like the method above, but when the indexing is type-unstable it's very slow.
+    # This method is much faster (up to 1000x!). I'm not exactly sure why, but I think it's
+    # doing something similar to manual union splitting.
+
+    ex = Expr(:elseif, :(i == $(M-1)), :(return rand(rng, cz.zm[$(M - 1 - 1)])), :(return rand(rng, cz.zr)))
+    for j in (M - 2):-1:2
+        ex = Expr(:elseif, :(i == $j), :(return rand(rng, cz.zm[$(j - 1)])), ex)
+    end
+    ex = Expr(:if, :(i == 1), :(return rand(rng, cz.zl)), ex)
+
+    quote
+        @inline
+        cz = s[]
+
+        i = rand(rng, cz.at)
+        $ex
+    end
 end
 
 @inline function Random.rand!(
     rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
     A::Array{X},
-    s::Random.SamplerTrivial{<:CompositeZiggurat{X}}
-) where {X<:FloatXX}
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Ns,2,0,F,ZL,Tuple{},ZR}}
+) where {X<:FloatXX,Y,Ns,F,ZL,ZR}
     cz = s[]
     if length(A) < 7 # TODO: Tune this number
         for i in eachindex(A)
@@ -480,19 +591,134 @@ end
             @inbounds r = reinterpret(T, A[i])
 
             j = rand(rng, cz.at)
-            @inbounds z = cz.zigs[j]
+            if j == 1
+                w = widths(cz.zl)
+                k = layerratios(cz.zl)
+                y = heights(cz.zl)
+                mb = highside(cz.zl)
+                am = lowside(cz.zl)
+                pdf = density(cz.zl)
+                fb = fallback(cz.zl)
+                LM = mask(cz.zl)
 
-            w = widths(z)
-            k = layerratios(z)
-            y = heights(z)
-            mb = highside(z)
-            am = lowside(z)
-            pdf = density(z)
-            fb = fallback(z)
-            LM = mask(z)
+                @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
+            else
+                w = widths(cz.zr)
+                k = layerratios(cz.zr)
+                y = heights(cz.zr)
+                mb = highside(cz.zr)
+                am = lowside(cz.zr)
+                pdf = density(cz.zr)
+                fb = fallback(cz.zr)
+                LM = mask(cz.zr)
 
-            @inbounds A[i] = zigsample(rng, w, k, y, mb, am, pdf, fb, LM, r)
+                @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
+            end
         end
     end
     A
+end
+
+@inline function Random.rand!(
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
+    A::Array{X},
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR}}
+) where {X<:FloatXX,Y,Ns,M,Mm2,F,ZL,ZM<:NTuple{Mm2,BoundedZiggurat{X,Y,N,K,NP1,LM,F}} where {N,K,NP1,LM},ZR}
+    cz = s[]
+    if length(A) < 7 # TODO: Tune this number
+        for i in eachindex(A)
+            @inbounds A[i] = rand(rng, s)
+        end
+    else
+        T = corresponding_uint(X)
+        GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
+        for i in eachindex(A)
+            @inbounds r = reinterpret(T, A[i])
+
+            j = rand(rng, cz.at)
+            if j == 1
+                w = widths(cz.zl)
+                k = layerratios(cz.zl)
+                y = heights(cz.zl)
+                mb = highside(cz.zl)
+                am = lowside(cz.zl)
+                pdf = density(cz.zl)
+                fb = fallback(cz.zl)
+                LM = mask(cz.zl)
+
+                @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
+            elseif j == M
+                w = widths(cz.zr)
+                k = layerratios(cz.zr)
+                y = heights(cz.zr)
+                mb = highside(cz.zr)
+                am = lowside(cz.zr)
+                pdf = density(cz.zr)
+                fb = fallback(cz.zr)
+                LM = mask(cz.zr)
+
+                @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
+            else
+                z = cz.zm[j - 1]
+                w = widths(z)
+                k = layerratios(z)
+                y = heights(z)
+                mb = highside(z)
+                am = lowside(z)
+                pdf = density(z)
+                fb = fallback(z)
+                LM = mask(z)
+
+                @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
+            end
+        end
+    end
+    A
+end
+
+@generated function Random.rand!(
+    rng::Union{TaskLocalRNG,Xoshiro,MersenneTwister},
+    A::Array{X},
+    s::Random.SamplerTrivial{<:CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR}}
+) where {X<:FloatXX,Y,Ns,M,Mm2,F,ZL,ZM,ZR}
+    sample_ex = z_ex -> quote
+        w = widths($z_ex)
+        k = layerratios($z_ex)
+        y = heights($z_ex)
+        mb = highside($z_ex)
+        am = lowside($z_ex)
+        pdf = density($z_ex)
+        fb = fallback($z_ex)
+        LM = mask($z_ex)
+
+        @inbounds A[i] = zigsample2(rng, w, k, y, mb, am, pdf, fb, LM, r)
+    end
+
+    ex = Expr(:elseif, :(i == $(M-1)), sample_ex(:(cz.zm[$(M - 1 - 1)])), sample_ex(:(cz.zr)))
+    for j in (M - 2):-1:2
+        ex = Expr(:elseif, :(i == $j), sample_ex(:(cz.zm[$(j - 1)])), ex)
+    end
+    ex = Expr(:if, :(i == 1), sample_ex(:(cz.zl)), ex)
+
+    quote
+        cz = s[]
+        if length(A) < 7 # TODO: Tune this number
+            for i in eachindex(A)
+                @inbounds A[i] = rand(rng, s)
+            end
+        else
+            T = corresponding_uint(X)
+            GC.@preserve A rand!(rng, Random.UnsafeView{T}(pointer(A), length(A)))
+
+            for i in eachindex(A)
+                @inbounds r = reinterpret(T, A[i])
+
+                j = rand(rng, cz.at)
+
+                $ex
+            end
+        end
+        A
+    end
 end

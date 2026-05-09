@@ -1,6 +1,7 @@
 using Test, Ziggurats
 using Random
 using StatsBase
+using StaticArrays
 using Distributions
 using SpecialFunctions
 using LambertW
