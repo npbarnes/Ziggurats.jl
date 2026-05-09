@@ -114,7 +114,7 @@ function _layermask_signed(T::Type{<:FloatXX}, N)
 end
 
 """
-Provide error messages for unexpected or invalid results including non-montonicity.
+Provide error messages for unexpected or invalid results including non-monotonicity.
 """
 struct PDFWrap{X,Y,F}
     f::F
@@ -547,7 +547,7 @@ function _check_arguments(N, domain::Regularized)
         throw(DomainError(N, "N must be a positive integer, got N=$N."))
     end
     if length(domain) != 2
-        # Regularized guarentees that the points in the domain are distinct,
+        # Regularized guarantees that the points in the domain are distinct,
         # so we only need to check the length, not uniqueness.
         error("the domain needs exactly two distinct points. Got $domain")
     end
@@ -660,13 +660,13 @@ function ziggurat_residual(y2, p)
     _y[end] - p.modalpdf
 end
 
-# The caller of build!() is responsible for ensuring consistancy of the build
+# The caller of build!() is responsible for ensuring consistency of the build
 # arguments. I.e.,
 # 1) length(x) == length(y) >= 1
 # 2) zero(y2) < y2 <= pdf(boundary)
 # 3) boundarypdf = pdf(boundary)
 # 4) the pdf is monotonic
-# 5) the ipdf is the gerneralized inverse of pdf (i.e. ipdf(y) is the largest x
+# 5) the ipdf is the generalized inverse of pdf (i.e. ipdf(y) is the largest x
 #       such that pdf(x) >= y for decreasing pdfs, and ipdf(y) is the smallest x
 #       such that pdf(x) >= y for increasing pdfs)
 
@@ -746,7 +746,7 @@ end
 # no idea why.
 
 @inline function x_in_domain(x, mb, am, flip = false)
-    # Rarely, roundoff causes x to be outside the domain, so clamp into the range if it's
+    # Rarely, round off causes x to be outside the domain, so clamp into the range if it's
     # close. Error if it's far outside the domain, but that shouldn't happen.
     # BellZiggurats may also flip x into the proper half-domain if needed.
 
