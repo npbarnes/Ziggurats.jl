@@ -6,7 +6,6 @@ using StaticArrays
 using QuadGK
 using LinearAlgebra
 using AliasTables
-using IntervalRootFinding
 using FixedPointNumbers
 using ILog2
 using Logging
