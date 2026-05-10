@@ -420,20 +420,6 @@ function composite_ziggurat(
 end
 
 """
-    monotonic_segments(f, domain)
-
-Divides the domain into its monotonic subdomains using automatic differentiation and root
-finding. The result will have every entry of `domain` as well as the detected critical points
-of `f` in sorted order with duplicates dropped.
-"""
-function monotonic_segments(f, domain)
-    domain = regularize(domain)
-    df = x -> ForwardDiff.derivative(f, x)
-    boundaries = find_zeros(df, domain)
-    unique(sort!(vcat(domain.a, boundaries)))
-end
-
-"""
     get_subdomains(f, domain)
 
 Convert a list of subdomain boundaries -- `domain` -- into a list of pairs representing subdomains.
