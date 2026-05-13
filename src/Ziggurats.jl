@@ -17,8 +17,6 @@ export BoundedBellZiggurat, UnboundedBellZiggurat
 export BoundedCompositeZiggurat, LeftTailCompositeZiggurat, RightTailCompositeZiggurat, TwoTailCompositeZiggurat
 export ziggurat, monotonic_ziggurat, bell_ziggurat, composite_ziggurat
 
-@compat public monotonic_segments
-
 abstract type Ziggurat{X,Y} end
 
 Base.eltype(::Ziggurat{X}) where {X} = X
