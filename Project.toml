@@ -21,7 +21,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 [compat]
 AliasTables = "1.1"
 Compat = "3.47, 4.10"
-FixedPointNumbers = "0.8"
+FixedPointNumbers = "0.8, 0.9"
 ILog2 = "2.0.0"
 LinearAlgebra = "1"
 Logging = "1.10"
