@@ -161,9 +161,24 @@ const BoundedTestCases = reduce(
     ]
 )
 
+const OffsetCases = [
+    MonotonicTestData(;
+        name = "Normal (μ=$offset, x>=$offset) $T",
+        dist = truncated(Normal(offset); lower = offset),
+        f = x -> 1/√T(2π) * exp(-(x-offset)^2/2),
+        ipdf = y -> √(-2log(√T(2π)*y)) + offset,
+        tailarea = x -> erfc((x-offset)/T(√2))/2,
+        fallback = (rng, x) -> T(√2 * erfcinv(erfc((x-offset)/T(√2))*(1-rand(rng)))) + offset,
+        domain = (T(offset), T(Inf)),
+        constructor = UnboundedZiggurat,
+        T = T
+    ) for T in (Float64, Float32) for offset in (5000, -5000)
+]
+
 const MonotonicTestCases = [
     UnboundedTestCases;
-    BoundedTestCases
+    BoundedTestCases;
+    OffsetCases
 ]
 
 # Laplace is a bell distribution, but It's separated out for extra tests
