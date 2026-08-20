@@ -309,6 +309,10 @@ function composite_ziggurat(pdf, domain; kwargs...)
     composite_ziggurat(pdf, domain, Ns; kwargs...)
 end
 
+function composite_ziggurat(pdf, domain, ::Nothing; kwargs...)
+    composite_ziggurat(pdf, domain; kwargs...)
+end
+
 function composite_ziggurat(pdf, domain, N::Integer; kwargs...)
     domain = regularize(domain)
     Ns = fill(N, length(domain)-1)
