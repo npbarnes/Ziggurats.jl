@@ -111,4 +111,17 @@
             @test_throws ErrorException UnboundedZiggurat{Float64,Float64,4}(x->1, (1,))
         end
     end
+
+    @testset "density() returns the pdf" begin
+        f = x -> exp(-x^2)
+        bounded = BoundedZiggurat{Float64,Float64}(f, (0, 1))
+        unbounded = UnboundedZiggurat{Float64,Float64}(f, (0, Inf))
+        bounded_bell = BoundedBellZiggurat{Float64,Float64}(f, (0, 1))
+        unbounded_bell = UnboundedZiggurat{Float64,Float64}(f, (0, Inf))
+        composite = TwoTailCompositeZiggurat{Float64,Float64}(f, (-Inf, 0, Inf))
+
+        @testset for zig in (bounded, unbounded, bounded_bell, unbounded_bell, composite)
+            @test Ziggurats.density(zig) === f
+        end
+    end
 end

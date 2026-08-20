@@ -46,7 +46,7 @@ struct CompositeZiggurat{
     end
 end
 
-density(z::CompositeZiggurat) = density(z.zigs[1])
+density(z::CompositeZiggurat) = density(z.zl)
 
 const BoundedCompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} =
     CompositeZiggurat{X,Y,Ns,M,Mm2,F,ZL,ZM,ZR,AT} where {X,Y,Ns,M,Mm2,F,ZL<:BoundedZiggurat,ZM,ZR<:BoundedZiggurat,AT}
