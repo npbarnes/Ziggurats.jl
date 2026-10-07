@@ -131,7 +131,7 @@
         @test_throws ErrorException composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], (256, 256, 256, 256))
     end
 
-    @testset "density() returns the pdf" begin
+    @testset "density() returns the wrapped pdf" begin
         f = x -> exp(-x^2)
         bounded = BoundedZiggurat{Float64,Float64}(f, (0, 1))
         unbounded = UnboundedZiggurat{Float64,Float64}(f, (0, Inf))
@@ -140,7 +140,7 @@
         composite = TwoTailCompositeZiggurat{Float64,Float64}(f, (-Inf, 0, Inf))
 
         @testset for zig in (bounded, unbounded, bounded_bell, unbounded_bell, composite)
-            @test Ziggurats.density(zig) === f
+            @test Ziggurats.density(zig).f === f
         end
     end
 end
