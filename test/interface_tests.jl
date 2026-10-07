@@ -114,19 +114,19 @@
 
     @testset "composite_ziggurat accepts many forms of Ns" begin
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π]) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], nothing) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], 256) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], [256, 256, 256]) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], (256, 256, 256)) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256}}
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π, 4π], [nothing, 256, nothing, 256]) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256,256}}
         @test composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π, 4π], (nothing, 256, nothing, 256)) isa
-              CompositeZiggurat{Float64,Float64,Tuple{256,256,256,256}}
+              Ziggurats.CompositeZiggurat{Float64,Float64,Tuple{256,256,256,256}}
         @test_throws ErrorException composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], (256, 256))
         @test_throws ErrorException composite_ziggurat(x -> cos(x) + 1, [0, π, 2π, 3π], (256, 256, 256, 256))
     end
