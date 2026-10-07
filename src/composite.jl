@@ -249,8 +249,8 @@ end
 function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
     dom = regularize(X, domain)
 
-    if M != length(dom) - 1
-        error("exactly one number of ziggurat layers (or nothing) must be given for each subdomain, but the number of subdomains does not match the number of layer counts given.")
+    if M != tupletypelength(Ns) || M != length(dom) - 1
+        error("the length of the Tuple `Ns`, the number of subdomains (`length(domain)-1`), and the number of ziggurats (`M`) must all be equal. Got M = $M, Ns = $Ns, and domain = $(dom.a).")
     end
 
     if area === nothing
