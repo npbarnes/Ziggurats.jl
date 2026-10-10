@@ -46,6 +46,10 @@ issamevector(a::Vector, b::Vector) = false
             @test eltype(regularize((0.0f0, 1))) == Float32
             @test eltype(regularize((0.0f0, 1.0f0))) == Float32
             @test eltype(regularize((0.0f0, Float16(1.0)))) == Float32
+
+            @test eltype(regularize(Real[1, 2, 3, π])) == Float64
+            @test eltype(regularize(Real[1, 2, 3.0f0])) == Float32
+            @test eltype(regularize(Real[1, 2, 3.0f0, π])) == Float32
         end
 
         @testset "regularize sorts, and promotes" begin

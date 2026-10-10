@@ -16,11 +16,7 @@ promote_to_float(a) = float.(promote(a...))
     elseif !isconcretetype(X) && X <: AbstractFloat
         return :(collect(promote(a...)))
     elseif !isconcretetype(X) && !(X <: AbstractFloat)
-        if X <: Real
-            return :(Vector{Float64}(a))
-        else
-            return :(collect(float.(promote(a...))))
-        end
+        return :(collect(float.(promote(a...))))
     else
         error("Unreachable error")
     end
