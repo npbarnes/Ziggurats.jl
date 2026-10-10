@@ -18,7 +18,7 @@ promote_to_float(a) = float.(promote(a...))
     elseif !isconcretetype(X) && !(X <: AbstractFloat)
         return :(collect(float.(promote(a...))))
     else
-        error("Unreachable error")
+        error("unreachable error")
     end
 end
 
@@ -34,7 +34,7 @@ function regularize(domain)
         error("duplicate values found in domain.")
     end
     if length(reg) < 2
-        error("The domain needs at least two distinct points to mark the boundaries.")
+        error("the domain needs at least two distinct points to mark the boundaries.")
     end
     Regularized(reg)
 end
@@ -48,7 +48,7 @@ function regularize(T, domain)
         error("duplicate values found in domain.")
     end
     if length(reg) < 2
-        error("The domain needs at least two distinct points to mark the boundaries.")
+        error("the domain needs at least two distinct points to mark the boundaries.")
     end
     Regularized(reg)
 end
