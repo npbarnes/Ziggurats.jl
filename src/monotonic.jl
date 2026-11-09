@@ -282,13 +282,13 @@ end
 # except instead of promoting S for each element of an array, you promote after each call to
 # f during ziggurat construction. That should be reasonably reliable. Call it a "best-effort
 # attempt to guess Y" in the documentation.
-function guess_ytype(f, domain::Regularized)
-    a, b = extrema(domain)
+function guess_ytype(f, dom)
+    a, b = dom
 
     # TODO: The number 10 is arbitrary, could use percentiles instead. Or Roots.__middle
     if isinf(a) && isinf(b)
-        l = zero(eltype(domain)) - 10
-        r = zero(eltype(domain)) + 10
+        l = zero(eltype(dom)) - 10
+        r = zero(eltype(dom)) + 10
     elseif isinf(a) && !isinf(b)
         l = b - 10
         r = b
@@ -413,7 +413,11 @@ function monotonic_ziggurat(
     ccdf = nothing,
     fallback = nothing
 )
-    dom = regularize(domain)
+    _d = canonicalize(domain)
+    if length(_d) != 1
+        error("a monotonic ziggurat must have a single contiguous domain specified by it's two end ponts. Got $domain.")
+    end
+    dom = only(_d)
     X = eltype(dom)
     Y = guess_ytype(pdf, dom)
     num = default_numlayers(X, Y, N)
@@ -445,19 +449,23 @@ function BoundedZiggurat{X,Y,nothing}(pdf, domain; ipdf = nothing) where {X,Y}
     BoundedZiggurat{X,Y}(pdf, domain; ipdf)
 end
 function BoundedZiggurat{X,Y,N}(pdf, domain; ipdf = nothing) where {X,Y,N}
-    domain = regularize(X, domain)
-    _check_arguments(N, domain)
-    a, b = domain
+    _d = canonicalize(X, domain)
+    if length(_d) != 1
+        error("a BoundedZiggurat must have a single contiguous domain specified by it's two end ponts. Got $domain.")
+    end
+    dom = only(_d)
+    _check_arguments(N, dom)
+    a, b = dom
     if isinf(a) || isinf(b)
-        error("expected a bounded domain, got domain=$domain.")
+        error("expected a bounded domain, got domain=$dom.")
     end
 
-    modalboundary, argminboundary = _identify_mode(pdf, domain)
+    modalboundary, argminboundary = _identify_mode(pdf, dom)
 
     wpdf = PDFWrap{X,Y}(pdf, modalboundary, argminboundary)
 
     if ipdf === nothing
-        _ipdf = InverseFunc{X,Y}(wpdf, extrema(domain)...)
+        _ipdf = InverseFunc{X,Y}(wpdf, extrema(dom)...)
     else
         _ipdf = ipdf
     end
@@ -499,7 +507,11 @@ function UnboundedZiggurat{X,Y,nothing}(pdf, domain; kwargs...) where {X,Y}
     UnboundedZiggurat{X,Y}(pdf, domain; kwargs...)
 end
 function UnboundedZiggurat{X,Y,N}(pdf, domain; ipdf = nothing, tailarea = nothing, fallback = nothing) where {X,Y,N}
-    dom = regularize(X, domain)
+    _d = canonicalize(X, domain)
+    if length(_d) != 1
+        error("an UnboundedZiggurat must have a single contiguous domain specified by it's two end ponts. Got $domain.")
+    end
+    dom = only(_d)
     _check_arguments(N, dom)
     a, b = extrema(dom)
     if !isinf(a) && !isinf(b)
@@ -624,13 +636,11 @@ function _choose_tailarea_func(pdf, domain, tailarea, cdf, ccdf)
 end
 
 """Check arguments for monotonic distributions"""
-function _check_arguments(N, domain::Regularized)
+function _check_arguments(N, domain)
     if N < 1
         throw(DomainError(N, "N must be a positive integer, got N=$N."))
     end
-    if length(domain) != 2
-        # Regularized guarantees that the points in the domain are distinct,
-        # so we only need to check the length, not uniqueness.
+    if length(domain) != 2 || !allunique(domain)
         error("the domain needs exactly two distinct points. Got $domain")
     end
 
@@ -642,7 +652,7 @@ function _check_arguments(N, domain::Regularized)
     return nothing
 end
 
-function _identify_mode(pdf, domain::Regularized)
+function _identify_mode(pdf, domain)
     # Return the modalboundary (mb) and argminboundary (am).
     # Assume that the domain is well formed and appropriate for a monotonic
     # distribution. A constant function is treated as decreasing.

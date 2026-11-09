@@ -247,10 +247,10 @@ function TwoTailCompositeZiggurat{X,Y,Ns,M}(
 end
 
 function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
-    dom = regularize(X, domain)
+    subdomains = canonicalize(X, domain)
 
-    if M != tupletypelength(Ns) || M != length(dom) - 1
-        error("the length of the Tuple `Ns`, the number of subdomains (`length(domain)-1`), and the number of ziggurats (`M`) must all be equal. Got M = $M, Ns = $Ns, and domain = $(dom.a).")
+    if M != tupletypelength(Ns) || M != length(subdomains)
+        error("the length of the Tuple `Ns`, the number of subdomains, and the number of ziggurats (`M`) must all be equal. Got M = $M, Ns = $Ns, and subdomains = $(subdomains).")
     end
 
     if area === nothing
@@ -263,7 +263,7 @@ function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
                 (a, b) -> abs(ccdf(a) - ccdf(b))
             end
         else
-            _tailarea = TailArea{X,Y}(pdf, first(dom))
+            _tailarea = TailArea{X,Y}(pdf, first(first(subdomains)))
 
             _area = let _tailarea=_tailarea
                 (a, b) -> abs(_tailarea(b) - _tailarea(a))
@@ -279,8 +279,6 @@ function _composite_setup(X, Y, Ns, M, pdf, domain; ipdfs, area, cdf, ccdf, p)
         _ipdfs = ipdfs
     end
 
-    subdomains = get_subdomains(Val(X), Val(M), pdf, dom)
-
     zigs_middle = middle_zigs(X, Y, Ns, pdf, subdomains, _ipdfs)
     _p = zigprobs(_area, subdomains, p)
     at = AliasTable(_p)
@@ -295,18 +293,18 @@ extracttype(::Type{Type{T}}) where {T} = T
 
     middles = collect(zip(idxs, NN))[2:(end - 1)]
 
-    Expr(:tuple, (:(BoundedZiggurat{X,Y,$N}(pdf, subdomains[$i, :]; ipdf = ipdfs[$i])) for (i, N) in middles)...)
+    Expr(:tuple, (:(BoundedZiggurat{X,Y,$N}(pdf, subdomains[$i]; ipdf = ipdfs[$i])) for (i, N) in middles)...)
 end
 
 function middle_zigs(X, Y, Ns, pdf, subdomains, ipdfs)
-    ntuple(i -> BoundedZiggurat{X,Y,Ns[i + 1]}(pdf, subdomains[i + 1, :]; ipdf = ipdfs[i + 1]), length(Ns)-2)
+    ntuple(i -> BoundedZiggurat{X,Y,Ns[i + 1]}(pdf, subdomains[i + 1]; ipdf = ipdfs[i + 1]), length(Ns)-2)
 end
 
 # TODO: add option to autodetect monotonic subdomains.
 function composite_ziggurat(pdf, domain; kwargs...)
-    domain = regularize(domain)
-    Ns = fill(nothing, length(domain) - 1)
-    composite_ziggurat(pdf, domain, Ns; kwargs...)
+    subdomains = canonicalize(domain)
+    Ns = fill(nothing, length(subdomains))
+    composite_ziggurat(pdf, subdomains, Ns; kwargs...)
 end
 
 function composite_ziggurat(pdf, domain, ::Nothing; kwargs...)
@@ -314,9 +312,9 @@ function composite_ziggurat(pdf, domain, ::Nothing; kwargs...)
 end
 
 function composite_ziggurat(pdf, domain, N::Integer; kwargs...)
-    domain = regularize(domain)
-    Ns = fill(N, length(domain)-1)
-    composite_ziggurat(pdf, domain, Ns; kwargs...)
+    subdomains = canonicalize(domain)
+    Ns = fill(N, length(subdomains))
+    composite_ziggurat(pdf, subdomains, Ns; kwargs...)
 end
 
 """
@@ -401,17 +399,17 @@ function composite_ziggurat(
     right_fallback = nothing,
     p = nothing
 )
-    dom = regularize(domain)
-    X = eltype(dom)
-    Y = guess_ytype(pdf, dom)
+    subdomains = canonicalize(domain)
+    X = eltype(eltype(subdomains))
+    Y = promote_type((guess_ytype(pdf, sd) for sd in subdomains)...)
     Ns = default_numlayers.(X, Y, Ns)
     _Ns = Tuple{Ns...}
-    M = length(dom) - 1
-    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, dom; ipdfs, area, cdf, ccdf, p)
+    M = length(subdomains)
+    zigs_middle, at, _ipdfs, subdomains = _composite_setup(X, Y, _Ns, M, pdf, subdomains; ipdfs, area, cdf, ccdf, p)
 
-    zig_L = monotonic_ziggurat(pdf, subdomains[1, :], Ns[1]; ipdf = _ipdfs[1], cdf = cdf, fallback = left_fallback)
+    zig_L = monotonic_ziggurat(pdf, subdomains[1], Ns[1]; ipdf = _ipdfs[1], cdf = cdf, fallback = left_fallback)
     zig_R =
-        monotonic_ziggurat(pdf, subdomains[end, :], Ns[end]; ipdf = _ipdfs[end], ccdf = ccdf, fallback = right_fallback)
+        monotonic_ziggurat(pdf, subdomains[end], Ns[end]; ipdf = _ipdfs[end], ccdf = ccdf, fallback = right_fallback)
 
     Mm2 = M - 2
     F = typeof(density(zig_L))
@@ -423,68 +421,16 @@ function composite_ziggurat(
     CompositeZiggurat{X,Y,_Ns,M,Mm2,F,ZL,ZM,ZR,AT}(zig_L, zigs_middle, zig_R, at)
 end
 
-"""
-    get_subdomains(f, domain)
-
-Convert a list of subdomain boundaries -- `domain` -- into a list of pairs representing subdomains.
-Attempts to detect discontinuities in f, and account for them.
-
-# Examples
-
-```julia-repl
-julia> Ziggurats.get_subdomains(cos, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, 0.0]
- [0.0, 1.0]
-
-julia> Ziggurats.get_subdomains(x -> x>0 ? 1.0 : 0.0, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, 0.0]
- [5.0e-324, 1.0]
-
-julia> Ziggurats.get_subdomains(x -> x>=0 ? 1.0 : 0.0, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, -5.0e-324]
- [0.0, 1.0]
-
-julia> Ziggurats.get_subdomains(sign, [-1, 0, 1])
-2-element Vector{Vector{Float64}}:
- [-1.0, -5.0e-324]
- [5.0e-324, 1.0]
-```
-"""
-function get_subdomains(::Val{X}, ::Val{M}, f, domain::Regularized) where {X,M}
-    sd = Array{X}(undef, M, 2)
-
-    sd[1, 1] = domain[1]
-    for i in 2:M
-        x = domain[i]
-        if isapprox(f(prevfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i - 1, 2] = x
-        else
-            sd[i - 1, 2] = prevfloat(x)
-        end
-
-        if isapprox(f(nextfloat(x)), f(x); atol = sqrt(eps(x)))
-            sd[i, 1] = x
-        else
-            sd[i, 1] = nextfloat(x)
-        end
-    end
-    sd[end, 2] = domain[end]
-    sd
-end
-
-zigprobs(area, subdomains, ::Nothing) = [area(a, b) for (a, b) in eachrow(subdomains)]
+zigprobs(area, subdomains, ::Nothing) = [area(a, b) for (a, b) in subdomains]
 function zigprobs(area, subdomains, p::AbstractArray)
-    if length(p) != size(subdomains, 1)
+    if length(p) != length(subdomains)
         error("the length of p is not equal to the number of subdomains.")
     end
 
-    _p = similar(p, eltype(subdomains))
+    _p = similar(p, eltype(eltype(subdomains)))
     for i in eachindex(p)
         if p[i] === nothing
-            a, b = @view(subdomains[i, :])
+            a, b = subdomains[i]
             _p[i] = area(a, b)
         else
             _p[i] = p[i]

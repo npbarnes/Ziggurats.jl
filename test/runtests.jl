@@ -4,7 +4,7 @@ include("test_inverses.jl")
 include("layermask_tests.jl")
 
 include("misc_tests.jl")
-include("argument_handling_tests.jl")
+include("argument_handling/argument_handling_tests.jl")
 include("assumptions_tests.jl")
 include("interface_tests.jl")
 include("typestable_interface.jl")
