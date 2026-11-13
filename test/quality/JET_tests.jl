@@ -15,7 +15,7 @@ using JET
             @testset "UnboundedZiggurats" begin
                 @testset "Default args" begin
                     z = @inferred UnboundedZiggurat{T,T,N}(x->exp(-x), (T(0), typemax(T)))
-                    @test_opt rand(z)
+                    @test_opt ignored_modules = (JET.AnyFrameModule(:QuadGK),) rand(z)
                     @test_call rand(z)
                 end
                 @testset "Overriding tailarea" begin
